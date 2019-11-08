@@ -43,7 +43,7 @@
     "hi-base32": "^0.5.0",
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
-    "unchained-bitcoin": "^0.0.4"
+    "unchained-bitcoin": "^0.0.5"
   },
   "directories": {
     "lib": "lib"
