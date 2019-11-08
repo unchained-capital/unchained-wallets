@@ -1,13 +1,13 @@
 import base32 from "hi-base32";
 import pako from "pako";
 import {
-  scriptToHex, 
+  scriptToHex,
   multisigRedeemScript,
   multisigAddressType,
   MULTISIG_ADDRESS_TYPES,
 } from "unchained-bitcoin";
 import {
-  WalletInteraction, 
+  WalletInteraction,
   PENDING,
   ACTIVE,
   INFO,
@@ -19,7 +19,7 @@ export class HermitInteraction extends WalletInteraction {
 
   //
   // Encoded string from QR code => JavaScript Object
-  // 
+  //
 
   _parseQRCodeData(encodedString) {
     try {
@@ -49,7 +49,7 @@ export class HermitInteraction extends WalletInteraction {
 
   //
   // JavaScript object => encoded string for QR code
-  // 
+  //
 
   _encodeQRCodeData(data) {
     try {
@@ -110,7 +110,7 @@ export class HermitExportPublicKey extends HermitExport {
     const mode = "wallet";
     const command = `export-pub ${this.bip32Path}`;
     messages[PENDING].push({
-      level:INFO, 
+      level:INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -123,7 +123,7 @@ export class HermitExportPublicKey extends HermitExport {
 
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey, bip32_path} = result;
+    const {xpub, pubkey} = result;
     if (!pubkey) {
       if (xpub) {
         throw new Error("Make sure you export a plain public key and NOT an extended public key.");
@@ -133,7 +133,7 @@ export class HermitExportPublicKey extends HermitExport {
     }
     return result;
   }
-  
+
 }
 
 export class HermitExportExtendedPublicKey extends HermitExport {
@@ -149,7 +149,7 @@ export class HermitExportExtendedPublicKey extends HermitExport {
     const mode = "wallet";
     const command = `export-xpub ${this.bip32Path}`;
     messages[PENDING].push({
-      level:INFO, 
+      level:INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -162,7 +162,7 @@ export class HermitExportExtendedPublicKey extends HermitExport {
 
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey, bip32_path} = result;
+    const {xpub, pubkey} = result;
     if (!xpub) {
       if (pubkey) {
         throw new Error("Make sure you export an extended public key and NOT a plain public key.");
@@ -172,7 +172,7 @@ export class HermitExportExtendedPublicKey extends HermitExport {
     }
     return result;
   }
-  
+
 }
 
 export class HermitSignTransaction extends HermitExport {
@@ -194,7 +194,7 @@ export class HermitSignTransaction extends HermitExport {
   outputsAreSupported() {
     if (this.outputs && this.outputs.length) {
       for (let i=0; i < this.outputs.length; i++) {
-        const output = this.outputs[i];  
+        const output = this.outputs[i];
         if (output.address.match(/^(tb|bc)/)) {
           return false;
         }
@@ -206,9 +206,9 @@ export class HermitSignTransaction extends HermitExport {
   inputsAreSupported() {
     if (this.inputs && this.inputs.length) {
       for (let i=0; i < this.inputs.length; i++) {
-        const input = this.inputs[i];  
+        const input = this.inputs[i];
         const inputAddressType = multisigAddressType(input.multisig);
-        
+
         if (inputAddressType !== MULTISIG_ADDRESS_TYPES.P2SH) {
           this.inputAddressType = inputAddressType
           return false;
@@ -223,16 +223,16 @@ export class HermitSignTransaction extends HermitExport {
 
     if (!this.inputsAreSupported()) {
       messages[UNSUPPORTED].push({
-        level: ERROR, 
-        code: "hermit.unsupported.inputaddress", 
+        level: ERROR,
+        code: "hermit.unsupported.inputaddress",
         text: `Unsupported input address type ${this.inputAddressType}, must be P2SH.`
       });
     }
 
     if (!this.outputsAreSupported()) {
       messages[UNSUPPORTED].push({
-        level: ERROR, 
-        code: "hermit.unsupported.outputaddress", 
+        level: ERROR,
+        code: "hermit.unsupported.outputaddress",
         text: `Unsupported output address type. bech32 addresses are unsupported.`
       });
     }
@@ -243,7 +243,7 @@ export class HermitSignTransaction extends HermitExport {
     const mode = "wallet";
     const command = "sign-bitcoin";
     messages[PENDING].push({
-      level: INFO, 
+      level: INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -283,7 +283,7 @@ export class HermitSignTransaction extends HermitExport {
     return {
       inputs: Object.values(hermitInputsByRedeemScript),
       outputs: this.outputs.map((output) => ({
-        address: output.address, 
+        address: output.address,
         amount: output.amountSats.toNumber(),
       })),
     };
@@ -294,5 +294,5 @@ export class HermitSignTransaction extends HermitExport {
     const {signatures} = result;
     return signatures;
   }
-  
+
 }

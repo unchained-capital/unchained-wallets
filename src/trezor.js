@@ -8,11 +8,10 @@ import {
 } from "unchained-bitcoin";
 
 import {
-  WalletInteraction, 
+  WalletInteraction,
   PENDING,
   ACTIVE,
   INFO,
-  WARNING,
   ERROR,
 } from "./interaction";
 

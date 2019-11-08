@@ -2,7 +2,7 @@ import { NETWORKS } from "unchained-bitcoin";
 import { P2SH, generateMultisigFromHex } from 'unchained-bitcoin';
 // import { ACTIVE } from "../unchained-wallets"
 
-import { TrezorExportHDNode, TrezorSignMultisigTransaction, TrezorExportPublicKey } from "./trezor";
+import { TrezorSignMultisigTransaction, TrezorExportPublicKey } from "./trezor";
 import BigNumber from "bignumber.js";
 
 function mockHdNodes() {
@@ -75,7 +75,7 @@ describe("Test trezor lib", () => {
         it('should properly report a request failure', async (next) => {
             const hdnode = new TrezorExportPublicKey({ network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/99" })
             try {
-                const result = await hdnode.run()
+                await hdnode.run()
                 throw("I should not get here")
             } catch (e) {
                 expect(e.message).toBe(mockHdNodes()[2].error)
@@ -107,12 +107,14 @@ describe("Test trezor lib", () => {
             const interaction = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
 
             it("should properly report messages for wallet state active", () => {
-                const actives = interaction.messagesFor({walletState:"active", excludeCodes: ["bip32"]});
+                //const actives =
+                interaction.messagesFor({walletState:"active", excludeCodes: ["bip32"]});
                 // console.log(actives); // TODO: what to test for
             })
 
             it("should properly report messages for wallet state pending", () => {
-                const pendings = interaction.messagesFor({walletState:"pending", excludeCodes: ["bip32"]});
+                //const pendings =
+                interaction.messagesFor({walletState:"pending", excludeCodes: ["bip32"]});
                 // console.log(pendings); // TODO: what to test for
             })
 

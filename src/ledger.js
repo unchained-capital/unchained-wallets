@@ -1,4 +1,4 @@
-import { 
+import {
   compressPublicKey,
   scriptToHex,
   multisigRedeemScript,
@@ -67,7 +67,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     if (result.publicKey) {
       const compressedPublicKey = compressPublicKey(result.publicKey);
       return compressedPublicKey;
-    } else { 
+    } else {
       throw new {message: "Unable to export public key."};
     }
   }
@@ -77,15 +77,15 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
   async run() {
-    const result = await super.run();
+    /*const result = */await super.run();
     // FIXME
-    return {error: "Unable to export extended public key."}; 
+    return {error: "Unable to export extended public key."};
   }
 
 }
 
 export class LedgerSignMultisigTransaction extends LedgerInteraction {
-  
+
   constructor({network, inputs, outputs, bip32Paths}) {
     super({network});
     this.inputs = inputs;
@@ -108,7 +108,7 @@ export class LedgerSignMultisigTransaction extends LedgerInteraction {
     return signMultisigSpendLedger(this.bip32Paths[0], this.inputs, this.outputs, isTestnet(this.network), ledgerbtc)
   }
 
-  
+
 }
 
 function isTestnet(network) {
@@ -125,7 +125,7 @@ export async function exportLedgerPubKey(path, ledgerbtc) {
     } catch(e) {
         return { success: false, text: e.message };
     }
-};
+}
 
 export async function signMultisigSpendLedger(path,
                                        inputs,
@@ -146,8 +146,8 @@ export async function signMultisigSpendLedger(path,
     for (var j = 0; j < inputs.length; j++) {
       txTmp.addInput(inputs[j].txid, inputs[j].index)
     }
-    
-    
+
+
     let txToSign = txTmp.buildIncomplete();
 
     const txHex = txToSign.toHex()

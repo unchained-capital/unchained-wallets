@@ -52,7 +52,7 @@ export class WalletInteraction {
   //   }
   //
   // See https://github.com/lancedikson/bowser for more details.
-  // 
+  //
   isSupported() {
     return true;
   }
@@ -112,8 +112,8 @@ export class WalletInteraction {
   // Should return a promise
   async run() {
   }
-  
-};
+
+}
 
 export class UnsupportedInteraction extends WalletInteraction {
 
