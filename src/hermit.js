@@ -1,13 +1,16 @@
+/**
+ * @module hermit
+ */
 import base32 from "hi-base32";
 import pako from "pako";
 import {
-  scriptToHex, 
+  scriptToHex,
   multisigRedeemScript,
   multisigAddressType,
   MULTISIG_ADDRESS_TYPES,
 } from "unchained-bitcoin";
 import {
-  WalletInteraction, 
+  WalletInteraction,
   PENDING,
   ACTIVE,
   INFO,
@@ -15,11 +18,15 @@ import {
   UNSUPPORTED,
 } from "./interaction";
 
+/**
+ * Interaction with Hermit (SLIP39) sharded wallet
+ * @extends {module:interaction.WalletInteraction}
+ */
 export class HermitInteraction extends WalletInteraction {
 
   //
   // Encoded string from QR code => JavaScript Object
-  // 
+  //
 
   _parseQRCodeData(encodedString) {
     try {
@@ -49,7 +56,7 @@ export class HermitInteraction extends WalletInteraction {
 
   //
   // JavaScript object => encoded string for QR code
-  // 
+  //
 
   _encodeQRCodeData(data) {
     try {
@@ -83,7 +90,12 @@ export class HermitInteraction extends WalletInteraction {
 
 }
 
-export class HermitExport extends HermitInteraction {
+/**
+ * Base class for exports from Hermit (SLIP39) sharded wallet
+ * Adds message for extended classes, mainly for internal use
+ * @extends {module:hermit.HermitInteraction}
+ */
+export class HermitExport extends HermitInteraction { // TODO: should this be exported?
 
   messages() {
     const messages = super.messages();
@@ -97,9 +109,18 @@ export class HermitExport extends HermitInteraction {
 
 }
 
+/**
+ * Class for wallet public key interaction for use with QR scanner
+ * @extends {module:hermit.HermitExport}
+ */
 export class HermitExportPublicKey extends HermitExport {
 
+  /**
+   * @example
+   * const hermitKeyExporter = new HermitExportPublicKey()
+   */
   constructor({network, bip32Path}) {
+    // TODO: are these really needed?  The path seems to come from QR and the network is not referred to.
     super({network});
     this.bip32Path = bip32Path;
   }
@@ -110,7 +131,7 @@ export class HermitExportPublicKey extends HermitExport {
     const mode = "wallet";
     const command = `export-pub ${this.bip32Path}`;
     messages[PENDING].push({
-      level:INFO, 
+      level:INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -121,9 +142,18 @@ export class HermitExportPublicKey extends HermitExport {
     return messages;
   }
 
+  /**
+   * Convert base64 encoded QR code to public key and BIP32 path
+   * @param {string} encodedString - base64 encoded QR code from Hermit
+   * @returns {object} public key and BIP32 path
+   * @example
+   * const keyInfo = hermitKeyExporter.run();
+   * console.log(keyInfo);
+   * // {pubkey:"...", bip32Path:"m/48'..."}
+   */
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey, bip32_path} = result;
+    const {xpub, pubkey} = result;
     if (!pubkey) {
       if (xpub) {
         throw new Error("Make sure you export a plain public key and NOT an extended public key.");
@@ -133,12 +163,16 @@ export class HermitExportPublicKey extends HermitExport {
     }
     return result;
   }
-  
+
 }
 
+/**
+ * Class for wallet extended public key interaction for use with QR scanner
+ * @extends {module:hermit.HermitExport}
+ */
 export class HermitExportExtendedPublicKey extends HermitExport {
 
-  constructor({network, bip32Path}) {
+  constructor({network, bip32Path}) { // TODO: I don't think network is needed here either, encoded in QR
     super({network});
     this.bip32Path = bip32Path;
   }
@@ -149,7 +183,7 @@ export class HermitExportExtendedPublicKey extends HermitExport {
     const mode = "wallet";
     const command = `export-xpub ${this.bip32Path}`;
     messages[PENDING].push({
-      level:INFO, 
+      level:INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -160,6 +194,15 @@ export class HermitExportExtendedPublicKey extends HermitExport {
     return messages;
   }
 
+  /**
+   * Convert base64 encoded QR code to an extended public key and BIP32 path
+   * @param {string} encodedString - base64 encoded QR code from Hermit
+   * @returns {object} extended public key and BIP32 path
+   * @example
+   * const keyInfo = hermitKeyExporter.parse();
+   * console.log(keyInfo);
+   * // {xpub:"...", bip32Path:"m/48'/..."}
+   */
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
     const {xpub, pubkey, bip32_path} = result;
@@ -172,12 +215,23 @@ export class HermitExportExtendedPublicKey extends HermitExport {
     }
     return result;
   }
-  
+
 }
 
+/**
+ * @extends {module:hermit.HermitExport}
+ */
 export class HermitSignTransaction extends HermitExport {
 
-  constructor({network, inputs, outputs, bip32Paths}) {
+  /**
+   *
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {array<object>} options.inputs - inputs for the transaction
+   * @param {array<object>} options.outputs - outputs for the transaction
+   * @param {array<string>} options.bip32Paths - BIP32 paths
+   */
+  constructor({network, inputs, outputs, bip32Paths}) { // TODO: check params here also
     super({network});
     this.inputs = inputs;
     this.outputs = outputs;
@@ -187,14 +241,22 @@ export class HermitSignTransaction extends HermitExport {
 
   }
 
+  /**
+   * Determine if a transaction is supported by Hermit signing
+   * @override
+   * @returns {boolean}
+   */
   isSupported() {
     return this.inputsAreSupported() && this.outputsAreSupported();
   }
 
+  /**
+   * @private
+   */
   outputsAreSupported() {
     if (this.outputs && this.outputs.length) {
       for (let i=0; i < this.outputs.length; i++) {
-        const output = this.outputs[i];  
+        const output = this.outputs[i];
         if (output.address.match(/^(tb|bc)/)) {
           return false;
         }
@@ -203,12 +265,15 @@ export class HermitSignTransaction extends HermitExport {
     return true;
   }
 
+  /**
+   * @private
+   */
   inputsAreSupported() {
     if (this.inputs && this.inputs.length) {
       for (let i=0; i < this.inputs.length; i++) {
-        const input = this.inputs[i];  
+        const input = this.inputs[i];
         const inputAddressType = multisigAddressType(input.multisig);
-        
+
         if (inputAddressType !== MULTISIG_ADDRESS_TYPES.P2SH) {
           this.inputAddressType = inputAddressType
           return false;
@@ -223,16 +288,16 @@ export class HermitSignTransaction extends HermitExport {
 
     if (!this.inputsAreSupported()) {
       messages[UNSUPPORTED].push({
-        level: ERROR, 
-        code: "hermit.unsupported.inputaddress", 
+        level: ERROR,
+        code: "hermit.unsupported.inputaddress",
         text: `Unsupported input address type ${this.inputAddressType}, must be P2SH.`
       });
     }
 
     if (!this.outputsAreSupported()) {
       messages[UNSUPPORTED].push({
-        level: ERROR, 
-        code: "hermit.unsupported.outputaddress", 
+        level: ERROR,
+        code: "hermit.unsupported.outputaddress",
         text: `Unsupported output address type. bech32 addresses are unsupported.`
       });
     }
@@ -243,7 +308,7 @@ export class HermitSignTransaction extends HermitExport {
     const mode = "wallet";
     const command = "sign-bitcoin";
     messages[PENDING].push({
-      level: INFO, 
+      level: INFO,
       code: "hermit.command",
       instructions,
       mode,
@@ -283,16 +348,41 @@ export class HermitSignTransaction extends HermitExport {
     return {
       inputs: Object.values(hermitInputsByRedeemScript),
       outputs: this.outputs.map((output) => ({
-        address: output.address, 
+        address: output.address,
         amount: output.amountSats.toNumber(),
       })),
     };
   }
 
+  /**
+   * Retrieve signatures from Hermit generated QR code for a given transaction
+   * @example
+   * import {generateMultisigFromHex, NETWORKS, MULTISIG_ADDRESS_TYPES} from "unchained-bitcoin";
+   * ...
+   * const input = {
+   *     txid: "8d276c76b3550b145e44d35c5833bae175e0351b4a5c57dc1740387e78f57b11",
+   *     index: 1,
+   *     multisig: generateMultisigFromHex(NETWORKS.TESTNET, MULTISIG_ADDRESS_TYPES.P2SH, redeemScript),
+   *     amountSats: BigNumber(1234000)
+   * }
+   * const output = {
+   *     amountSats: BigNumber(1299659),
+   *     address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
+   * }
+   * const hermitSigner = new HermitSignTransaction({
+   *   network: "testnet",
+   *   inputs: [input],
+   *   outputs: [output],
+   *   bip32Paths: ["m/45'/0'/0'/0"]
+   * });
+   * const signatures = await hermitSigner.parse();
+   * console.log(signatures);
+   * @returns {string} string representation of an array of signatures
+   */
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
     const {signatures} = result;
     return signatures;
   }
-  
+
 }

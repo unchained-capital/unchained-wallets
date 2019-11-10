@@ -1,15 +1,70 @@
+/**
+ * This module provides a base class for interactive messages for wallet interactions.
+ * Constants are provided for easier interaction with the messages based on state and level
+ * of the wallet
+ * @module interaction
+ */
+
 import Bowser from "bowser";
 
+/**
+ * Unsupported wallet state constant
+ * @type {string}
+ */
 export const UNSUPPORTED = "unsupported";
+
+/**
+ * Pending wallet state constant
+ * @type {string}
+ */
 export const PENDING = "pending";
+
+/**
+ * Active wallet state constant
+ * @type {string}
+ */
 export const ACTIVE = "active";
 
+/**
+ * Info message level constant
+ * @type {string}
+ */
 export const INFO    = "info";
+
+/**
+ * Warning message level constant
+ * @type {string}
+ */
 export const WARNING = "warning";
+
+/**
+ * Error message level constant
+ * @type {string}
+ */
 export const ERROR   = "error";
 
+/**
+ * Base class for wallet interaction.  Derived classes will inherit these methods for
+ * messaging and will be extended with additional functionality for key exports and signing.
+ * @example
+ * class MyWalletInteraction extends WalletInteraction {   *
+ *   constructor({network}) {
+ *     super({network});
+ *     // additional constructor actions
+ *   }
+ *   // additional class member definitions
+ * }
+ *
+ * const myInteraction = new MyWalletInteraction({network: "mainnet"})
+ */
 export class WalletInteraction {
 
+  /**
+   * Base class constructor.  Child classes will provide additional options.
+   * @constructor
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   */
   constructor({network}) {
     this.network = network;
     this.environment = Bowser.getParser(window.navigator.userAgent);
@@ -52,11 +107,20 @@ export class WalletInteraction {
   //   }
   //
   // See https://github.com/lancedikson/bowser for more details.
-  // 
+  //
+
+  /**
+   * Override this method for derived classes
+   * @returns {boolean}
+   */
   isSupported() {
     return true;
   }
 
+  /**
+   * Retrieves default empty messages object for supported states
+   * @returns {object} {pending:[], active:[], unsupported:[]}
+   */
   messages() {
     const messages = {};
     messages[PENDING] = [];
@@ -65,10 +129,31 @@ export class WalletInteraction {
     return messages;
   }
 
+  /**
+   * Determine whether or not any messages are currently available
+   * @example
+   * if (interaction.hasMessages()) {
+   *  // Code to report messages here
+   * }
+   * @returns {boolean}
+   */
   hasMessages() {
     return this.messages().length > 0;
   }
 
+  /**
+   * Retrieve filtered messages about the wallet
+   * @param {object} options
+   * @param {string} options.walletState - filter by the provided wallet state
+   * @param {string} options.level - filter by the provided message level
+   * @param {string} options.code - filter messages containing this string in the 'code' field
+   * @param {string} options.text - filter messages containing this string in the 'text' field
+   * @example
+   * const messages = interaction.messagesFor({walletState: ACTIVE, level: INFO});
+   * messages.foreEach(msg => console.log(msg.text));
+   * @returns {Array<object>} the filtered list of message objects
+   * @public
+   */
   messagesFor({walletState, level, code, text}) {
     const allMessages = this.messages();
     let messages;
@@ -94,29 +179,80 @@ export class WalletInteraction {
     return matchingMessages;
   }
 
+  /**
+   * Determines if filtered messages are available
+   * @param {object} options
+   * @param {string} options.walletState - filter by the provided wallet state
+   * @param {string} options.level - filter by the provided message level
+   * @param {string} options.code - filter messages containing this string in the 'code' field
+   * @param {string} options.text - filter messages containing this string in the 'text' field
+   * @example
+   * const hasActiveInfo = interaction.hasMessagesFor({walletState: ACTIVE, level: INFO})) {
+   * if (hasActiveInfo) {
+   *  // do something
+   * }
+   * @returns {boolean}
+   */
   hasMessagesFor({walletState, level, code, text}) {
     return this.messagesFor({walletState, level, code, text}).length > 0;
   }
 
+  /**
+   * Retrieve the first filtered messages about the wallet
+   * @param {object} options
+   * @param {string} options.walletState - filter by the provided wallet state
+   * @param {string} options.level - filter by the provided message level
+   * @param {string} options.code - filter messages containing this string in the 'code' field
+   * @param {string} options.text - filter messages containing this string in the 'text' field
+   * @example
+   * const message = interaction.messageFor({walletState: ACTIVE, level: INFO});
+   * console.log(message.text);
+   * @returns {object} the first filtered message object
+   */
   messageFor({walletState, level, code, text}) {
     const messages = this.messagesFor({walletState, level, code, text});
     if (messages.length > 0) { return messages[0]; }
     return null;
   }
 
+  /**
+   * Retrieve the first filtered messages about the wallet
+   * @param {object} options
+   * @param {string} options.walletState - filter by the provided wallet state
+   * @param {string} options.level - filter by the provided message level
+   * @param {string} options.code - filter messages containing this string in the 'code' field
+   * @param {string} options.text - filter messages containing this string in the 'text' field
+   * @example
+   * const message = interaction.messageFor({walletState: ACTIVE, level: INFO});
+   * console.log(message);
+   * @returns {string} the text for the first filtered message
+   */
   messageTextFor({walletState, level, code, text}) {
     const message = this.messageFor({walletState, level, code, text});
     return (message ? message.text : null);
   }
 
   // Should return a promise
+  /**
+   * implement this in derived class to interact with your device
+   */
   async run() {
   }
-  
+
 };
 
+/**
+ * Simple interaction messages for unsupported devices
+ * @extends {module:interaction.WalletInteraction}
+ */
 export class UnsupportedInteraction extends WalletInteraction {
 
+  /**
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {string} options.failureText - text to describe the nature of the failure
+   * @param {string} options.failureCode - failure code
+   */
   constructor({network, failureText, failureCode}) {
     super({network});
     this.failureText = failureText;

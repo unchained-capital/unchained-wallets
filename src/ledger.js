@@ -1,4 +1,7 @@
-import { 
+/**
+ * @module ledger
+ */
+import {
   compressPublicKey,
   scriptToHex,
   multisigRedeemScript,
@@ -21,11 +24,11 @@ const bitcoin = require('bitcoinjs-lib');
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
 
+/**
+ * Interaction with Ledger hardware wallets
+ * @extends {module:interaction.WalletInteraction}
+ */
 export class LedgerInteraction extends WalletInteraction {
-
-  installInstructions() {
-    return []; // ?
-  }
 
   messages() {
     const messages = super.messages();
@@ -38,8 +41,19 @@ export class LedgerInteraction extends WalletInteraction {
 
 }
 
+/**
+ * Class for wallet interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerInteraction}
+ */
 export class LedgerExportHDNode extends LedgerInteraction {
 
+  /**
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {string} bip32Path - the BIP32 path from which to retrieve public key
+   * @example
+   * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"})
+   */
   constructor({network, bip32Path}) {
     super({network});
     this.bip32Path = bip32Path;
@@ -52,6 +66,15 @@ export class LedgerExportHDNode extends LedgerInteraction {
     return messages;
   }
 
+  /**
+   * Retrieve key from Ledger device for a given instance
+   * @override
+   * @example
+   * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const result = await ledgerNode.run();
+   * console.log(result.publicKey);
+   * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
+   */
   async run() {
     const transport = await TransportU2F.create();
     const ledgerbtc = new LedgerBtc(transport);
@@ -60,14 +83,26 @@ export class LedgerExportHDNode extends LedgerInteraction {
   }
 }
 
+/**
+ * Class for wallet public key interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerExportHDNode}
+ */
 export class LedgerExportPublicKey extends LedgerExportHDNode {
 
+  /**
+   * Retrieve public key from Ledger device for a given instance
+   * @example
+   * const ledgerKeyExporter = new LedgerExportPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const publicKey = await ledgerKeyExporter.run();
+   * console.log(publicKey);
+   * @returns {string} public key for the BIP32 path of a given instance
+   */
   async run() {
     const result = await super.run();
     if (result.publicKey) {
       const compressedPublicKey = compressPublicKey(result.publicKey);
       return compressedPublicKey;
-    } else { 
+    } else {
       throw new {message: "Unable to export public key."};
     }
   }
@@ -79,13 +114,24 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   async run() {
     const result = await super.run();
     // FIXME
-    return {error: "Unable to export extended public key."}; 
+    return {error: "Unable to export extended public key."};
   }
 
 }
 
+/**
+ * Class for wallet signing interaction.
+ * @extends {module:ledger.LedgerInteraction}
+ */
 export class LedgerSignMultisigTransaction extends LedgerInteraction {
-  
+
+  /**
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {array<object>} options.inputs - inputs for the transaction
+   * @param {array<object>} options.outputs - outputs for the transaction
+   * @param {array<string>} options.bip32Paths - BIP32 paths
+   */
   constructor({network, inputs, outputs, bip32Paths}) {
     super({network});
     this.inputs = inputs;
@@ -100,7 +146,32 @@ export class LedgerSignMultisigTransaction extends LedgerInteraction {
   }
 
 
-  async run() {
+  /**
+   * Retrieve signatures from Ledger device for a given transaction
+   * @example
+   * import {generateMultisigFromHex, NETWORKS, MULTISIG_ADDRESS_TYPES} from "unchained-bitcoin";
+   * ...
+   * const input = {
+   *     txid: "8d276c76b3550b145e44d35c5833bae175e0351b4a5c57dc1740387e78f57b11",
+   *     index: 1,
+   *     multisig: generateMultisigFromHex(NETWORKS.TESTNET, MULTISIG_ADDRESS_TYPES.P2SH, redeemScript),
+   *     amountSats: BigNumber(1234000)
+   * }
+   * const output = {
+   *     amountSats: BigNumber(1299659),
+   *     address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
+   * }
+   * const ledgerSigner = new LedgerSignMultisigTransaction({
+   *   network: "testnet",
+   *   inputs: [input],
+   *   outputs: [output],
+   *   bip32Paths: ["m/45'/0'/0'/0"]
+   * });
+   * const signatures = await ledgerSigner.run();
+   * console.log(signatures);
+   * @returns {string} string representation of an array of signatures
+   */
+   async run() {
     const transport = await TransportU2F.create();
     transport.setExchangeTimeout(20000*this.outputs.length)
     const ledgerbtc = new LedgerBtc(transport);
@@ -108,7 +179,7 @@ export class LedgerSignMultisigTransaction extends LedgerInteraction {
     return signMultisigSpendLedger(this.bip32Paths[0], this.inputs, this.outputs, isTestnet(this.network), ledgerbtc)
   }
 
-  
+
 }
 
 function isTestnet(network) {
@@ -146,8 +217,8 @@ export async function signMultisigSpendLedger(path,
     for (var j = 0; j < inputs.length; j++) {
       txTmp.addInput(inputs[j].txid, inputs[j].index)
     }
-    
-    
+
+
     let txToSign = txTmp.buildIncomplete();
 
     const txHex = txToSign.toHex()
