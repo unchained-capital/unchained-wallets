@@ -112,7 +112,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
   async run() {
-    const result = await super.run();
+    /*const result = */await super.run();
     // FIXME
     return {error: "Unable to export extended public key."};
   }
@@ -196,7 +196,7 @@ export async function exportLedgerPubKey(path, ledgerbtc) {
     } catch(e) {
         return { success: false, text: e.message };
     }
-};
+}
 
 export async function signMultisigSpendLedger(path,
                                        inputs,

@@ -1,6 +1,6 @@
 {
   "name": "unchained-wallets",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Unchained Capital's HD Wallets Library",
   "main": "lib/index.js",
   "repository": {
@@ -17,6 +17,9 @@
     "@babel/cli": "^7.7.0",
     "@babel/core": "^7.7.2",
     "@babel/preset-env": "^7.7.1",
+    "eslint": "^6.6.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jest": "^23.0.3",
     "jest": "^24.9.0",
     "jest-junit": "^9.0.0",
     "jsdoc": "^3.6.3",
@@ -28,7 +31,8 @@
     "prepublish": "npm run compile",
     "pretest": "npm run compile",
     "test": "jest lib",
-    "docs": "jsdoc -d docs -r src README.md"
+    "docs": "jsdoc -d docs -r src README.md",
+    "lint": "eslint src"
   },
   "bin": {},
   "dependencies": {
@@ -39,7 +43,7 @@
     "hi-base32": "^0.5.0",
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
-    "unchained-bitcoin": "^0.0.4"
+    "unchained-bitcoin": "^0.0.5"
   },
   "directories": {
     "lib": "lib"

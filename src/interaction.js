@@ -239,7 +239,7 @@ export class WalletInteraction {
   async run() {
   }
 
-};
+}
 
 /**
  * Simple interaction messages for unsupported devices

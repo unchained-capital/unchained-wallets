@@ -205,7 +205,7 @@ export class HermitExportExtendedPublicKey extends HermitExport {
    */
   parse(encodedString) {
     const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey, bip32_path} = result;
+    const {xpub, pubkey} = result;
     if (!xpub) {
       if (pubkey) {
         throw new Error("Make sure you export an extended public key and NOT a plain public key.");

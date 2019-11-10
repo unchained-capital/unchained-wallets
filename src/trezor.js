@@ -15,7 +15,6 @@ import {
   PENDING,
   ACTIVE,
   INFO,
-  WARNING,
   ERROR,
 } from "./interaction";
 
