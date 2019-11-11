@@ -1,3 +1,6 @@
+/**
+ * @module trezor
+ */
 import {
   NETWORKS,
   bip32PathToSequence,
@@ -19,8 +22,16 @@ const TrezorConnect = require("trezor-connect").default;
 
 TrezorConnect.manifest({email: "foo@bar.com", appUrl: "https://localhost:3000"});
 
+/**
+ * Interaction with Trezor hardware wallets
+ * @extends {module:interaction.WalletInteraction}
+ */
 export class TrezorInteraction extends WalletInteraction {
 
+  /**
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   */
   constructor({network}) {
     super({network});
     this.trezorCoin = coin(network);
@@ -39,8 +50,20 @@ export class TrezorInteraction extends WalletInteraction {
 
 }
 
+/**
+ * Class for wallet interaction at a given BIP32 path.
+ * @extends {module:trezor.TrezorInteraction}
+ */
 export class TrezorExportHDNode extends TrezorInteraction {
 
+  /**
+   *
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {string} bip32Path - the BIP32 path from which to retrieve public key
+   * @example
+   * const trezorNode = new TrezorExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"})
+   */
   constructor({network, bip32Path}) {
     super({network});
     this.bip32Path = bip32Path;
@@ -71,8 +94,16 @@ export class TrezorExportHDNode extends TrezorInteraction {
     return messages;
   }
 
+  /**
+   * Retrieve key from Trezor device for a given instance
+   * @override
+   * @example
+   * const trezorNode = new TrezorExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const result = await trezorNode.run();
+   * console.log(result.publicKey);
+   * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
+   */
   async run() {
-    // console.log(`Exporting HD node at BIP32 path ${this.bip32Path} from Trezor device (${this.network})`);
     const result = await TrezorConnect.getPublicKey({
       path: this.bip32Path,
       coin: this.trezorCoin,
@@ -85,8 +116,20 @@ export class TrezorExportHDNode extends TrezorInteraction {
 
 }
 
+/**
+ * Class for wallet public key interaction at a given BIP32 path.
+ * @extends {module:trezor.TrezorExportHDNode}
+ */
 export class TrezorExportPublicKey extends TrezorExportHDNode {
 
+  /**
+   * Retrieve public key from Trezor device for a given instance
+   * @example
+   * const trezorNode = new TrezorExportPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const publicKey = await trezorNode.run();
+   * console.log(publicKey);
+   * @returns {string} public key for the BIP32 path of a given instance
+   */
   async run() {
     const payload = await super.run();
     return payload.publicKey;
@@ -94,8 +137,20 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
 
 }
 
+/**
+ * Class for wallet extended public key interaction at a given BIP32 path.
+ * @extends {module:trezor.TrezorExportHDNode}
+ */
 export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
 
+  /**
+   * Retrieve extended public key from Trezor device for a given instance
+   * @example
+   * const trezorNode = new TrezorExportExtendedPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const xpub = await trezorNode.run();
+   * console.log(xpub);
+   * @returns {string} extended public key for the BIP32 path of a given instance
+   */
   async run() {
     const payload = await super.run();
     return payload.xpub;
@@ -104,8 +159,19 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
 }
 
 
+/**
+ * Class for wallet signing interaction.
+ * @extends {module:trezor.TrezorInteraction}
+ */
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
 
+  /**
+   * @param {object} options
+   * @param {string} options.network - bitcoin network
+   * @param {array<object>} options.inputs - inputs for the transaction
+   * @param {array<object>} options.outputs - outputs for the transaction
+   * @param {array<string>} options.bip32Paths - BIP32 paths
+   */
   constructor({network, inputs, outputs, bip32Paths}) {
     super({network});
     this.inputs = inputs;
@@ -121,6 +187,31 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
     return messages;
   }
 
+  /**
+   * Retrieve extended public key from Trezor device for a given instance
+   * @example
+   * import {generateMultisigFromHex, NETWORKS, MULTISIG_ADDRESS_TYPES} from "unchained-bitcoin";
+   * ...
+   * const input = {
+   *     txid: "8d276c76b3550b145e44d35c5833bae175e0351b4a5c57dc1740387e78f57b11",
+   *     index: 1,
+   *     multisig: generateMultisigFromHex(NETWORKS.TESTNET, MULTISIG_ADDRESS_TYPES.P2SH, redeemScript),
+   *     amountSats: BigNumber(1234000)
+   * }
+   * const output = {
+   *     amountSats: BigNumber(1299659),
+   *     address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
+   * }
+   * const trezorSigner = new TrezorSignMultisigTransaction({
+   *   network: "testnet",
+   *   inputs: [input],
+   *   outputs: [output],
+   *   bip32Paths: ["m/45'/0'/0'/0"]
+   * });
+   * const signatures = await trezorSigner.run();
+   * console.log(signatures);
+   * @returns {string} string representation of an array of signatures
+   */
   async run() {
     const trezorInputs = this.inputs.map((input, inputIndex) => trezorInput(input, this.bip32Paths[inputIndex]));
     const trezorOutputs = this.outputs.map((output) => trezorOutput(output));
@@ -129,7 +220,6 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
       outputs: trezorOutputs,
       coin: coin(this.network),
     };
-    // console.log("Signing multisig transaction with Trezor device:", transaction);
     const result = await TrezorConnect.signTransaction(transaction);
     if (!result.success) {
       throw new Error(result.payload.error);
@@ -139,6 +229,12 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
 
 }
 
+/**
+ * Retrieve Trezor format for network constant
+ * @param {string} network - bitcoin network
+ * @private
+ * @returns {string} Trezor format of bitcoin network
+ */
 function coin(network) {
   return (network === NETWORKS.MAINNET ? "Bitcoin" : "Testnet");
 }
@@ -166,6 +262,12 @@ function trezorInput(input, bip32Path) {
   };
 }
 
+/**
+ * Retrieve Trezor formatted input object
+ * @param {string} publicKey
+ * @private
+ * @returns {object} Trezor formatted input
+ */
 function trezorPublicKey(publicKey) {
   return {
     address_n: [],
@@ -180,6 +282,12 @@ function trezorPublicKey(publicKey) {
   };
 }
 
+/**
+ * Retrieve Trezor formatted output object
+ * @param {object} output
+ * @private
+ * @returns {object} Trezor formatted output
+ */
 function trezorOutput(output) {
   return {
     amount: output.amountSats.toFixed(0),
