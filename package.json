@@ -23,8 +23,7 @@
     "jest": "^24.9.0",
     "jest-junit": "^9.0.0",
     "jsdoc": "^3.6.3",
-    "mocha": "^6.2.2",
-    "trezor-connect": "^7.0.5"
+    "mocha": "^6.2.2"
   },
   "scripts": {
     "compile": "babel -d lib/ src/",
@@ -37,12 +36,16 @@
   "bin": {},
   "dependencies": {
     "@babel/polyfill": "^7.7.0",
+    "@ledgerhq/hw-app-btc": "^4.21.0",
+    "@ledgerhq/hw-transport-node-hid": "^4.22.0",
+    "@ledgerhq/hw-transport-u2f": "^4.21.0",
     "bignumber.js": "^8.1.1",
     "bowser": "^2.6.1",
     "core-js": "^2.6.10",
     "hi-base32": "^0.5.0",
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
+    "trezor-connect": "^7.0.5",
     "unchained-bitcoin": "^0.0.5"
   },
   "directories": {
