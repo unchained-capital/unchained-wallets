@@ -203,7 +203,7 @@ This simple example illustrates several useful patterns:
   approach.
 
 * The `walletState` is stored in and controlled by the component.  In
-  `importPublicKey` the component explictly handles changes to
+  `importPublicKey` the component explicitly handles changes to
   `walletState`.  In `renderMessages` the component queries the
   interaction with the `walletState` (via
   `this.interaction().messagesFor({walletState})`.
