@@ -50,13 +50,14 @@ export class LedgerExportHDNode extends LedgerInteraction {
   /**
    * @param {object} options
    * @param {string} options.network - bitcoin network
-   * @param {string} bip32Path - the BIP32 path from which to retrieve public key
+   * @param {string} [bip32Path] - the BIP32 path from which to retrieve a single public key.  Note, you must provide either the bip32Path or the bip32Paths argument.
+   * @param {Array<string>} [bip32Paths] - the BIP32 path from which to retrieve a multiple public keys
    * @example
    * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"})
    */
-  constructor({network, bip32Path}) {
+  constructor({network, bip32Path, bip32Paths}) {
     super({network});
-    this.bip32Path = bip32Path;
+    this.bip32Paths = bip32Paths || [bip32Path];
   }
 
   messages() {
@@ -73,13 +74,26 @@ export class LedgerExportHDNode extends LedgerInteraction {
    * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
    * const result = await ledgerNode.run();
    * console.log(result.publicKey);
-   * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
+   * @returns {object|Array<object>} object or array containing public key and extended public key for the BIP32 path of a given instance
    */
   async run() {
+
     const transport = await TransportU2F.create();
     const ledgerbtc = new LedgerBtc(transport);
-    const result = await ledgerbtc.getWalletPublicKey(this.bip32Path, {verify: true});
-    return result;
+
+    if (this.bip32Paths.length === 1) {
+      const result = await ledgerbtc.getWalletPublicKey(this.bip32Paths[0], {verify: true});
+      return result;
+    } else if (this.bip32Paths.length > 1) {
+      const publicKeys = []
+      for(let i = 0; i < this.bip32Paths.length; i++) {
+        const result = await ledgerbtc.getWalletPublicKey(this.bip32Paths[i], {verify: i === 0});
+        publicKeys.push(result);
+      }
+      return publicKeys;
+    } else {
+      throw new Error("You must provide a bip32 path string or an array of bip32 paths")
+    }
   }
 }
 
@@ -95,13 +109,18 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
    * const ledgerKeyExporter = new LedgerExportPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
    * const publicKey = await ledgerKeyExporter.run();
    * console.log(publicKey);
-   * @returns {string} public key for the BIP32 path of a given instance
+   * @returns {string|Array<string>} public key or keys for the BIP32 paths of a given instance
    */
   async run() {
     const result = await super.run();
     if (result.publicKey) {
       const compressedPublicKey = compressPublicKey(result.publicKey);
       return compressedPublicKey;
+    } else if (Array.isArray(result)) {
+      return result.map(publicKeyObject => {
+        const compressedPublicKey = compressPublicKey(publicKeyObject.publicKey);
+        return compressedPublicKey;
+      })
     } else {
       throw new {message: "Unable to export public key."};
     }
@@ -176,7 +195,7 @@ export class LedgerSignMultisigTransaction extends LedgerInteraction {
     transport.setExchangeTimeout(20000*this.outputs.length)
     const ledgerbtc = new LedgerBtc(transport);
 
-    return signMultisigSpendLedger(this.bip32Paths[0], this.inputs, this.outputs, isTestnet(this.network), ledgerbtc)
+    return signMultisigSpendLedger(this.bip32Paths, this.inputs, this.outputs, isTestnet(this.network), ledgerbtc)
   }
 
 
@@ -198,7 +217,7 @@ export async function exportLedgerPubKey(path, ledgerbtc) {
     }
 }
 
-export async function signMultisigSpendLedger(path,
+export async function signMultisigSpendLedger(bip32Paths,
                                        inputs,
                                        outputs,
                                        testnet,
@@ -233,9 +252,7 @@ export async function signMultisigSpendLedger(path,
     const ledgerIns = inputs.map(input => ledgerInput(ledgerbtc, input));
 
     // BIP32 PATH
-    let ledger_bip32_path = path.split("/").slice(1).join("/");
-    let ledgerKeySets = Array(inputs.length).fill(ledger_bip32_path); //array[bip32]
-
+    let ledgerKeySets = bip32Paths.map(bip32Path => bip32Path.split("/").slice(1).join("/"));
     // SIGN
     let signatures = await ledgerbtc.signP2SHTransaction(
         ledgerIns,

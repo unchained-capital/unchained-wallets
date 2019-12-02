@@ -109,7 +109,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
    * const trezorNode = new TrezorExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
    * const result = await trezorNode.run();
    * console.log(result.publicKey);
-   * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
+   * @returns {Object|Array<object>} object or array of objects containing public key and extended public key for the BIP32 path of a given instance
    */
   async run() {
     let result;
@@ -146,7 +146,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
    * const trezorNode = new TrezorExportPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
    * const publicKey = await trezorNode.run();
    * console.log(publicKey);
-   * @returns {string} public key for the BIP32 path of a given instance
+   * @returns {string|Array<string>} public key or keys for the BIP32 paths of a given instance
    */
   async run() {
     const payload = await super.run();
