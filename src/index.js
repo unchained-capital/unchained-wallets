@@ -6,12 +6,12 @@ export const TREZOR = 'trezor';
 export const LEDGER = 'ledger';
 export const HERMIT = 'hermit';
 
-export function HardwareWalletExportPublicKey({walletType, network, bip32Path}) {
+export function HardwareWalletExportPublicKey({walletType, network, bip32Path, bip32Paths}) {
   switch (walletType) {
   case TREZOR:
-    return new TrezorExportPublicKey({network, bip32Path});
+    return new TrezorExportPublicKey({network, bip32Path, bip32Paths});
   case LEDGER:
-    return new LedgerExportPublicKey({network, bip32Path});
+    return new LedgerExportPublicKey({network, bip32Path, bip32Paths});
   default:
     return new UnsupportedInteraction({network, failureCode: "unsupported", failureText: "This wallet is not supported when exporting public keys."});
   }

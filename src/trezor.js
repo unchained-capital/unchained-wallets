@@ -60,34 +60,42 @@ export class TrezorExportHDNode extends TrezorInteraction {
    *
    * @param {object} options
    * @param {string} options.network - bitcoin network
-   * @param {string} bip32Path - the BIP32 path from which to retrieve public key
+   * @param {string} [bip32Path] - the BIP32 path from which to retrieve a single public key.  Note, you must provide either the bip32Path or the bip32Paths argument.
+   * @param {Array<string>} [bip32Paths] - the BIP32 path from which to retrieve a multiple public keys
    * @example
    * const trezorNode = new TrezorExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"})
    */
-  constructor({network, bip32Path}) {
+  constructor({network, bip32Path, bip32Paths}) {
     super({network});
-    this.bip32Path = bip32Path;
+    this.bip32Paths = bip32Paths || [bip32Path];
   }
 
   messages() {
     const messages = super.messages();
 
-    const bip32PathSegments = (this.bip32Path || '').split('/');
-    if (bip32PathSegments.length < 4) { // m, 45', 0', 0', ...
-      messages[PENDING].push({level: ERROR, text: "BIP32 path must be at least depth 3.", code: "trezor.bip32_path.minimum"});
-    } else {
-      const coinPath = bip32PathSegments[2];
-      if (this.network === NETWORKS.MAINNET) {
-        if (! coinPath.match(/^0'/)) {
-          messages[PENDING].push({level: ERROR, text: "Mainnet BIP32 path must have a second component of 0'", code: "trezor.bip32_path.mismatch"});
+    for(let i = 0; i < this.bip32Paths.length; i++) {
+      const bip32Path = this.bip32Paths[i]
+      const bip32PathSegments = (bip32Path || '').split('/');
+      if (bip32PathSegments.length < 4) { // m, 45', 0', 0', ...
+        messages[PENDING].push({level: ERROR, text: "BIP32 path must be at least depth 3.", code: "trezor.bip32_path.minimum"});
+        break;
+      } else {
+        const coinPath = bip32PathSegments[2];
+        if (this.network === NETWORKS.MAINNET) {
+          if (! coinPath.match(/^0'/)) {
+            messages[PENDING].push({level: ERROR, text: "Mainnet BIP32 path must have a second component of 0'", code: "trezor.bip32_path.mismatch"});
+            break;
+          }
         }
-      }
-      if (this.network === NETWORKS.TESTNET) {
-        if (! coinPath.match(/^1'/)) {
-          messages[PENDING].push({level: ERROR, text: "Testnet BIP32 path must have a second component of 1'", code: "trezor.bip32_path.mismatch"});
+        if (this.network === NETWORKS.TESTNET) {
+          if (! coinPath.match(/^1'/)) {
+            messages[PENDING].push({level: ERROR, text: "Testnet BIP32 path must have a second component of 1'", code: "trezor.bip32_path.mismatch"});
+            break;
+          }
         }
       }
     }
+
 
     messages[ACTIVE].push({level: INFO, text: "Confirm in the Trezor Connect window that you want to 'Export public key'.  You may be prompted to enter your PIN.", code: "trezor.popup.export_hdnode"});
 
@@ -104,10 +112,20 @@ export class TrezorExportHDNode extends TrezorInteraction {
    * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
    */
   async run() {
-    const result = await TrezorConnect.getPublicKey({
-      path: this.bip32Path,
-      coin: this.trezorCoin,
-    });
+    let result;
+    if (this.bip32Paths.length > 1) {
+      result = await TrezorConnect.getPublicKey({
+        bundle: this.bip32Paths.map(bip32path => ({path: bip32path})),
+        coin: this.trezorCoin,
+      });
+    } else if (this.bip32Paths.length === 1) {
+      result = await TrezorConnect.getPublicKey({
+        path: this.bip32Paths[0],
+        coin: this.trezorCoin,
+      });
+    } else {
+      throw new Error("You must provide a bip32 path string or an array of bip32 paths")
+    }
     if (!result.success) {
       throw new Error(result.payload.error);
     }
@@ -132,6 +150,9 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
    */
   async run() {
     const payload = await super.run();
+    if (Array.isArray(payload)) {
+      return payload.map(key => key.publicKey);
+    }
     return payload.publicKey;
   }
 
