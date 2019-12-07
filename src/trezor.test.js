@@ -135,15 +135,15 @@ describe("Test trezor lib", () => {
             })
 
             const interactionTestPathMAINNET = new TrezorExportPublicKey({network: NETWORKS.MAINNET, bip32Path: "m/45'/1'/0'/1"});
-            it("should properly report error for a testnet derivation path on mainnet for wallet state pending", () => {
-                const hasError = interactionTestPathMAINNET.hasMessagesFor({walletState:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
-                expect(hasError).toBe(true);
+            it("should properly report warning for a testnet derivation path on mainnet for wallet state pending", () => {
+                const hasWarning = interactionTestPathMAINNET.hasMessagesFor({walletState:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
+                expect(hasWarning).toBe(true);
             })
 
             const interactionMainPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/0'/0'/1"});
-            it("should properly report error for a mainnet derivation path on testnet for wallet state pending", () => {
-                const hasError = interactionMainPathTESTNET.hasMessagesFor({walletState:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
-                expect(hasError).toBe(true);
+            it("should properly report warning for a mainnet derivation path on testnet for wallet state pending", () => {
+                const hasWarning = interactionMainPathTESTNET.hasMessagesFor({walletState:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
+                expect(hasWarning).toBe(true);
             })
 
             const interactionTestPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
