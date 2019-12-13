@@ -119,9 +119,9 @@ export class HermitExportPublicKey extends HermitExport {
    * @example
    * const hermitKeyExporter = new HermitExportPublicKey()
    */
-  constructor({network, bip32Path}) {
+  constructor({bip32Path}) {
     // TODO: are these really needed?  The path seems to come from QR and the network is not referred to.
-    super({network});
+    super();
     this.bip32Path = bip32Path;
   }
 
@@ -172,8 +172,8 @@ export class HermitExportPublicKey extends HermitExport {
  */
 export class HermitExportExtendedPublicKey extends HermitExport {
 
-  constructor({network, bip32Path}) { // TODO: I don't think network is needed here either, encoded in QR
-    super({network});
+  constructor({bip32Path}) {
+    super();
     this.bip32Path = bip32Path;
   }
 
@@ -226,13 +226,12 @@ export class HermitSignTransaction extends HermitExport {
   /**
    *
    * @param {object} options
-   * @param {string} options.network - bitcoin network
    * @param {array<object>} options.inputs - inputs for the transaction
    * @param {array<object>} options.outputs - outputs for the transaction
    * @param {array<string>} options.bip32Paths - BIP32 paths
    */
-  constructor({network, inputs, outputs, bip32Paths}) { // TODO: check params here also
-    super({network});
+  constructor({inputs, outputs, bip32Paths}) { // TODO: check params here also
+    super();
     this.inputs = inputs;
     this.outputs = outputs;
     this.bip32Paths = bip32Paths;
@@ -370,7 +369,6 @@ export class HermitSignTransaction extends HermitExport {
    *     address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
    * }
    * const hermitSigner = new HermitSignTransaction({
-   *   network: "testnet",
    *   inputs: [input],
    *   outputs: [output],
    *   bip32Paths: ["m/45'/0'/0'/0"]

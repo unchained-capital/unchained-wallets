@@ -49,8 +49,8 @@ export const ERROR   = "error";
  * @example
  * class MyWalletInteraction extends WalletInteraction {   *
  *   constructor({network}) {
- *     super({network});
- *     // additional constructor actions
+ *     super();
+ *     this.network = network;
  *   }
  *   // additional class member definitions
  * }
@@ -60,13 +60,11 @@ export const ERROR   = "error";
 export class WalletInteraction {
 
   /**
-   * Base class constructor.  Child classes will provide additional options.
+   * Base class constructor.  Child classes can pass in necessary options.
    * @constructor
    * @param {object} options
-   * @param {string} options.network - bitcoin network
    */
-  constructor({network}) {
-    this.network = network;
+  constructor() {
     this.environment = Bowser.getParser(window.navigator.userAgent);
     this.failureText = '';
     this.failureCode = '';
@@ -249,12 +247,11 @@ export class UnsupportedInteraction extends WalletInteraction {
 
   /**
    * @param {object} options
-   * @param {string} options.network - bitcoin network
    * @param {string} options.failureText - text to describe the nature of the failure
    * @param {string} options.failureCode - failure code
    */
-  constructor({network, failureText, failureCode}) {
-    super({network});
+  constructor({failureText, failureCode}) {
+    super();
     this.failureText = failureText;
     this.failureCode = failureCode;
   }
