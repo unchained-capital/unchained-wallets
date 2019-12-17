@@ -1,6 +1,7 @@
 /**
  * @module trezor
  */
+import BigNumber from "bignumber.js";
 import {
   NETWORKS,
   bip32PathToSequence,
@@ -349,7 +350,7 @@ function trezorInput(input, bip32Path) {
     prev_hash: input.txid,
     prev_index: input.index,
     address_n: bip32PathToSequence(bip32Path),
-    amount: input.amountSats.toString()
+    amount: new BigNumber(input.amountSats).toString()
   };
 }
 
@@ -381,7 +382,7 @@ function trezorPublicKey(publicKey) {
  */
 function trezorOutput(output) {
   return {
-    amount: output.amountSats.toFixed(0),
+    amount: new BigNumber(output.amountSats).toFixed(0),
     address: output.address,
     script_type: 'PAYTOADDRESS',
   };

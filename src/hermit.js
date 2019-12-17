@@ -3,6 +3,7 @@
  */
 import base32 from "hi-base32";
 import pako from "pako";
+import BigNumber from "bignumber.js";
 import {
   scriptToHex,
   multisigRedeemScript,
@@ -341,14 +342,14 @@ export class HermitSignTransaction extends HermitExport {
       hermitInputsByRedeemScript[redeemScriptHex].push({
         txid: input.txid,
         index: input.index,
-        amount: input.amountSats.toNumber(),
+        amount: new BigNumber(input.amountSats).toNumber(),
       });
     }
     return {
       inputs: Object.values(hermitInputsByRedeemScript),
       outputs: this.outputs.map((output) => ({
         address: output.address,
-        amount: output.amountSats.toNumber(),
+        amount: new BigNumber(output.amountSats).toNumber(),
       })),
     };
   }

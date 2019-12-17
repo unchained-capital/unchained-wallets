@@ -1,6 +1,7 @@
 /**
  * @module ledger
  */
+import BigNumber from "bignumber.js";
 import {
   compressPublicKey,
   scriptToHex,
@@ -354,7 +355,7 @@ export async function signMultisigSpendLedger(path,
     }
 
     for (var i = 0; i < outputs.length; i++) {
-        txTmp.addOutput(outputs[i].address, outputs[i].amountSats.toNumber());
+      txTmp.addOutput(outputs[i].address, new BigNumber(outputs[i].amountSats).toNumber());
     }
     for (var j = 0; j < inputs.length; j++) {
       txTmp.addInput(inputs[j].txid, inputs[j].index)
