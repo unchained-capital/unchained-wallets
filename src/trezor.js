@@ -9,6 +9,9 @@ import {
   multisigRequiredSigners,
   multisigAddressType,
   MULTISIG_ADDRESS_TYPES,
+  P2SH,
+  P2SH_P2WSH,
+  P2WSH,
 } from "unchained-bitcoin";
 
 import {
@@ -19,6 +22,8 @@ import {
   ERROR,
   WARNING,
 } from "./interaction";
+
+export const TREZOR = 'trezor';
 
 const TrezorConnect = require("trezor-connect").default;
 
@@ -251,7 +256,6 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
   }
 
 }
-
 
 /**
  * Class for wallet signing interaction.

@@ -20,6 +20,8 @@ import {
   WalletInteraction,
 } from "./interaction";
 
+export const LEDGER = 'ledger';
+
 const bitcoin = require('bitcoinjs-lib');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
