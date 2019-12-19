@@ -1,6 +1,7 @@
 /**
  * @module ledger
  */
+import BigNumber from "bignumber.js";
 import {
   compressPublicKey,
   scriptToHex,
@@ -19,6 +20,8 @@ import {
   WalletInteraction,
 } from "./interaction";
 
+export const LEDGER = 'ledger';
+
 const bitcoin = require('bitcoinjs-lib');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
@@ -34,7 +37,6 @@ export class LedgerInteraction extends WalletInteraction {
     const messages = super.messages();
     messages[PENDING].push({level: INFO, text: "Make sure your Ledger hardware wallet is plugged in.", code: "ledger.device.connect"});
     messages[PENDING].push({level: INFO, text: "Make sure you have unlocked your Ledger hardware wallet.", code: "ledger.device.unlocked"});
-    messages[PENDING].push({level: INFO, text: "Make sure you have opened your Ledger hardware wallet to the Bitcoin app.", code: "ledger.app.bitcoin"});
     messages[ACTIVE].push({level: INFO, text: "Communicating with Ledger hardware wallet...", code: "ledger.active"});
     return messages;
   }
@@ -42,20 +44,184 @@ export class LedgerInteraction extends WalletInteraction {
 }
 
 /**
- * Class for wallet interaction at a given BIP32 path.
+ * Retrieve Ledger device metadata.
  * @extends {module:ledger.LedgerInteraction}
  */
-export class LedgerExportHDNode extends LedgerInteraction {
+export class LedgerGetMetadata extends LedgerInteraction {
+
+  messages() {
+    const messages = super.messages();
+    messages[PENDING].push({level: INFO, text: "Make sure you are in the main Ledger dashboard, NOT the Bitcoin app.", code: "ledger.app.none"});
+    messages[ACTIVE].push({level: INFO, text: "Make sure you are in the main Ledger dashboard, NOT the Bitcoin app.", code: "ledger.app.none"});
+    return messages;
+  }
+
+  /**
+   * Retrieve metadata from Ledger device
+   * @override
+   * @example
+   * const interaction = new LedgerGetMetadata();
+   * const result = await interaction.run();
+   * console.log(resultKey);
+   * @returns {object} object containing metadata
+   */
+  async run() {
+    const transport = await TransportU2F.create();
+    transport.setScrambleKey('B0L0S');
+    const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
+    return this.parseMetadata(rawResult);
+  }
+
+  parseMetadata(res) {
+    // From
+    //
+    //   https://github.com/LedgerHQ/ledger-live-common/blob/master/src/hw/getVersion.js
+    //   https://github.com/LedgerHQ/ledger-live-common/blob/master/src/hw/getDeviceInfo.js
+    //   https://git.xmr.pm/LedgerHQ/ledger-live-common/commit/9ffc75acfc7f1e9aa9101a32b3e7481770fb3b89
+
+    const PROVIDERS = {
+      "": 1,
+      das: 2,
+      club: 3,
+      shitcoins: 4,
+      ee: 5
+    };
+    const ManagerAllowedFlag = 0x08;
+    const PinValidatedFlag = 0x80;
+
+    const byteArray = [...res];
+    const data = byteArray.slice(0, byteArray.length - 2);
+    const targetIdStr = Buffer.from(data.slice(0, 4));
+    const targetId = targetIdStr.readUIntBE(0, 4);
+    const seVersionLength = data[4];
+    let seVersion = Buffer.from(data.slice(5, 5 + seVersionLength)).toString();
+    const flagsLength = data[5 + seVersionLength];
+    let flags = Buffer.from(
+      data.slice(5 + seVersionLength + 1, 5 + seVersionLength + 1 + flagsLength)
+    );
+
+    const mcuVersionLength = data[5 + seVersionLength + 1 + flagsLength];
+    let mcuVersion = Buffer.from(
+      data.slice(
+        7 + seVersionLength + flagsLength,
+        7 + seVersionLength + flagsLength + mcuVersionLength
+      )
+    );
+    if (mcuVersion[mcuVersion.length - 1] === 0) {
+      mcuVersion = mcuVersion.slice(0, mcuVersion.length - 1);
+    }
+    mcuVersion = mcuVersion.toString();
+
+    if (!seVersionLength) {
+      seVersion = "0.0.0";
+      flags = Buffer.allocUnsafeSlow(0);
+      mcuVersion = "";
+    }
+
+    const isOSU = seVersion.includes("-osu");
+    const version = seVersion.replace("-osu", "");
+    const m = seVersion.match(/([0-9]+.[0-9]+)(.[0-9]+)?(-(.*))?/);
+    const [, majMin, , , providerName] = m || [];
+    const providerId = PROVIDERS[providerName] || 1;
+    const isBootloader = (targetId & 0xf0000000) !== 0x30000000;
+    const flag = flags.length > 0 ? flags[0] : 0;
+    const managerAllowed = !!(flag & ManagerAllowedFlag);
+    const pin = !!(flag & PinValidatedFlag);
+
+    const [majorVersion, minorVersion, patchVersion] = (version || '').split('.');
+    const [mcuMajorVersion, mcuMinorVersion] = (mcuVersion || '').split('.');
+
+
+    // https://gist.github.com/TamtamHero/b7651ffe6f1e485e3886bf4aba673348
+    // +-----------------+------------+
+    // |    FirmWare     | Target ID  |
+    // +-----------------+------------+
+    // | Nano S <= 1.3.1 | 0x31100002 |
+    // | Nano S 1.4.x    | 0x31100003 |
+    // | Nano S 1.5.x    | 0x31100004 |
+    // |                 |            |
+    // | Blue 2.0.x      | 0x31000002 |
+    // | Blue 2.1.x      | 0x31000004 |
+    // | Blue 2.1.x V2   | 0x31010004 |
+    // |                 |            |
+    // | Nano X          | 0x33000004 |
+    // |                 |            |
+    // | MCU,any version | 0x01000001 |
+    // +-----------------+------------+
+    //
+    //  Order matters -- high to low minTargetId
+    const MODEL_RANGES = [
+      {minTargetId: 0x33000004,  model: "Nano X"},
+      {minTargetId: 0x31100002,  model: "Nano S"},
+      {minTargetId: 0x31100002, model: "Blue"},
+      {minTargetId: 0x01000001, model: "MCU"},
+    ];
+    let model = 'Unknown';
+    if (targetId) {
+      for (let i=0; i<MODEL_RANGES.length; i++) {
+        const range = MODEL_RANGES[i];
+        if (targetId >= range.minTargetId) {
+          model = range.model;
+          break;
+        }
+      }
+    }
+
+    let spec = `${model} v.${version} (MCU v${mcuVersion})`;
+    // if (pin) {
+    //   spec += " w/PIN";
+    // }
+
+    return {
+      spec,
+      model,
+      version: {
+        major: majorVersion,
+        minor: minorVersion,
+        patch: patchVersion,
+      },
+      mcuVersion: {
+        major: mcuMajorVersion,
+        minor: mcuMinorVersion,
+      },
+      // pin,
+    };
+
+  }
+
+}
+
+/**
+ * Interaction with the Ledger BTC app
+ * @extends {module:ledger.LedgerInteraction}
+ */
+export class LedgerBitcoinInteraction extends LedgerInteraction {
+
+  messages() {
+    const messages = super.messages();
+    messages[PENDING].push({level: INFO, text: "Make sure you have opened your Ledger hardware wallet to the Bitcoin app.", code: "ledger.app.bitcoin"});
+    messages[ACTIVE].push({level: INFO, text: "Make sure you have opened your Ledger hardware wallet to the Bitcoin app.", code: "ledger.app.bitcoin"});
+    return messages;
+  }
+
+}
+
+
+
+/**
+ * Class for wallet interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerBitcoinInteraction}
+ */
+export class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
    * @param {object} options
-   * @param {string} options.network - bitcoin network
    * @param {string} bip32Path - the BIP32 path from which to retrieve public key
    * @example
-   * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"})
+   * const ledgerNode = new LedgerExportHDNode({bip32Path: "m/48'/0'/0'/2'/0"})
    */
-  constructor({network, bip32Path}) {
-    super({network});
+  constructor({bip32Path}) {
+    super();
     this.bip32Path = bip32Path;
   }
 
@@ -70,7 +236,7 @@ export class LedgerExportHDNode extends LedgerInteraction {
    * Retrieve key from Ledger device for a given instance
    * @override
    * @example
-   * const ledgerNode = new LedgerExportHDNode({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const ledgerNode = new LedgerExportHDNode({bip32Path: "m/48'/0'/0'/2'/0"});
    * const result = await ledgerNode.run();
    * console.log(result.publicKey);
    * @returns {object} object containing public key and extended public key for the BIP32 path of a given instance
@@ -92,7 +258,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
   /**
    * Retrieve public key from Ledger device for a given instance
    * @example
-   * const ledgerKeyExporter = new LedgerExportPublicKey({network: "mainnet", bip32Path: "m/48'/0'/0'/2'/0"});
+   * const ledgerKeyExporter = new LedgerExportPublicKey({bip32Path: "m/48'/0'/0'/2'/0"});
    * const publicKey = await ledgerKeyExporter.run();
    * console.log(publicKey);
    * @returns {string} public key for the BIP32 path of a given instance
@@ -121,9 +287,9 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
 /**
  * Class for wallet signing interaction.
- * @extends {module:ledger.LedgerInteraction}
+ * @extends {module:ledger.LedgerBitcoinInteraction}
  */
-export class LedgerSignMultisigTransaction extends LedgerInteraction {
+export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   /**
    * @param {object} options
@@ -133,7 +299,8 @@ export class LedgerSignMultisigTransaction extends LedgerInteraction {
    * @param {array<string>} options.bip32Paths - BIP32 paths
    */
   constructor({network, inputs, outputs, bip32Paths}) {
-    super({network});
+    super();
+    this.network = network;
     this.inputs = inputs;
     this.outputs = outputs;
     this.bip32Paths = bip32Paths;
@@ -212,7 +379,7 @@ export async function signMultisigSpendLedger(path,
     }
 
     for (var i = 0; i < outputs.length; i++) {
-        txTmp.addOutput(outputs[i].address, outputs[i].amountSats.toNumber());
+      txTmp.addOutput(outputs[i].address, new BigNumber(outputs[i].amountSats).toNumber());
     }
     for (var j = 0; j < inputs.length; j++) {
       txTmp.addInput(inputs[j].txid, inputs[j].index)

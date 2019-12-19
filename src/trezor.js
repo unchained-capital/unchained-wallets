@@ -1,6 +1,7 @@
 /**
  * @module trezor
  */
+import BigNumber from "bignumber.js";
 import {
   NETWORKS,
   bip32PathToSequence,
@@ -8,6 +9,9 @@ import {
   multisigRequiredSigners,
   multisigAddressType,
   MULTISIG_ADDRESS_TYPES,
+  P2SH,
+  P2SH_P2WSH,
+  P2WSH,
 } from "unchained-bitcoin";
 
 import {
@@ -18,6 +22,8 @@ import {
   ERROR,
   WARNING,
 } from "./interaction";
+
+export const TREZOR = 'trezor';
 
 const TrezorConnect = require("trezor-connect").default;
 
@@ -34,7 +40,8 @@ export class TrezorInteraction extends WalletInteraction {
    * @param {string} options.network - bitcoin network
    */
   constructor({network}) {
-    super({network});
+    super();
+    this.network = network;
     this.trezorCoin = coin(network);
   }
 
@@ -50,6 +57,96 @@ export class TrezorInteraction extends WalletInteraction {
   }
 
 }
+
+/**
+ * Class for retrieving Trezor device metadata.
+ * @extends {module:trezor.TrezorInteraction}
+ */
+export class TrezorGetMetadata extends TrezorInteraction {
+
+  constructor() {
+    super({});
+  }
+
+  /**
+   * Retrieve and parse features from Trezor device
+   * @override
+   * @example
+   * const interaction = new TrezorGetMetadata();
+   * const result = await interaction.run();
+   * console.log(result);
+   * // 
+   * @returns {object} object containing metadata about the Trezor device
+   */
+  async run() {
+    const result = await TrezorConnect.getFeatures();
+    if (!result.success) {
+      throw new Error(result.payload.error);
+    }
+    return this.parseMetadata(result.payload);
+  }
+
+  parseMetadata(payload) {
+    // Example result:
+    // 
+    // {
+    //   bootloader_hash: "5112...846e9"
+    //   bootloader_mode: null
+    //   device_id: "BDF9...F198"
+    //   firmware_present: null
+    //   flags: 0
+    //   fw_major: null
+    //   fw_minor: null
+    //   fw_patch: null
+    //   fw_vendor: null
+    //   fw_vendor_keys: null
+    //   imported: false
+    //   initialized: true
+    //   label: "My Trezor"
+    //   language: null
+    //   major_version: 1
+    //   minor_version: 6
+    //   model: "1"
+    //   needs_backup: false
+    //   no_backup: null
+    //   passphrase_cached: false
+    //   passphrase_protection: false
+    //   patch_version: 3
+    //   pin_cached: true
+    //   pin_protection: true
+    //   revision: "ef8...862d7"
+    //   unfinished_backup: null
+    //   vendor: "bitcointrezor.com"
+    // }
+    const {
+      major_version, minor_version, patch_version,
+      label,
+      model,
+      pin_protection, passphrase_protection,
+    } = payload;
+    let spec = `Model ${model} v.${major_version}.${minor_version}.${patch_version}`;
+    if (pin_protection) {
+      spec += " w/PIN";
+    }
+    if (passphrase_protection) {
+      spec += " w/PASS";
+    }
+    return {
+      spec,
+      model: model,
+      version: {
+        major: major_version,
+        minor: minor_version,
+        patch: patch_version,
+      },
+      label,
+      pin: pin_protection,
+      passphrase: passphrase_protection,
+    };
+  }
+
+}
+
 
 /**
  * Class for wallet interaction at a given BIP32 path.
@@ -160,7 +257,6 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
 
 }
 
-
 /**
  * Class for wallet signing interaction.
  * @extends {module:trezor.TrezorInteraction}
@@ -220,7 +316,7 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
     const transaction = {
       inputs: trezorInputs,
       outputs: trezorOutputs,
-      coin: coin(this.network),
+      coin: this.trezorCoin,
     };
     const result = await TrezorConnect.signTransaction(transaction);
     if (!result.success) {
@@ -260,7 +356,7 @@ function trezorInput(input, bip32Path) {
     prev_hash: input.txid,
     prev_index: input.index,
     address_n: bip32PathToSequence(bip32Path),
-    amount: input.amountSats.toString()
+    amount: new BigNumber(input.amountSats).toString()
   };
 }
 
@@ -292,7 +388,7 @@ function trezorPublicKey(publicKey) {
  */
 function trezorOutput(output) {
   return {
-    amount: output.amountSats.toFixed(0),
+    amount: new BigNumber(output.amountSats).toFixed(0),
     address: output.address,
     script_type: 'PAYTOADDRESS',
   };
