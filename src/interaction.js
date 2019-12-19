@@ -259,6 +259,7 @@ export class UnsupportedInteraction extends WalletInteraction {
   messages() {
     const messages = super.messages();
     messages[PENDING].push({level: ERROR, code: this.failureCode, text: this.failureText});
+    return messages;
   }
 
   isSupported() {
