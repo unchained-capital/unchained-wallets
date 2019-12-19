@@ -87,12 +87,6 @@ export class LedgerGetMetadata extends LedgerInteraction {
     const ManagerAllowedFlag = 0x08;
     const PinValidatedFlag = 0x80;
 
-    const MODEL_S = "Nano S";
-    const MODEL_X = "Nano X";
-    const MODEL_S_IDS = [823132164, 823132163];
-    const MODEL_X_IDS = [855638020];
-
-
     const byteArray = [...res];
     const data = byteArray.slice(0, byteArray.length - 2);
     const targetIdStr = Buffer.from(data.slice(0, 4));
@@ -135,12 +129,40 @@ export class LedgerGetMetadata extends LedgerInteraction {
     const [majorVersion, minorVersion, patchVersion] = (version || '').split('.');
     const [mcuMajorVersion, mcuMinorVersion] = (mcuVersion || '').split('.');
 
+
+    // https://gist.github.com/TamtamHero/b7651ffe6f1e485e3886bf4aba673348
+    // +-----------------+------------+
+    // |    FirmWare     | Target ID  |
+    // +-----------------+------------+
+    // | Nano S <= 1.3.1 | 0x31100002 |
+    // | Nano S 1.4.x    | 0x31100003 |
+    // | Nano S 1.5.x    | 0x31100004 |
+    // |                 |            |
+    // | Blue 2.0.x      | 0x31000002 |
+    // | Blue 2.1.x      | 0x31000004 |
+    // | Blue 2.1.x V2   | 0x31010004 |
+    // |                 |            |
+    // | Nano X          | 0x33000004 |
+    // |                 |            |
+    // | MCU,any version | 0x01000001 |
+    // +-----------------+------------+
+    //
+    //  Order matters -- high to low minTargetId
+    const MODEL_RANGES = [
+      {minTargetId: 0x33000004,  model: "Nano X"},
+      {minTargetId: 0x31100002,  model: "Nano S"},
+      {minTargetId: 0x31100002, model: "Blue"},
+      {minTargetId: 0x01000001, model: "MCU"},
+    ];
     let model = 'Unknown';
-    if (MODEL_S_IDS.includes(targetId)) {
-      model = MODEL_S;
-    }
-    if (MODEL_X_IDS.includes(targetId)) {
-      model = MODEL_X;
+    if (targetId) {
+      for (let i=0; i<MODEL_RANGES.length; i++) {
+        const range = MODEL_RANGES[i];
+        if (targetId >= range.minTargetId) {
+          model = range.model;
+          break;
+        }
+      }
     }
 
     let spec = `${model} v.${version} (MCU v${mcuVersion})`;
