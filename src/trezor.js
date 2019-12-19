@@ -17,6 +17,7 @@ import {
   ACTIVE,
   INFO,
   ERROR,
+  WARNING,
 } from "./interaction";
 
 const TrezorConnect = require("trezor-connect").default;
@@ -171,12 +172,12 @@ export class TrezorExportHDNode extends TrezorInteraction {
       const coinPath = bip32PathSegments[2];
       if (this.network === NETWORKS.MAINNET) {
         if (! coinPath.match(/^0'/)) {
-          messages[PENDING].push({level: ERROR, text: "Mainnet BIP32 path must have a second component of 0'", code: "trezor.bip32_path.mismatch"});
+          messages[ACTIVE].push({level: WARNING, text: "On Trezor model T the screen may display a 'Confirm path' warning message.", code: "trezor.bip32_path.mismatch"});
         }
       }
       if (this.network === NETWORKS.TESTNET) {
         if (! coinPath.match(/^1'/)) {
-          messages[PENDING].push({level: ERROR, text: "Testnet BIP32 path must have a second component of 1'", code: "trezor.bip32_path.mismatch"});
+          messages[ACTIVE].push({level: WARNING, text: "On Trezor model T the screen may display a 'Confirm path' warning message.'", code: "trezor.bip32_path.mismatch"});
         }
       }
     }
@@ -199,6 +200,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
     const result = await TrezorConnect.getPublicKey({
       path: this.bip32Path,
       coin: this.trezorCoin,
+      crossChain: true,
     });
     if (!result.success) {
       throw new Error(result.payload.error);
