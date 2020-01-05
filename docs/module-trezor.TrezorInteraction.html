@@ -31,7 +31,25 @@
         <h2><span class="attribs"><span class="type-signature"></span></span>
             <span class="ancestors"><a href="module-trezor.html">trezor</a>.</span>TrezorInteraction<span class="signature">(options)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">Interaction with Trezor hardware wallets</div>
+            <div class="class-description"><p>Base class for interactions with Trezor hardware wallets.</p>
+<p>Assumes we are using TrezorConnect to talk to the device.</p>
+<p>Subclasses <em>must</em> implement a method <code>this.connectParams</code> which
+returns a 2-element array.  The first element of this array should
+be a <code>TrezorConnect</code> method to use (e.g. -
+<code>TrezorConnect.getAddress</code>).  The second element of this array
+should be the parameters to pass to the given <code>TrezorConnect</code>
+method.</p>
+<p>Errors thrown when calling TrezorConnect are not caught, so users
+of this class (and its subclasses) should use <code>try...catch</code> as
+always.</p>
+<p>Unsuccessful responses (the request succeeded but the Trezor device
+returned an error message) are intercepted and thrown as errors.
+This allows upstream <code>try...catch</code> blocks to intercept errors &amp;
+failures uniformly.</p>
+<p>Subclasses <em>may</em> implement the <code>parse(payload)</code> method which
+accepts the response payload object and returns the relevant data.</p>
+<p>Subclasses will also want to implement a <code>messages()</code> method to
+manipulate the messages returned to the user for each interaction.</p></div>
         
     
 </header>
@@ -52,6 +70,11 @@
     
 
 
+
+<div class="description">
+    <p>Trezor interactions require knowing the bitcoin network they are
+for.</p>
+</div>
 
 
 
@@ -144,7 +167,7 @@
 
             
 
-            <td class="description last">bitcoin network</td>
+            <td class="description last"><p>bitcoin network</p></td>
         </tr>
 
     
@@ -192,7 +215,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line35">line 35</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line150">line 150</a>
     </li></ul></dd>
     
 
@@ -221,6 +244,48 @@
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>import {TrezorInteraction} from "unchained-wallets";
+// Simple subclass
+
+class SimpleTrezorInteraction extends TrezorInteraction {
+
+  constructor({network, param}) {
+    super({network});
+    this.param =  param;
+  }
+
+  connectParams() {
+    return [
+      TrezorConnect.doSomething, // Not a real TrezorConnect function...
+      {
+        // Many Trezor methods require the `coin` parameter.  The
+        // value of `this.trezorCoin` is set appropriately based on the
+        // `network` provided in the constructor.
+        coin: this.trezorCoin,
+
+        // Pass whatever arguments are required
+        // by the TrezorConnect function being called.
+        param: this.param,
+        // ...
+      }
+    ];
+  }
+
+  parse(payload) {
+    return payload.someValue;
+  }
+
+}
+
+// usage
+import {MAINNET} from "unchained-bitcoin";
+const interaction = new SimpleTrezorInteraction({network: MAINNET, param: "foo"});
+const result = await interaction.run();
+console.log(result); // someValue from payload</code></pre>
+
+
 
     
     </div>
@@ -232,7 +297,7 @@
 
 
     <ul>
-        <li><a href="module-interaction.WalletInteraction.html">module:interaction.WalletInteraction</a></li>
+        <li><a href="module-interaction.DirectKeystoreInteraction.html">module:interaction.DirectKeystoreInteraction</a></li>
     </ul>
 
 
@@ -259,7 +324,7 @@
     
 
     
-    <h4 class="name" id="hasMessages"><span class="type-signature"></span>hasMessages<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    <h4 class="name" id="connectParams"><span class="type-signature"></span>connectParams<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;function(), Object>}</span></h4>
     
 
     
@@ -267,7 +332,12 @@
 
 
 <div class="description">
-    Determine whether or not any messages are currently available
+    <p>Override this method in a subclass to return a 2-element array.</p>
+<p>The first element should be a functin to call, typically a
+<code>TrezorConnect</code> method, e.g. <code>TrezorConnect.getAddress</code>.</p>
+<p>The second element should be the parameters to pass to this
+function.</p>
+<p>By default, the function passed just throws an error.</p>
 </div>
 
 
@@ -291,11 +361,6 @@
     
 
     
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#hasMessages">module:interaction.WalletInteraction#hasMessages</a>
-    </li></ul></dd>
-    
 
     
 
@@ -316,7 +381,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line140">line 140</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line208">line 208</a>
     </li></ul></dd>
     
 
@@ -352,7 +417,7 @@
     </dt>
     <dd>
         
-<span class="param-type">boolean</span>
+<span class="param-type">Array.&lt;function(), Object></span>
 
 
     </dd>
@@ -363,11 +428,118 @@
 
 
 
-    <h5>Example</h5>
+
+        
+            
+
     
-    <pre class="prettyprint"><code>if (interaction.hasMessages()) {
- // Code to report messages here
-}</code></pre>
+
+    
+    <h4 class="name" id="messages"><span class="type-signature"></span>messages<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Default messages are added asking the user to plug in their
+Trezor device (<code>device.connect</code>) and about the TrezorConnect
+popups (<code>trezor.connect.generic</code>).</p>
+<p>Subclasses should override this method and add their own messages
+(don't forget to call <code>super()</code>).</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line166">line 166</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>messages</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
 
 
 
@@ -377,7 +549,7 @@
     
 
     
-    <h4 class="name" id="hasMessagesFor"><span class="type-signature"></span>hasMessagesFor<span class="signature">(options)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(payload)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -385,7 +557,9 @@
 
 
 <div class="description">
-    Determines if filtered messages are available
+    <p>Override this method in a subclass to parse the payload of a
+successful response from the device.</p>
+<p>By default, the entire payload is returned.</p>
 </div>
 
 
@@ -421,13 +595,13 @@
 
         <tr>
             
-                <td class="name"><code>options</code></td>
+                <td class="name"><code>payload</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">object</span>
+<span class="param-type">Object</span>
 
 
             
@@ -437,125 +611,7 @@
 
             
 
-            <td class="description last">
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>walletState</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided wallet state</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>level</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided message level</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>code</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'code' field</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'text' field</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
+            <td class="description last"></td>
         </tr>
 
     
@@ -578,7 +634,7 @@
     
     <dt class="tag-overrides">Overrides:</dt>
     <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#hasMessagesFor">module:interaction.WalletInteraction#hasMessagesFor</a>
+        <a href="module-interaction.DirectKeystoreInteraction.html#parse">module:interaction.DirectKeystoreInteraction#parse</a>
     </li></ul></dd>
     
 
@@ -601,7 +657,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line196">line 196</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line224">line 224</a>
     </li></ul></dd>
     
 
@@ -637,7 +693,7 @@
     </dt>
     <dd>
         
-<span class="param-type">boolean</span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -648,14 +704,6 @@
 
 
 
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const hasActiveInfo = interaction.hasMessagesFor({walletState: ACTIVE, level: INFO})) {
-if (hasActiveInfo) {
- // do something
-}</code></pre>
-
-
 
         
             
@@ -663,7 +711,7 @@ if (hasActiveInfo) {
     
 
     
-    <h4 class="name" id="isSupported"><span class="type-signature"></span>isSupported<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    <h4 class="name" id="request"><span class="type-signature"></span>request<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
@@ -671,7 +719,7 @@ if (hasActiveInfo) {
 
 
 <div class="description">
-    Override this method for derived classes
+    <p>Throws an error.</p>
 </div>
 
 
@@ -697,7 +745,7 @@ if (hasActiveInfo) {
     
     <dt class="tag-overrides">Overrides:</dt>
     <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#isSupported">module:interaction.WalletInteraction#isSupported</a>
+        <a href="module-interaction.DirectKeystoreInteraction.html#request">module:interaction.DirectKeystoreInteraction#request</a>
     </li></ul></dd>
     
 
@@ -720,7 +768,106 @@ if (hasActiveInfo) {
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line116">line 116</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line474">line 474</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Awaits the call of <code>this.method</code>, passing in the output of
+<code>this.params()</code>.</p>
+<p>If the call returns but is unsuccessful (<code>result.success</code>) is
+false, will throw the returned error message.  If some other
+error is thrown, it will not be caught.</p>
+<p>Otherwise it returns the result of passing <code>result.payload</code> to
+<code>this.parse</code>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-interaction.DirectKeystoreInteraction.html#run">module:interaction.DirectKeystoreInteraction#run</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line186">line 186</a>
     </li></ul></dd>
     
 
@@ -756,1085 +903,13 @@ if (hasActiveInfo) {
     </dt>
     <dd>
         
-<span class="param-type">boolean</span>
+<span class="param-type">Promise</span>
 
 
     </dd>
 </dl>
 
     
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="messageFor"><span class="type-signature"></span>messageFor<span class="signature">(options)</span><span class="type-signature"> &rarr; {object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Retrieve the first filtered messages about the wallet
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>walletState</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided wallet state</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>level</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided message level</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>code</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'code' field</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'text' field</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#messageFor">module:interaction.WalletInteraction#messageFor</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line212">line 212</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    the first filtered message object
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const message = interaction.messageFor({walletState: ACTIVE, level: INFO});
-console.log(message.text);</code></pre>
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="messages"><span class="type-signature"></span>messages<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Retrieves default empty messages object for supported states
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#messages">module:interaction.WalletInteraction#messages</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line124">line 124</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    {pending:[], active:[], unsupported:[]}
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="messagesFor"><span class="type-signature"></span>messagesFor<span class="signature">(options)</span><span class="type-signature"> &rarr; {Array.&lt;object>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Retrieve filtered messages about the wallet
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>walletState</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided wallet state</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>level</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided message level</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>code</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'code' field</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'text' field</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#messagesFor">module:interaction.WalletInteraction#messagesFor</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line157">line 157</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    the filtered list of message objects
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array.&lt;object></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const messages = interaction.messagesFor({walletState: ACTIVE, level: INFO});
-messages.foreEach(msg => console.log(msg.text));</code></pre>
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="messageTextFor"><span class="type-signature"></span>messageTextFor<span class="signature">(options)</span><span class="type-signature"> &rarr; {string}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Retrieve the first filtered messages about the wallet
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>walletState</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided wallet state</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>level</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter by the provided message level</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>code</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'code' field</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filter messages containing this string in the 'text' field</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#messageTextFor">module:interaction.WalletInteraction#messageTextFor</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line230">line 230</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    the text for the first filtered message
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const message = interaction.messageFor({walletState: ACTIVE, level: INFO});
-console.log(message);</code></pre>
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    implement this in derived class to interact with your device
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-interaction.WalletInteraction.html#run">module:interaction.WalletInteraction#run</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line239">line 239</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1856,13 +931,13 @@ console.log(message);</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitExport.html">HermitExport</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-interaction.WalletInteraction.html">WalletInteraction</a></li><li><a href="module-ledger.LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 11 2019 12:02:27 GMT-0600 (Central Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Jan 05 2020 16:43:31 GMT-0600 (Central Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

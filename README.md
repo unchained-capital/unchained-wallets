@@ -1,9 +1,13 @@
-# Unchained Capital Wallet Utilities
+# Unchained Capital Keystore Utilities
 
 [![Build Status](https://travis-ci.com/unchained-capital/unchained-wallets.svg?branch=master)](https://travis-ci.com/unchained-capital/unchained-wallets)
 
-This library provides classes for integrating bitcoin wallet
-functionality into JavaScript applications.
+This library provides classes for integrating functionality from the
+following keystores into JavaScript applications:
+
+* Trezor hardware wallets  (models: One, T)
+* Ledger hardware wallets  (models: Nano)
+* [Hermit](https://github.com/unchained-capital/hermit)
 
 Full API documentation can be found at
 [unchained-wallets](https://unchained-capital.github.io/unchained-wallets).
@@ -23,67 +27,40 @@ $ npm install --save unchained-wallets
 ## Usage
 
 This library provides classes meant to wrap the interactions between
-an application and wallets, e.g. - exporting a public key at a certain
-BIP32 path from a Trezor ONE device.
+an application and a keystore, e.g. - exporting a public key at a
+certain BIP32 path from a Trezor model T.
 
-The classes are designed to be stateless; all wallet interaction state
-is meant to be stored by the calling application.
+The classes are designed to be stateless; all keystore interaction
+state (are we currrently talking to the Trezor?) is meant to be stored
+by the calling application.
 
 The classes will also provide messages back to the developer suitable
-for display in user interfaces.
+for display in user interfaces.  All errors will also be percolated up
+to the developer to handle how they see fit.
 
-The examples below provide an initial idea of how to use this library,
-but see the [API
+
+### API
+
+The following top-level functions are the entry points to this API:
+
+* `GetMetadata({keystore})` - obtain metadata about a device
+* `ExportPublicKey({keystore, network, bip32Path})` - export an HD public key
+* `ExportExtendedPublicKey({keystore,  network, bip32Path})` - export an HD extended public key
+* `SignMultisigTransaction({keystore, network,  inputs,  outputs, bip32Paths})` - sign a transaction with some multisig inputs
+* `ConfirmMultisigAddress({keystore, network, bip32Path, multisig})` - confirm a multisig address
+
+Not every keystore supported by this library implements each of these
+interactions.
+
+Each interaction takes different arguments. See the [API
 documentation](https://unchained-capital.github.io/unchained-wallets)
 for full details.
 
-### Interaction classes
-
-Interactions with wallets are mediated via objects which implement the
-`WalletInteraction` API:
-
-* Wallet interaction subclasses accept required arguments via their
-  constructor.  These arguments are exposed as properties of the
-  resulting object.
-
-```javascript
-import {MAINNET} from "unchained-bitcoin";
-import {TrezorExportPublicKey} from "unchained-wallets";
-const interaction = new TrezorExportPublicKey({network: MAINNET, bip32Path: "m/45'/0'/0'/0/0"});
-console.log(interaction.network);   // "mainnet"
-console.log(interaction.bip32Path); // "m/45'/0'/0'/0/0"
-```
-
-* All objects implement an `isSupported()` method which returns `true`
-  or `false` based on whether the wallet supports the given
-  interaction with the given arguments.
-
-* All objects implement a `messages()` method which returns feedback
-  about the interaction given the current environment, wallet state,
-  &c.
-
-* A message is an object with the following keys:
-
-  * `code` -- a string describing the message (e.g. - `trezor.device.connect`)
-  * `text` -- a string containing the message (e.g. - `Make sure your Trezor hardware wallet is plugged in.`)
-  * `level` -- a string categorizing the message (e.g. - `info`)
-  
-* Messages may have additional keys depending on the wallet.  Several
-  methods such as `messageTextFor()` are available to filter and
-  extract data from messages.
-
-* All objects implement a `async run()` method which performs the
-  interaction with the wallet and returns the required data.
-  
-Developers who want to support new wallets or new interactions should
-subclass the `WalletInteraction` class and implement a constructor,
-`messages()`, and `run()`.
-
-### Application Usage
+### Applications
 
 The following minimal React example shows how an application developer
-would use an interaction class to export a public key from a Trezor
-hardware wallet.
+would use the `ExportPublicKey` API function of this library to export
+a public key from a Trezor hardware wallet.
 
 ```javascript
 // This is a React example but a similar
@@ -95,37 +72,47 @@ import PropTypes from 'prop-types';
 import {MAINNET} from "unchained-bitcoin";
 
 import {
-  HardwareWalletExportPublicKey,// This is our interaction.
-  TREZOR, LEDGER,               // These are supported wallets.
-  PENDING, ACTIVE, UNSUPPORTED, // These are wallet states.
-} from "unchained-wallets";
+  // This is the interaction we are implementing.
+  ExportPublicKey, 
 
+  // These are the keystores we want to support.  They both
+  // work identically as far as this minimal UI is concerned.
+  // Other keystores are supported but they would require a
+  // different UI.
+  TREZOR, LEDGER,
+
+  // These are  possible states our keystore could be in.
+  PENDING, ACTIVE, UNSUPPORTED,
+} from "unchained-wallets";
 
 export class HardwareWalletPublicKeyImporter extends React.Component {
 
   // For this example, the required arguments are
   // passed into this component via `props`.
+  //
+  // A more realistic example would provide a UI for
+  // entering this or pull it from somewhere else.
   static propTypes = {
     network: PropTypes.string.isRequired,
     bip32Path: PropTypes.string.isRequired,
-	walletType: PropTypes.string.isRequired,
+    keystore: PropTypes.string.isRequired,
   };
 
 
   // The interaction is stateless so can be instantiated
   // on the fly as needed, with appropriate arguments.
   interaction() {
-    const {walletType, network, bip32Path} = this.props;
-    return HardwareWalletExportPublicKey({walletType, network, bip32Path});
+    const {keystore, network, bip32Path} = this.props;
+    return ExportPublicKey({keystore, network, bip32Path});
   }
 
 
   constructor(props) {
     super(props);
-    // Wallet state is kept in the React component
+    // Keystore state is kept in the React component
     // and passed to the library.
     this.state = {
-      walletState: (this.interaction().isSupported() ? PENDING : UNSUPPORTED),
+      keystoreState: (this.interaction().isSupported() ? PENDING : UNSUPPORTED),
       publicKey: '',
       error: '',
     };
@@ -133,7 +120,7 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
 
 
   render() {
-    const {walletState, publicKey, error} = this.state;
+    const {keystoreState, publicKey, error} = this.state;
     const {bip32Path} = this.props;
     if (publicKey) {
       return (
@@ -146,7 +133,7 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
       return (
         <div>
           <p>Click here to import public key for BIP32 path {bip32Path}.</p>
-          <button disabled={walletState !== PENDING} onClick={this.importPublicKey}>Import Public Key</buttton>
+          <button disabled={keystoreState !== PENDING} onClick={this.importPublicKey}>Import Public Key</buttton>
           {this.renderMessages()}
           {error && <p>{error}</p>}
         </div>
@@ -156,10 +143,10 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
 
 
   renderMessages() {
-    const {walletState} = this.state;
+    const {keystoreState} = this.state;
     // Here we grab just the messages relevant for the
-    // current wallet state, but more complex filtering is possible...
-    const messages = this.interaction().messagesFor({walletState});
+    // current keystore state, but more complex filtering is possible...
+    const messages = this.interaction().messagesFor({state: keystoreState});
     return (
       <ul>
         {messages.map(this.renderMessage)}
@@ -176,17 +163,17 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
 
 
   async importPublicKey() {
-    this.setState({walletState: ACTIVE});
+    this.setState({keystoreState: ACTIVE});
     try {
       // This is where we actually talk to the hardware wallet.
       const publicKey = await this.interaction().run();
-      // If we succeed, revert the wallet state
-	  // and store the imported public key.
-      this.setState({walletState: PENDING, publicKey});
+      // If we succeed, reset the keystore state
+      // and store the imported public key.
+      this.setState({keystoreState: PENDING, publicKey});
     } catch(e) {
-      // Something went wrong; revert the wallet
-	  // state and track the error message.
-      this.setState({walletState: PENDING, error: e.message});
+      // Something went wrong; revert the keystore
+      // state and track the error message.
+      this.setState({keystoreState: PENDING, error: e.message});
     }
   }
 }
@@ -202,18 +189,49 @@ This simple example illustrates several useful patterns:
   "fresh" each time it is needed is fine and actually the preferred
   approach.
 
-* The `walletState` is stored in and controlled by the component.  In
-  `importPublicKey` the component explicitly handles changes to
-  `walletState`.  In `renderMessages` the component queries the
-  interaction with the `walletState` (via
-  `this.interaction().messagesFor({walletState})`.
+* The `keystoreState` is stored in and controlled by the React
+  component.  In `importPublicKey` the component explicitly handles
+  changes to `keystoreState`.  In `renderMessages` the component
+  queries the interaction for messages, passing in the current
+  `keystoreState` as a filter.
 
 * The `messagesFor` and `renderMessages` methods will work regardless
-  of the values of `network`, `bip32Path`, or `walletType`.  If a user
+  of the values of `network`, `bip32Path`, or `keystore`.  If a user
   is allowed to change these input values, appropriate warning and
-  informational messages will be rendered for each wallet type given
-  the arguments.  This makes handling "edge cases" between wallets
-  much easier for developers.
+  informational messages will be rendered for each keeystore given the
+  arguments.  This makes handling "edge cases" between keystores much
+  easier for developers.
+
+### More on Messages
+
+Interactions with keystores are mediated via objects which implement
+the `Interaction` API.  This API surfaces rich data to the user via
+the `messages()` and related methods.
+
+The `messages()` method returns an array of messages (see below) about
+the interaction.  The application calling `messages()` is expected to
+pass in the keystore `state`, and other filtering properties.
+
+A message in the `messages()` array is an object with the following
+keys:
+
+* `code` -- a dot-separrated string describing the message (e.g. - `device.connect`)
+* `state` -- the keystore state the message is for (e.g. - `pending`, `active`, or `unsupported`)
+* `level` -- the level of the message (e.g. - `info`, `warning`, or `error`)
+* `text` -- the message text (e.g. - `Make sure your Trezor hardware wallet is plugged in.`)
+* `version` -- (optional) a version string or range/spec describing which versions of the keystore this message applies to
+* `image` -- (optional) an object with `label`, `mimeType`, and base64-encoded `data` for an image
+* `steps` -- (optional) an array of sub-messages for this message.  `code`, `state`, and `level` are optional for submessages.
+  
+Messages are hierachical and well-structured, allowing applications to
+display them appropriately.
+
+Several methods such as `hasMessage`, `messageTextFor()`, &c. are
+available to filter and extract data from messages.
+
+See the [API
+documentation](https://unchained-capital.github.io/unchained-wallets)
+for more details on messages..
 
 ## Developers
 
@@ -227,6 +245,49 @@ $ cd unchained-wallets
 $ npm install
 ```
 
+Development proceeds in one of three ways:
+
+1) Working on the `unchained-wallets` library itself.
+
+2) Implementing interactions to support a new keystore.
+
+3) Adding or modifying existing interactions for a supported
+keystores.
+
+Work on (1) should hopefully slow over time as this library reaches a
+mature state of flexibility.
+
+Work on (2) should be considered carefully.  If a new keystore doesn't
+support most of the existing API of this library, then integration may
+be a poorer return than expected.
+
+Work on (3) should proceed in an even-handed way.  Most of all we want
+inter-compatibility between keystores.  Implementing features which
+increase complexity and reduce inter-compatibility should be
+discouraged.
+
+### DirectInteraction classes
+
+Some devices (such as a Trezor) support "direct" interactions --
+JavaScript code directly obtain a response from the device.
+
+Developers implementing these kinds of interactions should subclass
+`DirectInteraction` and provide an `async run()` method which performs
+the interaction with the keystore and returns the required data.
+
+### IndirectInteraction classes
+
+Some devices (such as a QR-code based air-gapped laptop) support
+"indirect" interactions -- JavaScript code cannot directly obtain a
+response from the device.  A user must manually relay a request and
+then separately input a response.
+
+Developers implementing these kinds of interactions should subclass
+`IndirectInteraction` and provide two methods:
+
+* `request()` which returns appropriate data for a request
+* `parse(response)` which parses a response
+  
 ### Testing
 
 Unit tests are implemented in Jest and can be run via

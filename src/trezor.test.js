@@ -1,179 +1,318 @@
-import { NETWORKS } from "unchained-bitcoin";
-import { P2SH, generateMultisigFromHex } from 'unchained-bitcoin';
-// import { ACTIVE } from "../unchained-wallets"
-
-import { TrezorSignMultisigTransaction, TrezorExportPublicKey } from "./trezor";
 import BigNumber from "bignumber.js";
 
-function mockHdNodes() {
-    return [
-        { "path": [2147483693, 2147483649, 2147483648, 0], "serializedPath": "m/45'/1'/0'/0", "childNum": 0, "xpub": "tpubDF17mBZYUi35iCPDfFAa3jFd23L5ZF49tpS1AS1cEqNwhNaS8qVVD8ZPj67iKEarhPuMapZHuxr7TBDYA4DLxAoz25FN8ksyakdbc2V4X2Q", "chainCode": "ae5fd427f2cd537df4fe7c923b25e7c92b09106b79117611971619cb3c3dec8a", "publicKey": "02d393457d46d1381b5f22fc0383de23e485ca94073f9f8cba02e15e1077e80477", "fingerprint": 2502288493, "depth": 4 },
-        { "path": [2147483693, 2147483649, 2147483648, 1], "serializedPath": "m/45'/1'/0'/1", "childNum": 1, "xpub": "tpubDF17mBZYUi35mAwDiKU1fdGhxvGFkteU3fCvbDXTaYjRh4XaRMuD4hbWgXPCUrJDLKzFLppyr3LHHQtmoQFNeVHvYwfunFH5UgBQUmDfFGC", "chainCode": "d930f21f81f476c92d194f0e2231dc7a678294a35f1702f1cb135bc640270256", "publicKey": "032c2224ecd101e556eb2cbbb5bac908560f8b1d7d00e58c736fad9b414c87f7af", "fingerprint": 2502288493, "depth": 4 },
-        {error: "test bad call"}
-    ]}
-    jest.mock("trezor-connect", () => {
-    return {
-        default: {
-            getPublicKey: jest.fn()
-                .mockImplementation(params => {
-                    switch (params.path) {
-                        case "m/45'/1'/0'/0":
-                            return { success: true, payload: mockHdNodes()[0] }
-                        case "m/45'/1'/0'/1":
-                            return { success: true, payload: mockHdNodes()[1] }
-                        case "m/45'/0'/0'/0":
-                                return { success: true, payload: mockHdNodes()[0] }
-                        case "m/45'/0'/0'/1":
-                                return { success: true, payload: mockHdNodes()[1] }
-                        default:
-                            return {success: false, payload: mockHdNodes()[2]}
-                    }
-                })
-            ,
-            manifest: () => { },
-            signTransaction: () => {
-                return { success: true, payload: { signatures: ["3045022100e6a78f457953c692d0472afe41f1b7e7bc821ebb059f30676715403f12d175b802204442aebea5a77de2a4093994759f769464d9eae3f2c5f8071d266267995b2b31"] } }
-            }
-        }
+import { 
+  TESTNET,
+  MAINNET,
+  TEST_FIXTURES,
+} from "unchained-bitcoin";
+import { 
+  PENDING,
+  ACTIVE,
+  INFO,
+} from "./interaction";
+
+import { 
+  trezorCoin,
+  TrezorInteraction,
+  TrezorGetMetadata,
+  TrezorExportHDNode,
+  TrezorExportPublicKey,
+  TrezorExportExtendedPublicKey,
+  TrezorSignMultisigTransaction,
+  TrezorConfirmMultisigAddress,
+} from "./trezor";
+
+const TrezorConnect = require("trezor-connect").default;
+
+function itHasStandardMessages(interactionBuilder) {
+  it("has a message about ensuring your device is plugged in", () => {
+    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.connect", text: "plugged in"})).toBe(true);
+  });
+
+  it("has a message about the TrezorConnect popup and enabling popups", () => {
+    expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "trezor.connect.generic", text: "enabled popups"})).toBe(true);
+  });
+}
+
+function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
+
+  it("throws an error on an unsuccessful request", async () => {
+    const interaction = interactionBuilder();
+    interaction.connectParams = () => ([(params) => ({success: false, payload: {error: "foobar"}}), {}]);
+    try  {
+      await interaction.run();
+    } catch(e) {
+      expect(e.message).toMatch(/foobar/i);
     }
-})
-
-const sigs = ["3045022100e6a78f457953c692d0472afe41f1b7e7bc821ebb059f30676715403f12d175b802204442aebea5a77de2a4093994759f769464d9eae3f2c5f8071d266267995b2b31"]
-const redeem = "522103a90d10bf3794352bb1fa533dbd4ea75a0ffc98e0d05124938fcc3e10cdbe1a4321030d60e8d497fa8ce59a2b3203f0e597cd0182e1fe0cc3688f73497f2e99fbf64b2102b79dc8fda9d447f1928d64f95d61dc1f51a440f3c36650e5da74e5d6a98ea58653ae"
-
-const input = {
-    txid: "8d276c76b3550b145e44d35c5833bae175e0351b4a5c57dc1740387e78f57b11",
-    index: 1,
-    multisig: generateMultisigFromHex(NETWORKS.TESTNET, P2SH, redeem),
-    amountSats: BigNumber(1234000)
-}
-const output = {
-    amountSats: BigNumber(1299659),
-    address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
+  });
+  
 }
 
-describe("Test trezor lib", () => {
-    describe("Test TrezorExportPublicKey", () => {
-        it('should properly retrieve a public key on testnet', async (next) => {
-            ["m/45'/1'/0'/0", "m/45'/1'/0'/1"].forEach(async (derivationPath, i) => {
-                const hdnode = new TrezorExportPublicKey({ network: NETWORKS.TESTNET, bip32Path: derivationPath })
-                const result = await hdnode.run()
-                expect(result).toEqual(mockHdNodes()[i].publicKey)
-                if(i===1) next();
-            })
-        });
 
-        it('should properly retrieve a public key on mainnet', async (next) => {
-            ["m/45'/0'/0'/0", "m/45'/0'/0'/1"].forEach(async (derivationPath, i) => {
-                const hdnode = new TrezorExportPublicKey({ network: NETWORKS.MAINNET, bip32Path: derivationPath })
-                const result = await hdnode.run()
-                expect(result).toEqual(mockHdNodes()[i].publicKey)
-                if(i===1) next();
-            })
-        });
+describe('trezor', () => {
 
-        it('should properly report a request failure', async (next) => {
-            const hdnode = new TrezorExportPublicKey({ network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/99" })
-            try {
-                await hdnode.run()
-                throw("I should not get here")
-            } catch (e) {
-                expect(e.message).toBe(mockHdNodes()[2].error)
-                next();
-            }
-        });
+  describe('TrezorInteraction', () => {
+    
+    const interactionBuilder = () => (new TrezorInteraction({network: MAINNET}));
 
-    })
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-    describe("Test TrezorSignMultisigTransaction", () => {
-        it('should properly retrieve a signature on mainnet', async (next) => {
-            const sig = new TrezorSignMultisigTransaction({ network: NETWORKS.MAINNET, inputs: [input], outputs: [output], bip32Paths: ["m/45'/0'/0'/0"] })
-            const result = await sig.run()
-            expect(result).toEqual(sigs)
-            next();
-        });
+    it("sets the default method to throw an error", async () => {
+      try {
+        await interactionBuilder().run();
+      } catch(e) {
+        expect(e.message).toMatch(/subclass of TrezorInteraction/i);
+      }
+    });
 
-        it('should properly retrieve a signature on testnet', async (next) => {
-            const sig = new TrezorSignMultisigTransaction({ network: NETWORKS.TESTNET, inputs: [input], outputs: [output], bip32Paths: ["m/45'/1'/0'/0"] })
-            const result = await sig.run()
-            expect(result).toEqual(sigs)
-            next();
+  });
+
+  describe("TrezorGetMetadata", ()  => {
+
+    const interactionBuilder = () => (new TrezorGetMetadata({network: MAINNET}));
+
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+    it("parses metadata", () => {
+
+      expect(
+        interactionBuilder().parse({
+          bootloader_hash: "5112...846e9",
+          bootloader_mode: null,
+          device_id: "BDF9...F198",
+          firmware_present: null,
+          flags: 0,
+          fw_major: null,
+          fw_minor: null,
+          fw_patch: null,
+          fw_vendor: null,
+          fw_vendor_keys: null,
+          imported: false,
+          initialized: true,
+          label: "My Trezor",
+          language: null,
+          major_version: 1,
+          minor_version: 6,
+          model: "1",
+          needs_backup: false,
+          no_backup: null,
+          passphrase_cached: false,
+          passphrase_protection: false,
+          patch_version: 3,
+          pin_cached: true,
+          pin_protection: true,
+          revision: "ef8...862d7",
+          unfinished_backup: null,
+          vendor: "bitcointrezor.com",
+        })).toEqual({
+          spec: "Model 1 v.1.6.3 w/PIN",
+          model: "Model 1",
+          version: {
+            major: 1,
+            minor: 6,
+            patch: 3,
+            string: "1.6.3",
+          },
+          label: "My Trezor",
+          pin: true,
+          passphrase: false,
         });
     });
 
-    describe("Test interactions.", () => {
-        describe("Test public key export interactions.", () => {
+    it("uses TrezorConnect.getFeatures", () => {
+      const interaction = interactionBuilder();
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.getFeatures);
+      expect(params).toEqual({});
+    });
 
-            const interaction = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
+  });
 
-            it("should properly report messages for wallet state active", () => {
-                //const actives =
-                interaction.messagesFor({walletState:"active", excludeCodes: ["bip32"]});
-                // console.log(actives); // TODO: what to test for
-            })
+  describe("TrezorExportHDNode", () => {
 
-            it("should properly report messages for wallet state pending", () => {
-                //const pendings =
-                interaction.messagesFor({walletState:"pending", excludeCodes: ["bip32"]});
-                // console.log(pendings); // TODO: what to test for
-            })
+    const bip32Path = "m/45'/0'/0'/0'";
+    const interactionBuilder = () => (new TrezorExportHDNode({bip32Path, network: MAINNET}));
 
-            it("should not report error for a valid state", () => {
-                const hasError = interaction.hasMessagesFor({walletState:"active", level: 'error', code: "bip32"});
-                expect(hasError).toBe(false);
-            })
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-            const badInteraction = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1"});
-            it("should not report error for not meeting the minimum path length for wallet state active", () => {
-                const hasError = badInteraction.hasMessagesFor({walletState:"active", level: 'error', code: "trezor.bip32_path.minimum"});
-                expect(hasError).toBe(false);
-            })
+    it("uses TrezorConnect.getPublicKey", () => {
+      const interaction = interactionBuilder();
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.getPublicKey);
+      expect(params.path).toEqual(bip32Path);
+      expect(params.coin).toEqual(trezorCoin(MAINNET));
+      expect(params.crossChain).toBe(true);
+    });
 
-            it("should properly report error for not meeting the minimum path length for wallet state pending", () => {
-                const hasError = badInteraction.hasMessagesFor({walletState:"pending", level: 'error', code: "trezor.bip32_path.minimum"});
-                expect(hasError).toBe(true);
-            })
+  });
 
-            const interactionTestPathMAINNET = new TrezorExportPublicKey({network: NETWORKS.MAINNET, bip32Path: "m/45'/1'/0'/1"});
-            it("should properly report warning for a testnet derivation path on mainnet for wallet state pending", () => {
-                const hasWarning = interactionTestPathMAINNET.hasMessagesFor({walletState:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
-                expect(hasWarning).toBe(true);
-            })
+  describe("TrezorExportPublicKey", () => {
 
-            const interactionMainPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/0'/0'/1"});
-            it("should properly report warning for a mainnet derivation path on testnet for wallet state pending", () => {
-                const hasWarning = interactionMainPathTESTNET.hasMessagesFor({walletState:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
-                expect(hasWarning).toBe(true);
-            })
+    const bip32Path = "m/45'/0'/0'/0'";
+    const interactionBuilder = () => (new TrezorExportPublicKey({bip32Path, network: MAINNET}));
 
-            const interactionTestPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
-            it("should not report an error for correctly matching derivation path on testnet", () => {
-                const hasError = interactionTestPathTESTNET.hasMessagesFor({walletState:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
-                expect(hasError).toBe(false);
-            })
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-            const interactionMainPathMAINNET = new TrezorExportPublicKey({network: NETWORKS.MAINNET, bip32Path: "m/45'/0'/0'/1"});
-            it("should not report an error for correctly matching derivation path on mainnet", () => {
-                const hasError = interactionMainPathMAINNET.hasMessagesFor({walletState:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
-                expect(hasError).toBe(false);
-            })
+    it("parses out the public key from the response payload", () => {
+      expect(interactionBuilder().parse({publicKey: "foobar"})).toEqual("foobar");
+    });
 
-        })
-    })
+    it("uses TrezorConnect.getPublicKey", () => {
+      const interaction = interactionBuilder();
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.getPublicKey);
+      expect(params.path).toEqual(bip32Path);
+      expect(params.coin).toEqual(trezorCoin(MAINNET));
+      expect(params.crossChain).toBe(true);
+    });
 
-    describe("Test signing interactions.", () => {
+  });
 
-        const interaction = new TrezorSignMultisigTransaction({ network: NETWORKS.TESTNET, inputs: [input], outputs: [output], bip32Paths: ["m/45'/1'/0'/0"] })
+  describe("TrezorExportExtendedPublicKey", () => {
 
-        it("should not report error for wallet state active", () => {
-            const hasError = interaction.hasMessagesFor({walletState:"active", level: 'error'});
-            expect(hasError).toBe(false);
-        })
+    const bip32Path = "m/45'/0'/0'/0'";
 
-        it("should properly report messages for wallet state active", () => {
-            const messages = interaction.hasMessagesFor({walletState:"active", level: 'info'});
-            expect(messages).toBe(true);
-        })
-    })
+    const interactionBuilder = () => (new TrezorExportExtendedPublicKey({bip32Path, network: MAINNET}));
 
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+    it("parses out the extended public key from the response payload", () => {
+      expect(interactionBuilder().parse({xpub: "foobar"})).toEqual("foobar");
+    });
+
+    it("uses TrezorConnect.getPublicKey", () => {
+      const interaction = interactionBuilder();
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.getPublicKey);
+      expect(params.path).toEqual(bip32Path);
+      expect(params.coin).toEqual(trezorCoin(MAINNET));
+      expect(params.crossChain).toBe(true);
+    });
+
+  });
+
+  describe("TrezorSignMultisigTransaction", () => {
+
+    TEST_FIXTURES.transactions.forEach((fixture) => {
+
+      describe(`signing for a transaction which ${fixture.description}`, () => {
+
+        const interactionBuilder = () => (new TrezorSignMultisigTransaction(fixture));
+
+        itHasStandardMessages(interactionBuilder);
+        itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+        it("parses out the signatures from the response payload", () => {
+          expect(interactionBuilder().parse({signatures: "foobar"})).toEqual("foobar");
+        });
+
+        it("uses TrezorConnect.signTransaction", () => {
+          const interaction = interactionBuilder();
+          const [method, params] = interaction.connectParams();
+          expect(method).toEqual(TrezorConnect.signTransaction);
+          expect(params.coin).toEqual(trezorCoin(fixture.network));
+          expect(params.inputs.length).toEqual(fixture.inputs.length);
+          expect(params.outputs.length).toEqual(fixture.outputs.length);
+          // FIXME check inputs & output details
+        });
+        
+      });
+
+    });
+
+  });
+
+  describe("TrezorConfirmMultisigAddress", () => {
+
+    TEST_FIXTURES.multisigs.forEach((fixture) => {
+
+      describe(`displaying a ${fixture.description}`, () => {
+        const interactionBuilder = () => (new TrezorConfirmMultisigAddress(fixture));
+
+        itHasStandardMessages(interactionBuilder);
+        itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+        it("uses TrezorConnect.getAddress", () => {
+          const interaction = interactionBuilder();
+          const [method, params] = interaction.connectParams();
+          expect(method).toEqual(TrezorConnect.getAddress);
+          expect(params.path).toEqual(fixture.bip32Path);
+          expect(params.address).toEqual(fixture.address);
+          expect(params.showOnTrezor).toBe(true);
+          expect(params.coin).toEqual(trezorCoin(fixture.network));
+          expect(params.crossChain).toBe(true);
+          // FIXME check multisig details
+        });
+
+      });
+
+    });
+  });
+  
 });
+
+
+//     describe("Test interactions.", () => {
+//         describe("Test public key export interactions.", () => {
+
+//             const interaction = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
+
+//             it("should properly report messages for wallet state active", () => {
+//                 //const actives =
+//                 interaction.messagesFor({state:"active", excludeCodes: ["bip32"]});
+//                 // console.log(actives); // TODO: what to test for
+//             })
+
+//             it("should properly report messages for wallet state pending", () => {
+//                 //const pendings =
+//                 interaction.messagesFor({state:"pending", excludeCodes: ["bip32"]});
+//                 // console.log(pendings); // TODO: what to test for
+//             })
+
+//             it("should not report error for a valid state", () => {
+//                 const hasError = interaction.hasMessagesFor({state:"active", level: 'error', code: "bip32"});
+//                 expect(hasError).toBe(false);
+//             })
+
+//             const badInteraction = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1"});
+//             it("should not report error for not meeting the minimum path length for wallet state active", () => {
+//                 const hasError = badInteraction.hasMessagesFor({state:"active", level: 'error', code: "trezor.bip32_path.minimum"});
+//                 expect(hasError).toBe(false);
+//             })
+
+//             it("should properly report error for not meeting the minimum path length for wallet state pending", () => {
+//                 const hasError = badInteraction.hasMessagesFor({state:"pending", level: 'error', code: "trezor.bip32_path.minimum"});
+//                 expect(hasError).toBe(true);
+//             })
+
+//             const interactionTestPathMAINNET = new TrezorExportPublicKey({network: NETWORKS.MAINNET, bip32Path: "m/45'/1'/0'/1"});
+//             it("should properly report warning for a testnet derivation path on mainnet for wallet state pending", () => {
+//                 const hasWarning = interactionTestPathMAINNET.hasMessagesFor({state:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
+//                 expect(hasWarning).toBe(true);
+//             })
+
+//             const interactionMainPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/0'/0'/1"});
+//             it("should properly report warning for a mainnet derivation path on testnet for wallet state pending", () => {
+//                 const hasWarning = interactionMainPathTESTNET.hasMessagesFor({state:"active", level: 'warning', code: "trezor.bip32_path.mismatch"});
+//                 expect(hasWarning).toBe(true);
+//             })
+
+//             const interactionTestPathTESTNET = new TrezorExportPublicKey({network: NETWORKS.TESTNET, bip32Path: "m/45'/1'/0'/1"});
+//             it("should not report an error for correctly matching derivation path on testnet", () => {
+//                 const hasError = interactionTestPathTESTNET.hasMessagesFor({state:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
+//                 expect(hasError).toBe(false);
+//             })
+
+//             const interactionMainPathMAINNET = new TrezorExportPublicKey({network: NETWORKS.MAINNET, bip32Path: "m/45'/0'/0'/1"});
+//             it("should not report an error for correctly matching derivation path on mainnet", () => {
+//                 const hasError = interactionMainPathMAINNET.hasMessagesFor({state:"pending", level: 'error', code: "trezor.bip32_path.mismatch"});
+//                 expect(hasError).toBe(false);
+//             })
+
+//         })
+//     })

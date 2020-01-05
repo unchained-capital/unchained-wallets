@@ -29,6 +29,8 @@
 <header>
     
         
+            
+        
     
 </header>
 
@@ -36,6 +38,101 @@
     <div class="container-overview">
     
         
+            <div class="description"><p>Provides classes for interacting with Trezor hardware wallets.</p>
+<p>The base class provided is <code>TrezorInteraction</code> which wraps calls to <a href="https://github.com/trezor/connect"><code>TrezorConnect</code></a>.  New interactions should subclass <code>TrezorInteraction</code>.</p>
+<p>Many Trezor calls require knowing the bitcoin network.  This
+library uses the API defined by <code>unchained-bitcoin</code> to label
+bitcoin networks, and this is the value expected in several off the
+constructors for classes in this module.</p>
+<p>The value of the <code>network</code> is mapped internally to
+<code>this.trezorCoin</code>.  This value is useful to subclasses implementing
+the <code>params()</code> method as many TrezorConnect methods require the
+<code>coin</code> parameter.</p>
+<p>The following API classes are implemented:</p>
+<ul>
+<li>TrezorGetMetadata</li>
+<li>TrezorExportPublicKey</li>
+<li>TrezorExportExtendedPublicKey</li>
+<li>TrezorSignMultisigTransaction</li>
+<li>TrezorConfirmMultisigAddress</li>
+</ul></div>
+        
+
+        
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line1">line 1</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         
     
@@ -49,6 +146,9 @@
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
+            <dt><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></dt>
+            <dd></dd>
+        
             <dt><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></dt>
             <dd></dd>
         
@@ -56,6 +156,9 @@
             <dd></dd>
         
             <dt><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></dt>
             <dd></dd>
         
             <dt><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></dt>
@@ -73,7 +176,247 @@
     
 
     
+        <h3 class="subsection-title">Members</h3>
 
+        
+            
+<h4 class="name" id=".TREZOR"><span class="type-signature">(static, constant) </span>TREZOR<span class="type-signature"> :string</span></h4>
+
+
+
+
+<div class="description">
+    <p>Constant defining Trezor interactions.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-default">Default Value:</dt>
+    <dd class="tag-default"><ul class="dummy">
+            <li>trezor</li>
+        </ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line55">line 55</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".trezorCoin"><span class="type-signature">(static) </span>trezorCoin<span class="signature">(network)</span><span class="type-signature"> &rarr; {string}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns the Trezor API version of the given network.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>network</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>bitcoin network</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line653">line 653</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
     
 
     
@@ -89,13 +432,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitExport.html">HermitExport</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-interaction.WalletInteraction.html">WalletInteraction</a></li><li><a href="module-ledger.LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 11 2019 12:02:27 GMT-0600 (Central Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sun Jan 05 2020 16:43:31 GMT-0600 (Central Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
