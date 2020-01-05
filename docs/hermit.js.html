@@ -26,11 +26,28 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/**
+            <pre class="prettyprint source linenums"><code>/* eslint-disable max-lines*/
+
+/**
+ * Provides classes for interacting with a Hermit installation through
+ * QR codes.
+ *
+ * The base classes provided are `HermitDisplayer` and `HermitReader`
+ * for displaying &amp; reading a QR code to/from Hermit, respectively.
+ * Functions `parseHermitQRCodeData` and `encodeHermitQRCodeData`
+ * handle the Hermit QR-code data protocol.
+ *
+ * The following API classes are implemented:
+ *
+ * * HermitExportPublicKey
+ * * HermitExportExtendedPublicKey
+ * * HermitSignMultisigTransaction
+ * 
  * @module hermit
  */
 import base32 from "hi-base32";
 import pako from "pako";
+import BigNumber from "bignumber.js";
 import {
   scriptToHex,
   multisigRedeemScript,
@@ -38,7 +55,7 @@ import {
   MULTISIG_ADDRESS_TYPES,
 } from "unchained-bitcoin";
 import {
-  WalletInteraction,
+  IndirectKeystoreInteraction,
   PENDING,
   ACTIVE,
   INFO,
@@ -46,88 +63,113 @@ import {
   UNSUPPORTED,
 } from "./interaction";
 
+export const HERMIT = 'hermit';
+
 /**
- * Interaction with Hermit (SLIP39) sharded wallet
- * @extends {module:interaction.WalletInteraction}
+ * Parse the data from a Hermit-created QR-code.
+ *
+ * @param {string} encodedString - base32-encoded, gzipped, JSON data
+ * @returns {object} the parsed data
  */
-export class HermitInteraction extends WalletInteraction {
-
-  //
-  // Encoded string from QR code => JavaScript Object
-  //
-
-  _parseQRCodeData(encodedString) {
+export function parseHermitQRCodeData(encodedString) {
+  const errorPrefix = "Unable to parse QR code";
+  try {
+    const compressedBytes = base32.decode.asBytes(encodedString);
     try {
-      const compressedBytes = base32.decode.asBytes(encodedString);
-      return this._decompressAndParseJSON(compressedBytes);
-    } catch(base32DecodingError) {
-      throw new Error("Unable to parse QR code (Base32 decode error).");
+      const json = pako.inflate(compressedBytes, {to: 'string'});
+      try {
+        return JSON.parse(json);
+      } catch(e) {
+        throw new Error(`${errorPrefix} (JSON parse error)`);
+      }
+    } catch(e) {
+      if (e.message &amp;&amp; e.message.startsWith(errorPrefix)) { 
+        throw(e);
+      } else {
+        throw new Error(`${errorPrefix} (gzip decompression error)`);
+      }
+    }
+  } catch(e) {
+    if (e.message &amp;&amp; e.message.startsWith(errorPrefix)) { 
+      throw(e);
+    } else {
+      throw new Error(`${errorPrefix} (Base32 decode error)`);
     }
   }
-
-  _decompressAndParseJSON(compressedBytes) {
-    try {
-      const decompressedJSON = pako.inflate(compressedBytes, {to: 'string'});
-      return this._parseJSON(decompressedJSON);
-    } catch(decompressError) {
-      throw new Error("Unable to parse QR code (gzip decompress error).");
-    }
-  }
-
-  _parseJSON(json) {
-    try {
-      return JSON.parse(json);
-    } catch(parseJSONError) {
-      throw new Error("Unable to parse QR code (JSON parse error).");
-    }
-  }
-
-  //
-  // JavaScript object => encoded string for QR code
-  //
-
-  _encodeQRCodeData(data) {
-    try {
-      const jsonString = JSON.stringify(data);
-      return this._compressAndBase32Encode(jsonString);
-    } catch (encodeJSONError) {
-      console.error(encodeJSONError);
-      throw new Error("Unable to create QR code (JSON encode error).");
-    }
-  }
-
-  _compressAndBase32Encode(jsonString) {
-    try {
-      const compressedBytes = pako.deflate(jsonString, {gzip: true});
-      return this._base32Encode(compressedBytes);
-    } catch(compressionError) {
-      console.error(compressionError);
-      throw new Error("Unable to create QR code (gzip compress error).");
-    }
-  }
-
-  _base32Encode(compressedBytes) {
-    try {
-      const encodedData = base32.encode(compressedBytes);
-      return encodedData;
-    } catch(base32EncodingError) {
-      console.error(base32EncodingError);
-      throw new Error("Unable to create QR code (Base32 encode error).");
-    }
-  }
-
 }
 
 /**
- * Base class for exports from Hermit (SLIP39) sharded wallet
- * Adds message for extended classes, mainly for internal use
+ * Encode the given `data` as a string to be put into a
+ * Hermit-readable QR code.
+ *
+ * @param {object} data plain JavaScript object to encode
+ * @returns {string} base32-encoded, gzipped, JSON data
+ */
+export function encodeHermitQRCodeData(data) {
+  const errorPrefix = "Unable to create QR code";
+  try {
+    const jsonString = JSON.stringify(data);
+    try {
+      const compressedBytes = pako.deflate(jsonString, {gzip: true});
+      try {
+        return base32.encode(compressedBytes);
+      } catch(e) {
+        throw new Error(`${errorPrefix} (Base32 encode error)`);
+      }
+    } catch(e) {
+      if (e.message &amp;&amp; e.message.startsWith(errorPrefix)) { 
+        throw(e);
+      } else {
+        throw new Error(`${errorPrefix} (gzip compression error)`);
+      }
+    }
+  } catch(e) {
+    if (e.message &amp;&amp; e.message.startsWith(errorPrefix)) { 
+      throw(e);
+    } else {
+      throw new Error(`${errorPrefix} (JSON encode error)`);
+    }
+  }
+}
+
+function commandMessage(data) {
+  return {
+    ...{
+      state: PENDING,
+      level: INFO,
+      code: "hermit.command",
+      mode: "wallet",
+    },
+    ...{text: `${data.instructions} '${data.command}'`},
+    ...data,
+  };
+}
+
+/**
+ * Base class for interactions with Hermit.
+ * 
+ * @extends {module:interaction.IndirectKeystoreInteraction}
+ */
+export class HermitInteraction extends IndirectKeystoreInteraction {
+}
+
+/**
+ * Base class for interactions which read a QR code displayed by a
+ * Hermit command.
+ * 
  * @extends {module:hermit.HermitInteraction}
  */
-export class HermitExport extends HermitInteraction { // TODO: should this be exported?
+export class HermitReader extends HermitInteraction {
+
+  constructor() {
+    super();
+    this.reader = true;
+  }
 
   messages() {
     const messages = super.messages();
-    messages[ACTIVE].push({
+    messages.push({
+      state: ACTIVE,
       level: INFO,
       code: "hermit.scanning",
       text: "Scan Hermit QR code now.",
@@ -138,56 +180,63 @@ export class HermitExport extends HermitInteraction { // TODO: should this be ex
 }
 
 /**
- * Class for wallet public key interaction for use with QR scanner
- * @extends {module:hermit.HermitExport}
+ * Base class for interactions which display data as a QR code for
+ * Hermit to read and then read the QR code Hermit displays in
+ * response.
+ * 
+ * @extends {module:hermit.HermitInteraction}
  */
-export class HermitExportPublicKey extends HermitExport {
+export class HermitDisplayer extends HermitReader {
 
-  /**
-   * @example
-   * const hermitKeyExporter = new HermitExportPublicKey()
-   */
-  constructor({network, bip32Path}) {
-    // TODO: are these really needed?  The path seems to come from QR and the network is not referred to.
-    super({network});
+  constructor() {
+    super();
+    this.displayer = true;
+  }
+
+}
+
+
+/**
+ * Reads a public key from data in a Hermit QR code.
+ * 
+ * @extends {module:hermit.HermitReader}
+ * @example
+ * const interaction = new HermitExportPublicKey();
+ * const encodedString = readHermitQRCode(); // application dependent
+ * const {pubkey, bip32Path} = interaction.parse(encoodedString);
+ * console.log(pubkey);
+ * // "03..."
+ * console.log(bip32Path);
+ * // "m/45'/0'/0'/0/0"
+ */
+export class HermitExportPublicKey extends HermitReader {
+
+  constructor({bip32Path}) {
+    super();
     this.bip32Path = bip32Path;
   }
 
   messages() {
     const messages = super.messages();
-    const instructions = "Run the following Hermit command, replacing the BIP32 path if you need to:";
-    const mode = "wallet";
-    const command = `export-pub ${this.bip32Path}`;
-    messages[PENDING].push({
-      level:INFO,
-      code: "hermit.command",
-      instructions,
-      mode,
-      command,
-      text: `${instructions} '${command}'`
-    });
-
+    messages.push(commandMessage({
+      instructions: "Run the following Hermit command, replacing the BIP32 path if you need to:",
+      command: `export-pub ${this.bip32Path}`,
+    }));
     return messages;
   }
 
-  /**
-   * Convert base64 encoded QR code to public key and BIP32 path
-   * @param {string} encodedString - base64 encoded QR code from Hermit
-   * @returns {object} public key and BIP32 path
-   * @example
-   * const keyInfo = hermitKeyExporter.run();
-   * console.log(keyInfo);
-   * // {pubkey:"...", bip32Path:"m/48'..."}
-   */
   parse(encodedString) {
-    const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey} = result;
+    const result = parseHermitQRCodeData(encodedString);
+    const {xpub, pubkey, bip32Path} = result;
     if (!pubkey) {
       if (xpub) {
         throw new Error("Make sure you export a plain public key and NOT an extended public key.");
       } else {
-        throw new Error("Did not receive a public key.");
+        throw new Error("No public key in QR code.");
       }
+    }
+    if (!bip32Path) {
+      throw new Error("No BIP32 path in QR code.");
     }
     return result;
   }
@@ -195,51 +244,46 @@ export class HermitExportPublicKey extends HermitExport {
 }
 
 /**
- * Class for wallet extended public key interaction for use with QR scanner
- * @extends {module:hermit.HermitExport}
+ * Reads an extended public key from data in a Hermit QR code.
+ * 
+ * @extends {module:hermit.HermitReader}
+ * @example
+ * const interaction = new HermitExportExtendedPublicKey();
+ * const encodedString = readHermitQRCode(); // application dependent
+ * const {xpub, bip32Path} = interaction.parse(encoodedString);
+ * console.log(xpub);
+ * // "xpub..."
+ * console.log(bip32Path);
+ * // "m/45'/0'/0'"
  */
-export class HermitExportExtendedPublicKey extends HermitExport {
+export class HermitExportExtendedPublicKey extends HermitReader {
 
-  constructor({network, bip32Path}) { // TODO: I don't think network is needed here either, encoded in QR
-    super({network});
+  constructor({bip32Path}) {
+    super();
     this.bip32Path = bip32Path;
   }
 
   messages() {
     const messages = super.messages();
-    const instructions = "Run the following Hermit command, replacing the BIP32 path if you need to:";
-    const mode = "wallet";
-    const command = `export-xpub ${this.bip32Path}`;
-    messages[PENDING].push({
-      level:INFO,
-      code: "hermit.command",
-      instructions,
-      mode,
-      command,
-      text: `${instructions} '${command}'`
-    });
-
+    messages.push(commandMessage({
+      instructions: "Run the following Hermit command, replacing the BIP32 path if you need to:",
+      command: `export-xpub ${this.bip32Path}`,
+    }));
     return messages;
   }
 
-  /**
-   * Convert base64 encoded QR code to an extended public key and BIP32 path
-   * @param {string} encodedString - base64 encoded QR code from Hermit
-   * @returns {object} extended public key and BIP32 path
-   * @example
-   * const keyInfo = hermitKeyExporter.parse();
-   * console.log(keyInfo);
-   * // {xpub:"...", bip32Path:"m/48'/..."}
-   */
   parse(encodedString) {
-    const result = this._parseQRCodeData(encodedString);
-    const {xpub, pubkey} = result;
+    const result = parseHermitQRCodeData(encodedString);
+    const {xpub, pubkey, bip32Path} = result;
     if (!xpub) {
       if (pubkey) {
         throw new Error("Make sure you export an extended public key and NOT a plain public key.");
       } else {
-        throw new Error("Did not receive an extended public key.");
+        throw new Error("No extended public key in QR code.");
       }
+    }
+    if (!bip32Path) {
+      throw new Error("No BIP32 path in QR code.");
     }
     return result;
   }
@@ -247,40 +291,49 @@ export class HermitExportExtendedPublicKey extends HermitExport {
 }
 
 /**
- * @extends {module:hermit.HermitExport}
+ * Returns signature request data to display in a QR code for Hermit
+ * and reads the signature data passed back by Hermit in another QR
+ * code.
+ *
+ * NOTE: Transactions with inputs &amp; outputs to non-P2SH addresses are not supported by Hermit.
+ * 
+ * @extends {module:hermit.HermitDisplayer}
+ * @example
+ * const interaction = new HermitSignTransaction({inputs, outputs, bip32Paths});
+ * console.log(interaction.request());
+ * // "IJQXGZI..."
+ * 
+ * // Display a QR code containing the above data to Hermit running
+ * // `sign-bitcoin` and it will return another QR code which needs
+ * // parsed.
+ * const encodedString = readHermitQRCode(); // application dependent
+ * const signatures = interaction.parse(encoodedString);
+ * console.log(signatures);
+ * // ["ababa...01", ... ]
+ * 
  */
-export class HermitSignTransaction extends HermitExport {
+export class HermitSignTransaction extends HermitDisplayer {
 
   /**
    *
-   * @param {object} options
-   * @param {string} options.network - bitcoin network
+   * @param {object} options - options argument
    * @param {array&lt;object>} options.inputs - inputs for the transaction
    * @param {array&lt;object>} options.outputs - outputs for the transaction
    * @param {array&lt;string>} options.bip32Paths - BIP32 paths
    */
-  constructor({network, inputs, outputs, bip32Paths}) { // TODO: check params here also
-    super({network});
+  constructor({inputs, outputs, bip32Paths}) {
+    super();
     this.inputs = inputs;
     this.outputs = outputs;
     this.bip32Paths = bip32Paths;
-    this.supported = true;
     this.inputAddressType = '';
 
   }
 
-  /**
-   * Determine if a transaction is supported by Hermit signing
-   * @override
-   * @returns {boolean}
-   */
   isSupported() {
     return this.inputsAreSupported() &amp;&amp; this.outputsAreSupported();
   }
 
-  /**
-   * @private
-   */
   outputsAreSupported() {
     if (this.outputs &amp;&amp; this.outputs.length) {
       for (let i=0; i &lt; this.outputs.length; i++) {
@@ -293,9 +346,6 @@ export class HermitSignTransaction extends HermitExport {
     return true;
   }
 
-  /**
-   * @private
-   */
   inputsAreSupported() {
     if (this.inputs &amp;&amp; this.inputs.length) {
       for (let i=0; i &lt; this.inputs.length; i++) {
@@ -308,14 +358,15 @@ export class HermitSignTransaction extends HermitExport {
         }
       }
     }
-    return true
+    return true;
   }
 
   messages() {
     const messages = super.messages();
 
     if (!this.inputsAreSupported()) {
-      messages[UNSUPPORTED].push({
+      messages.push({
+        statet: UNSUPPORTED,
         level: ERROR,
         code: "hermit.unsupported.inputaddress",
         text: `Unsupported input address type ${this.inputAddressType}, must be P2SH.`
@@ -323,7 +374,8 @@ export class HermitSignTransaction extends HermitExport {
     }
 
     if (!this.outputsAreSupported()) {
-      messages[UNSUPPORTED].push({
+      messages.push({
+        state: UNSUPPORTED,
         level: ERROR,
         code: "hermit.unsupported.outputaddress",
         text: `Unsupported output address type. bech32 addresses are unsupported.`
@@ -331,31 +383,16 @@ export class HermitSignTransaction extends HermitExport {
     }
 
     if (!this.inputsAreSupported() || !this.outputsAreSupported()) return messages;
-
-    const instructions = "Scan this QR code into Hermit by running the following command:";
-    const mode = "wallet";
-    const command = "sign-bitcoin";
-    messages[PENDING].push({
-      level: INFO,
-      code: "hermit.command",
-      instructions,
-      mode,
-      command,
-      text: `${instructions} '${command}'`
-    });
-
-    const data = this.signatureRequestData();
-    const encodedData = this._encodeQRCodeData(data);
-
-    messages[PENDING].push({
-      level: INFO,
-      code: "hermit.signature_request",
-      data,
-      encodedData,
-      text: "Signature Request",
-    });
-
+    messages.push(commandMessage({
+      instructions: "Scan this QR code into Hermit by running the following command:",
+      command: "sign-bitcoin",
+    }));
     return messages;
+  }
+
+  request() {
+    const data = this.signatureRequestData();
+    return encodeHermitQRCodeData(data);
   }
 
   signatureRequestData() {
@@ -370,47 +407,25 @@ export class HermitSignTransaction extends HermitExport {
       hermitInputsByRedeemScript[redeemScriptHex].push({
         txid: input.txid,
         index: input.index,
-        amount: input.amountSats.toNumber(),
+        amount: new BigNumber(input.amountSats).toNumber(),
       });
     }
     return {
       inputs: Object.values(hermitInputsByRedeemScript),
       outputs: this.outputs.map((output) => ({
         address: output.address,
-        amount: output.amountSats.toNumber(),
+        amount: new BigNumber(output.amountSats).toNumber(),
       })),
     };
   }
 
-  /**
-   * Retrieve signatures from Hermit generated QR code for a given transaction
-   * @example
-   * import {generateMultisigFromHex, NETWORKS, MULTISIG_ADDRESS_TYPES} from "unchained-bitcoin";
-   * ...
-   * const input = {
-   *     txid: "8d276c76b3550b145e44d35c5833bae175e0351b4a5c57dc1740387e78f57b11",
-   *     index: 1,
-   *     multisig: generateMultisigFromHex(NETWORKS.TESTNET, MULTISIG_ADDRESS_TYPES.P2SH, redeemScript),
-   *     amountSats: BigNumber(1234000)
-   * }
-   * const output = {
-   *     amountSats: BigNumber(1299659),
-   *     address: "2NGHod7V2TAAXC1iUdNmc6R8UUd4TVTuBmp"
-   * }
-   * const hermitSigner = new HermitSignTransaction({
-   *   network: "testnet",
-   *   inputs: [input],
-   *   outputs: [output],
-   *   bip32Paths: ["m/45'/0'/0'/0"]
-   * });
-   * const signatures = await hermitSigner.parse();
-   * console.log(signatures);
-   * @returns {string} string representation of an array of signatures
-   */
   parse(encodedString) {
-    const result = this._parseQRCodeData(encodedString);
+    const result = parseHermitQRCodeData(encodedString);
     const {signatures} = result;
-    return signatures;
+    if ((! signatures) || signatures.length === 0) {
+      throw new Error("No signatures in QR code.");
+    }
+    return (signatures || []).map((inputSignature) => (`${inputSignature}01`));
   }
 
 }
@@ -424,13 +439,13 @@ export class HermitSignTransaction extends HermitExport {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitExport.html">HermitExport</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-interaction.WalletInteraction.html">WalletInteraction</a></li><li><a href="module-ledger.LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 11 2019 12:02:27 GMT-0600 (Central Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Feb 11 2020 20:25:40 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

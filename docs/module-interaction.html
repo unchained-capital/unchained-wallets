@@ -38,9 +38,13 @@
     <div class="container-overview">
     
         
-            <div class="description">This module provides a base class for interactive messages for wallet interactions.
-Constants are provided for easier interaction with the messages based on state and level
-of the wallet</div>
+            <div class="description"><p>This module provides base classes for modeling interactions with
+keystores.</p>
+<p>It also defines several constants used throughout the API for
+categorizing messages.</p>
+<p>Integrations with new wallets should begin by creating a base class
+for that wallet by subclassing either <code>DirectKeystoreInteraction</code>
+or <code>IndirectKeystoreInteraction</code>.</p></div>
         
 
         
@@ -89,7 +93,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line1">line 1</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line3">line 3</a>
     </li></ul></dd>
     
 
@@ -131,10 +135,16 @@ of the wallet</div>
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
-            <dt><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></dt>
+            <dt><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></dt>
             <dd></dd>
         
-            <dt><a href="module-interaction.WalletInteraction.html">WalletInteraction</a></dt>
+            <dt><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></dt>
             <dd></dd>
         </dl>
     
@@ -156,7 +166,7 @@ of the wallet</div>
 
 
 <div class="description">
-    Active wallet state constant
+    <p>Constant representing a keystore in active use.</p>
 </div>
 
 
@@ -204,7 +214,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line26">line 26</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line39">line 39</a>
     </li></ul></dd>
     
 
@@ -228,7 +238,7 @@ of the wallet</div>
 
 
 <div class="description">
-    Error message level constant
+    <p>Constant for messages at the &quot;error&quot; level.</p>
 </div>
 
 
@@ -276,7 +286,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line44">line 44</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line60">line 60</a>
     </li></ul></dd>
     
 
@@ -300,7 +310,151 @@ of the wallet</div>
 
 
 <div class="description">
-    Info message level constant
+    <p>Constant for messages at the &quot;info&quot; level.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line46">line 46</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".LEVELS"><span class="type-signature">(static, constant) </span>LEVELS<span class="type-signature"> :string</span></h4>
+
+
+
+
+<div class="description">
+    <p>Enumeration of possible message levels (<a href="module-interaction.html#.INFO">INFO</a>|<a href="module-interaction.html#.WARNING">WARNING</a>|<a href="module-interaction.html#.ERROR">ERROR</a>).</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">string</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line80">line 80</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".PENDING"><span class="type-signature">(static, constant) </span>PENDING<span class="type-signature"> :string</span></h4>
+
+
+
+
+<div class="description">
+    <p>Constant representing a keystore pending activation by the user.</p>
 </div>
 
 
@@ -366,13 +520,13 @@ of the wallet</div>
 
         
             
-<h4 class="name" id=".PENDING"><span class="type-signature">(static, constant) </span>PENDING<span class="type-signature"> :string</span></h4>
+<h4 class="name" id=".STATES"><span class="type-signature">(static, constant) </span>STATES<span class="type-signature"> :string</span></h4>
 
 
 
 
 <div class="description">
-    Pending wallet state constant
+    <p>Enumeration of possible keystore states (<a href="module-interaction.html#.PENDING">PENDING</a>|<a href="module-interaction.html#.ACTIVE">ACTIVE</a>|<a href="module-interaction.html#.UNSUPPORTED">UNSUPPORTED</a>).</p>
 </div>
 
 
@@ -420,7 +574,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line20">line 20</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line70">line 70</a>
     </li></ul></dd>
     
 
@@ -444,7 +598,8 @@ of the wallet</div>
 
 
 <div class="description">
-    Unsupported wallet state constant
+    <p>Constant representing a keystore which is unsupported due to the
+kind of interaction or combination of paramters provided.</p>
 </div>
 
 
@@ -492,7 +647,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line14">line 14</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line25">line 25</a>
     </li></ul></dd>
     
 
@@ -516,7 +671,7 @@ of the wallet</div>
 
 
 <div class="description">
-    Warning message level constant
+    <p>Constant for messages at the &quot;warning&quot; level.</p>
 </div>
 
 
@@ -564,7 +719,7 @@ of the wallet</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line38">line 38</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line53">line 53</a>
     </li></ul></dd>
     
 
@@ -586,6 +741,466 @@ of the wallet</div>
     
 
     
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<h4 class="name" id=".Message">Message</h4>
+
+
+
+
+<div class="description">
+    <p>Represents a message returned by an interaction.</p>
+<p>Message objects may have additional properties.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>text</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>message text</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>code</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>a dot-separated message code, e.g. <code>device.connect</code> (<em>Optional for submessages</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>state</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-interaction.html#.STATES">module:interaction.STATES</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>keystore state (<em>Optional for submessages</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>level</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-interaction.html#.LEVELS">module:interaction.LEVELS</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>message level (<em>Optional for submessages</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>keystore version (can be a single version string or a range/spec) (<em>Optional</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>action</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>keystore action user is expected to take (<em>Optional</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>image</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-interaction.html#.MessageImage">module:interaction.MessageImage</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>image for this message (<em>Optional</em>)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>messages</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Message></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>submessages (<em>Optional</em>)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line93">line 93</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id=".MessageImage">MessageImage</h4>
+
+
+
+
+<div class="description">
+    <p>Represents an image in a message returned by an interaction.</p>
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>label</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>a human-readable label for the image</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mimeType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the MIME type of the image</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>base64-encoded image data</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line83">line 83</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
+    
 
     
 </article>
@@ -598,13 +1213,13 @@ of the wallet</div>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitExport.html">HermitExport</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-interaction.WalletInteraction.html">WalletInteraction</a></li><li><a href="module-ledger.LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 11 2019 12:02:27 GMT-0600 (Central Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Feb 11 2020 20:25:40 GMT-0700 (Mountain Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

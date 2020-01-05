@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: LedgerInteraction</title>
+    <title>JSDoc: Class: LedgerDashboardInteraction</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: LedgerInteraction</h1>
+    <h1 class="page-title">Class: LedgerDashboardInteraction</h1>
 
     
 
@@ -29,14 +29,10 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerInteraction<span class="signature">()</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerDashboardInteraction<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Base class for interactions with Ledger hardware wallets.</p>
-<p>Subclasses must implement their own <code>run()</code> method.  They may use
-the <code>withTransport</code> and <code>withApp</code> methods to connect to the Ledger
-API's transport or app layers, respectively.</p>
-<p>Errors are not caught, so users of this class (and its subclasses)
-should use <code>try...catch</code> as always.</p></div>
+            <div class="class-description"><p>Base class for interactions which must occur when the Ledger device
+is not in any app but in the dashboard.</p></div>
         
     
 </header>
@@ -51,7 +47,7 @@ should use <code>try...catch</code> as always.</p></div>
     
 
     
-    <h4 class="name" id="LedgerInteraction"><span class="type-signature"></span>new LedgerInteraction<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LedgerDashboardInteraction"><span class="type-signature"></span>new LedgerDashboardInteraction<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
@@ -99,7 +95,7 @@ should use <code>try...catch</code> as always.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line121">line 121</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line197">line 197</a>
     </li></ul></dd>
     
 
@@ -128,32 +124,6 @@ should use <code>try...catch</code> as always.</p></div>
 
 
 
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>import {LedgerInteraction} from "unchained-wallets";
-// Simple subclass
-
-class SimpleLedgerInteraction extends LedgerInteraction {
-
-  constructor({param}) {
-    super({});
-    this.param =  param;
-  }
-
-  async run() {
-    return await this.withApp(async (app, transport) => {
-      return app.doSomething(this.param); // Not a real Ledger API call
-    });
-  }
-
-}
-
-// usage
-const interaction = new SimpleLedgerInteraction({param: "foo"});
-const result = await interaction.run();
-console.log(result); // whatever value `app.doSomething(...)` returns</code></pre>
-
-
 
     
     </div>
@@ -165,7 +135,7 @@ console.log(result); // whatever value `app.doSomething(...)` returns</code></pr
 
 
     <ul>
-        <li><a href="module-interaction.DirectKeystoreInteraction.html">module:interaction.DirectKeystoreInteraction</a></li>
+        <li><a href="module-ledger.LedgerInteraction.html">module:ledger.LedgerInteraction</a></li>
     </ul>
 
 
@@ -200,10 +170,9 @@ console.log(result); // whatever value `app.doSomething(...)` returns</code></pr
 
 
 <div class="description">
-    <p>Adds <code>pending</code> messages at the <code>info</code> level about ensuring the
-device is plugged in (<code>device.connect</code>) and unlocked
-(<code>device.unlock</code>).  Adds an <code>active</code> message at the <code>info</code> level
-when communicating with the device (<code>device.active</code>).</p>
+    <p>Adds <code>pending</code> and <code>active</code> messages at the <code>info</code> level urging
+the user to be in the Ledger dashboard, not the bitcoin app
+(<code>ledger.app.dashboard</code>).</p>
 </div>
 
 
@@ -227,6 +196,11 @@ when communicating with the device (<code>device.active</code>).</p>
     
 
     
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerInteraction.html#messages">module:ledger.LedgerInteraction#messages</a>
+    </li></ul></dd>
+    
 
     
 
@@ -247,7 +221,7 @@ when communicating with the device (<code>device.active</code>).</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line131">line 131</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line206">line 206</a>
     </li></ul></dd>
     
 
@@ -276,7 +250,7 @@ when communicating with the device (<code>device.active</code>).</p>
 
         
 <div class="param-desc">
-    <p>messages for ths interaction</p>
+    <p>messages for this interaction</p>
 </div>
 
 
@@ -755,6 +729,11 @@ API as the second.</p>
     
 
     
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerInteraction.html#withApp">module:ledger.LedgerInteraction#withApp</a>
+    </li></ul></dd>
+    
 
     
 
@@ -928,6 +907,11 @@ to the function.</p>
 
     
 
+    
+    <dt class="inherited-from">Inherited From:</dt>
+    <dd class="inherited-from"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerInteraction.html#withTransport">module:ledger.LedgerInteraction#withTransport</a>
+    </li></ul></dd>
     
 
     

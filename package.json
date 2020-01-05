@@ -26,11 +26,13 @@
     "mocha": "^6.2.2"
   },
   "scripts": {
-    "compile": "babel -d lib/ src/",
+    "compile-images": "node images/compile.js",
+    "compile": "babel -d lib/ src/ && npm run compile-images",
     "prepublish": "npm run compile",
     "pretest": "npm run compile",
+    "prepare": "npm run compile",
     "test": "jest lib",
-    "docs": "jsdoc -d docs -r src README.md",
+    "docs": "jsdoc -c docs/config.json -d docs -r src README.md",
     "lint": "eslint src"
   },
   "bin": {},
@@ -40,13 +42,14 @@
     "@ledgerhq/hw-transport-node-hid": "^4.22.0",
     "@ledgerhq/hw-transport-u2f": "^4.21.0",
     "bignumber.js": "^8.1.1",
+    "bitcoinjs-lib": "^4.0.5",
     "bowser": "^2.6.1",
     "core-js": "^2.6.10",
     "hi-base32": "^0.5.0",
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
-    "trezor-connect": "^7.0.5",
-    "unchained-bitcoin": "^0.0.6"
+    "trezor-connect": "^8.0.13",
+    "unchained-bitcoin": "0.0.7"
   },
   "directories": {
     "lib": "lib"

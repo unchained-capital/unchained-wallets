@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: LedgerInteraction</title>
+    <title>JSDoc: Class: LedgerExportHDNode</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: LedgerInteraction</h1>
+    <h1 class="page-title">Class: LedgerExportHDNode</h1>
 
     
 
@@ -29,14 +29,11 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerInteraction<span class="signature">()</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-ledger.html">ledger</a>~</span>LedgerExportHDNode<span class="signature">(options, bip32Path)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Base class for interactions with Ledger hardware wallets.</p>
-<p>Subclasses must implement their own <code>run()</code> method.  They may use
-the <code>withTransport</code> and <code>withApp</code> methods to connect to the Ledger
-API's transport or app layers, respectively.</p>
-<p>Errors are not caught, so users of this class (and its subclasses)
-should use <code>try...catch</code> as always.</p></div>
+            <div class="class-description"><p>Base class for interactions exporting information about an HD node
+at a given BIP32 path.</p>
+<p>You may want to use <code>LedgerExportPublicKey</code> directly.</p></div>
         
     
 </header>
@@ -51,19 +48,95 @@ should use <code>try...catch</code> as always.</p></div>
     
 
     
-    <h4 class="name" id="LedgerInteraction"><span class="type-signature"></span>new LedgerInteraction<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LedgerExportHDNode"><span class="type-signature"></span>new LedgerExportHDNode<span class="signature">(options, bip32Path)</span><span class="type-signature"></span></h4>
     
 
     
 
 
 
+<div class="description">
+    <p>Requires a valid BIP32 path to the node to export.</p>
+</div>
 
 
 
 
 
 
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>options argument</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>bip32Path</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the BIP32 path for the HD node</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -99,7 +172,7 @@ should use <code>try...catch</code> as always.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line121">line 121</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line434">line 434</a>
     </li></ul></dd>
     
 
@@ -130,28 +203,11 @@ should use <code>try...catch</code> as always.</p></div>
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>import {LedgerInteraction} from "unchained-wallets";
-// Simple subclass
-
-class SimpleLedgerInteraction extends LedgerInteraction {
-
-  constructor({param}) {
-    super({});
-    this.param =  param;
-  }
-
-  async run() {
-    return await this.withApp(async (app, transport) => {
-      return app.doSomething(this.param); // Not a real Ledger API call
-    });
-  }
-
-}
-
-// usage
-const interaction = new SimpleLedgerInteraction({param: "foo"});
-const result = await interaction.run();
-console.log(result); // whatever value `app.doSomething(...)` returns</code></pre>
+    <pre class="prettyprint"><code>import {MAINNET} from "unchained-bitcoin";
+import {LedgerExportHDNode} from "unchained-wallets";
+const interaction = new LedgerExportHDNode({network: MAINNET, bip32Path: "m/48'/0'/0'/2'/0"});
+const node = await interaction.run();
+console.log(node);</code></pre>
 
 
 
@@ -165,7 +221,7 @@ console.log(result); // whatever value `app.doSomething(...)` returns</code></pr
 
 
     <ul>
-        <li><a href="module-interaction.DirectKeystoreInteraction.html">module:interaction.DirectKeystoreInteraction</a></li>
+        <li><a href="module-ledger.LedgerBitcoinInteraction.html">module:ledger.LedgerBitcoinInteraction</a></li>
     </ul>
 
 
@@ -192,7 +248,7 @@ console.log(result); // whatever value `app.doSomething(...)` returns</code></pr
     
 
     
-    <h4 class="name" id="messages"><span class="type-signature"></span>messages<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>>}</span></h4>
+    <h4 class="name" id="hasBIP32PathWarning"><span class="type-signature"></span>hasBIP32PathWarning<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
     
 
     
@@ -200,10 +256,19 @@ console.log(result); // whatever value `app.doSomething(...)` returns</code></pr
 
 
 <div class="description">
-    <p>Adds <code>pending</code> messages at the <code>info</code> level about ensuring the
-device is plugged in (<code>device.connect</code>) and unlocked
-(<code>device.unlock</code>).  Adds an <code>active</code> message at the <code>info</code> level
-when communicating with the device (<code>device.active</code>).</p>
+    <p>Returns whether or not the Ledger device will display a warning
+to the user about an unusual BIP32 path.</p>
+<p>A &quot;usual&quot; BIP32 path is exactly 5 segments long.  The segments
+have the following constraints:</p>
+<ul>
+<li>Segment 1: Must be equal to <code>44'</code></li>
+<li>Segment 2: Can have any value</li>
+<li>Segment 3: Must be between <code>0'</code> and <code>100'</code></li>
+<li>Segment 4: Must be equal to <code>0</code></li>
+<li>Segment 5: Must be between <code>0 and 50000</code></li>
+</ul>
+<p>Any other kind of path is considered unusual and will trigger the
+warning.</p>
 </div>
 
 
@@ -247,7 +312,7 @@ when communicating with the device (<code>device.active</code>).</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line131">line 131</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line557">line 557</a>
     </li></ul></dd>
     
 
@@ -276,7 +341,122 @@ when communicating with the device (<code>device.active</code>).</p>
 
         
 <div class="param-desc">
-    <p>messages for ths interaction</p>
+    <p>whether a BIP32 path warning will be displayed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="messages"><span class="type-signature"></span>messages<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Adds messages related to the warnings Ledger devices produce on various BIP32 paths.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#messages">module:ledger.LedgerBitcoinInteraction#messages</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line444">line 444</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>messages for this interaction</p>
 </div>
 
 
@@ -335,12 +515,12 @@ when communicating with the device (<code>device.active</code>).</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.DirectKeystoreInteraction.html#parse">module:interaction.DirectKeystoreInteraction#parse</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#parse">module:ledger.LedgerBitcoinInteraction#parse</a>
+    </li></ul></dd>
     
 
     
@@ -458,12 +638,12 @@ when communicating with the device (<code>device.active</code>).</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.DirectKeystoreInteraction.html#request">module:interaction.DirectKeystoreInteraction#request</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#request">module:ledger.LedgerBitcoinInteraction#request</a>
+    </li></ul></dd>
     
 
     
@@ -551,7 +731,7 @@ when communicating with the device (<code>device.active</code>).</p>
     
 
     
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
     
 
     
@@ -559,10 +739,7 @@ when communicating with the device (<code>device.active</code>).</p>
 
 
 <div class="description">
-    <p>Initiate the intended interaction and return a result.</p>
-<p>Subclasses <em>must</em> override this function.  This function must
-always return a promise as it is designed to be called within an
-<code>await</code> block.</p>
+    <p>See <a href="https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc#getwalletpublickey">https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc#getwalletpublickey</a>.</p>
 </div>
 
 
@@ -584,12 +761,12 @@ always return a promise as it is designed to be called within an
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.DirectKeystoreInteraction.html#run">module:interaction.DirectKeystoreInteraction#run</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#run">module:ledger.LedgerBitcoinInteraction#run</a>
+    </li></ul></dd>
     
 
     
@@ -611,7 +788,7 @@ always return a promise as it is designed to be called within an
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line478">line 478</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line580">line 580</a>
     </li></ul></dd>
     
 
@@ -640,7 +817,7 @@ always return a promise as it is designed to be called within an
 
         
 <div class="param-desc">
-    <p>Does the work of interacting with the keystore.</p>
+    <p>the HD node object.</p>
 </div>
 
 
@@ -651,7 +828,7 @@ always return a promise as it is designed to be called within an
     </dt>
     <dd>
         
-<span class="param-type">Promise</span>
+<span class="param-type">object</span>
 
 
     </dd>
@@ -756,6 +933,11 @@ API as the second.</p>
 
     
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#withApp">module:ledger.LedgerBitcoinInteraction#withApp</a>
+    </li></ul></dd>
     
 
     
@@ -930,6 +1112,11 @@ to the function.</p>
 
     
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-ledger.LedgerBitcoinInteraction.html#withTransport">module:ledger.LedgerBitcoinInteraction#withTransport</a>
+    </li></ul></dd>
     
 
     
