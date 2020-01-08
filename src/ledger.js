@@ -16,12 +16,16 @@
  */
 import BigNumber from "bignumber.js";
 import {
+  bip32PathToSequence,
+  hardenedBIP32Index,
   compressPublicKey,
   scriptToHex,
   multisigRedeemScript,
   multisigWitnessScript,
-  NETWORKS,
-  MULTISIG_ADDRESS_TYPES,
+  TESTNET,
+  P2SH,
+  P2SH_P2WSH,
+  P2WSH,
   multisigAddressType,
 } from "unchained-bitcoin";
 
@@ -47,6 +51,34 @@ const bitcoin = require('bitcoinjs-lib');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
+
+/**
+ * Constant representing the action of pushing the left button on a
+ * Ledger device.
+ *
+ * @type {string}
+ * @default 'ledger_left_button'
+ */
+export const LEDGER_LEFT_BUTTON = 'ledger_left_button';
+
+/**
+ * Constant representing the action of pushing the right button on a
+ * Ledger device.
+ *
+ * @type {string}
+ * @default 'ledger_right_button'
+ */
+export const LEDGER_RIGHT_BUTTON = 'ledger_right_button';
+
+/**
+ * Constant representing the action of pushing both buttons on a
+ * Ledger device..
+ *
+ * @type {string}
+ * @default 'ledger_both_buttons'
+ */
+export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
+
 
 /**
  * Base class for interactions with Ledger hardware wallets.
@@ -96,9 +128,9 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger device is plugged in.", code: "device.connect"});
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have unlocked your Ledger device.", code: "device.unlock"});
-    messages.push({state: ACTIVE, level: INFO, text: "Communicating with Ledger device...", code: "device.active"});
+    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger is plugged in.", code: "device.connect"});
+    messages.push({state: PENDING, level: INFO, text: "Make sure you have unlocked your Ledger.", code: "device.unlock"});
+    messages.push({state: ACTIVE, level: INFO, text: "Communicating with Ledger...", code: "device.active"});
     return messages;
   }
 
@@ -388,7 +420,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
 class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
-   * Requires a BIP32 path to the node to export.
+   * Requires a valid BIP32 path to the node to export.
    * 
    * @param {object} options
    * @param {string} bip32Path - the BIP32 path for the HD node
@@ -406,70 +438,138 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   messages() {
     const messages = super.messages();
 
-    messages.push({
-      state: ACTIVE, 
-      level: WARNING, 
-      version: "<1.6.0",
-      text: "Your Ledger will display a 'WARNING!' message because it doesn't understand standards for multisig addresses.  It is safe to continue.",
-      code: "ledger.path.warning",
-      steps: [
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[0],
-          text: "Your Ledger will display a WARNING message.  Click BOTH buttons to continue."
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[1],
-          text: "Your Ledger will display a message about an unusual derivation path.  Click BOTH buttons to continue.",
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[2],
-          text: `Your Ledger will display the derivation path "${this.bip32Path}" .  Click BOTH buttons to continue.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[3],
-          text: `Your Ledger will ask if you're sure.  Click the RIGHT button to continue.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[4],
-          text: `Your Ledger will will display a bitcoin address.  Click the RIGHT button to continue.`,
-        },
-      ],
-    });
-    messages.push({
-      state: ACTIVE, 
-      level: WARNING, 
-      version: ">=1.6.0",
-      text: "Your Ledger will display a message stating the BIP32 path is unusual.  It is safe to continue.",
-      code: "ledger.path.warning",
-      steps: [
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[1], // FIXME update image
-          text: "Your Ledger will display a message about an unusual derivation path.  Click the RIGHT button to continue.",
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[2], // FIXME update image
-          text: `Your Ledger will display the derivation path "${this.bip32Path}".  Click the RIGHT button to continue.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[3], // FIXME update image
-          text: `Your Ledger will ask if you want to reject this request.  Click the RIGHT button to continue.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[3], // FIXME update image
-          text: `Your Ledger will ask if you want to approve ths request.  Click BOTH buttons to do so.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[4], // FIXME update image
-          text: `Your Ledger will display a bitcoin address.  Click the RIGHT button until you scroll past the entire address text.`,
-        },
-        {
-          image: IMAGES[LEDGER].bip32PathWarningV1[3], // FIXME update image
-          text: `Your Ledger will ask you if you to approve this request.  Click BOTH buttons to do so.`,
-        },
+    if (this.hasBIP32PathWarning()) { 
 
-      ],
+      messages.push({
+        state: ACTIVE, 
+        level: WARNING, 
+        version: "<1.6.0",
+        text: `Your Ledger will display a "WARNING!" message.  It is safe to continue through the prompts till you see a bitcoin address.`,
+        code: "ledger.path.warning",
+        messages: [
+          {
+            image: IMAGES[LEDGER].warning,
+            text: `Your Ledger will display a "WARNING!" message.`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+          {
+            image: IMAGES[LEDGER].derivationPathIsUnusualV1,
+            text: `Your Ledger will display a message saying the "derivation path is unusual".`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+          {
+            image: IMAGES[LEDGER].derivationPathV1,
+            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+          {
+            image: IMAGES[LEDGER].rejectIfNotSureV1,
+            text: `Your Ledger will ask if you to "Reject if you're not sure".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+        ],
+      });
+
+      messages.push({
+        state: ACTIVE, 
+        level: WARNING, 
+        version: ">=1.6.0",
+        text: `Your Ledger will display a message saying "derivation path is unusual".  It is safe to continue through the prompts till you see a bitcoin address.`,
+        code: "ledger.path.warning",
+        messages: [
+          {
+            text: "Your Ledger will display a message about an unusual derivation path.",
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask if you want to "Approve derivation path".`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+        ],
+      });
+
+    }
+  
+    messages.push({
+      state: ACTIVE, 
+      level: INFO, 
+      version: "<1.6.0",
+      text: `Your Ledger will scroll a bitcoin address across its screen.`,
+      code: "ledger.export.hdnode",
+      image: IMAGES[LEDGER].addressScrollV1,
+      action: LEDGER_RIGHT_BUTTON,
     });
+
+    messages.push({
+      state: ACTIVE, 
+      level: INFO, 
+      version: ">=1.6.0",
+      text: `Your Ledger will display a bitcoin address in several parts.  Approve exporting the corresponding public key.`,
+      code: "ledger.export.hdnode",
+      messages: [
+        {
+          text: `Your Ledger will display a bitcoin address in several parts.`,
+          action: LEDGER_RIGHT_BUTTON,
+        },
+        {
+          text: `Your Ledger will ask you if want to "Approve" this request.`,
+          action: LEDGER_BOTH_BUTTONS,
+        },
+      ],
+
+    });
+    
     return messages;
+  }
+
+  /**
+   * Returns whether or not the Ledger device will display a warning
+   * to the user about an unusual BIP32 path.
+   *
+   * A "usual" BIP32 path is exactly 5 segments long.  The segments
+   * have the following constraints:
+   *
+   * - Segment 1: Must be equal to `44'`
+   * - Segment 2: Can have any value
+   * - Segment 3: Must be between `0'` and `100'`
+   * - Segment 4: Must be equal to `0`
+   * - Segment 5: Must be between `0 and 50000`
+   *
+   * Any other kind of path is considered unusual and will trigger the
+   * warning.
+   *
+   * @returns {boolean}
+   */
+  hasBIP32PathWarning() {
+    // 0 -> 44'
+    // 1 -> anything
+    // 2 -> 0' - 100'
+    // 3 -> 0
+    // 4 -> 0 - 50000
+    const indices = bip32PathToSequence(this.bip32Path);
+    // FIXME  -- Error when calling `hardenedBIP32Index` here for some reason?
+    // const hardened0   = hardenedBIP32Index(0);
+    // const hardened44  = hardenedBIP32Index(44);
+    // const hardened100 = hardenedBIP32Index(100);
+
+    const hardeningOffset = Math.pow(2, 31);
+    const hardened0   =   0 + hardeningOffset;
+    const hardened44  =  44 + hardeningOffset;
+    const hardened100 = 100 + hardeningOffset;
+    if (indices.length !== 5) { return true; }
+    if (indices[0] !== hardened44) { return true; }
+    if (indices[2] < hardened0 || indices[2] > hardened100) { return true; }
+    if (indices[3] !== 0) { return true; }
+    if (indices[4] < 0 || indices[4] > 50000) { return true; }
+    return false;
   }
 
   /**
@@ -595,8 +695,128 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    */
   messages() {
     const messages = super.messages();
-    // FIXME add messages!
+
+    messages.push({
+      state: ACTIVE,
+      level: WARNING,
+      code: "ledger.sign.delay",
+      text: `Your Ledger device may take up to several minutes to process a transaction with many inputs.`,
+      preProcessingTime: this.preProcessingTime(),
+      postProcessingTime: this.postProcessingTime(),
+    });
+
+    if (this.anySegwitInputs()) {
+
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.sign",
+        version: "<1.6.0",
+        text: `Your Ledger will ask you to "Confirm transaction" and display each output amount and address followed by the the fee amount.`,
+        action: LEDGER_RIGHT_BUTTON,
+      });
+
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.sign",
+        version: ">=1.6.0",
+        text: `Confirm each output on your Ledger device and approve the transaction.`,
+        messages: [
+          {
+            text: `Your Ledger will ask you to "Review transaction".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `For each output, your Ledger device will display the output amount...`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `...followed by the output address in several parts`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will display the transaction fees.`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask you to "Accept and send".`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+        ],
+      });
+
+    } else {
+
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.sign",
+        version: "<1.6.0",
+        text: `Confirm each output on your Ledger device and approve the transaction.`,
+        messages: [
+          {
+            text: `For each output, your Ledger will display the output amount and address for you to confirm.`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask if you want to "Confirm the transaction".  Due to a bug in the Ledger software, your device may display the transaction fee as "UNKNOWN".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+        ],
+      });
+
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.sign",
+        version: ">=1.6.0",
+        text: `Confirm each output on your Ledger device and approve the transaction.`,
+        messages: [
+          {
+            text: `For each output, your Ledger will ask you to "Review output".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will display the output amount.`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will display the output address in several parts.`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask if you want to "Accept" the output.`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+          {
+            text: `Your Ledger will ask if you want to "Confirm the transaction".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Due to a bug in the Ledger software, your device will display the transaction fee as "UNKNOWN".`,
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: `Your Ledger will ask you to "Accept and send".`,
+            action: LEDGER_BOTH_BUTTONS,
+          },
+        ],
+      });
+
+    }
+
     return messages;
+  }
+
+  preProcessingTime() {
+    // FIXME
+    return 10;
+  }
+
+  postProcessingTime() {
+    // FIXME
+    return 10;
   }
 
   /**
@@ -624,7 +844,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return this.inputs.map(input => {
       const addressType = multisigAddressType(input.multisig);
       const inputTransaction = app.splitTransaction(input.transactionHex, true); // FIXME: should the 2nd parameter here always be true?
-      const scriptFn = (addressType === MULTISIG_ADDRESS_TYPES.P2SH ? multisigRedeemScript : multisigWitnessScript);
+      const scriptFn = (addressType === P2SH ? multisigRedeemScript : multisigWitnessScript);
       const scriptHex = scriptToHex(scriptFn(input.multisig));
       return [inputTransaction, input.index, scriptHex]; // can add sequence number for RBF as an additional element
     });
@@ -639,7 +859,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     // result...
     let txTmp = new bitcoin.TransactionBuilder();
     txTmp.setVersion(1);
-    if (this.network === NETWORKS.TESTNET) {
+    if (this.network === TESTNET) {
       txTmp.network = bitcoin.networks.testnet;
     }
     for (var i = 0; i < this.outputs.length; i++) {
@@ -663,7 +883,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     for (let i=0; i<this.inputs.length; i++) {
       const input = this.inputs[i];
       const addressType = multisigAddressType(input.multisig);
-      if (addressType === MULTISIG_ADDRESS_TYPES.P2SH_P2WSH || addressType === MULTISIG_ADDRESS_TYPES.P2WSH) {
+      if (addressType === P2SH_P2WSH || addressType === P2WSH) {
         return true;
       }
     }

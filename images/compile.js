@@ -15,34 +15,32 @@ function base64Data(imagePath) {
 
 const IMAGES = {
   ledger: {
-    bip32PathWarningV1: [
-      {
-        label: "Ledger screen displaying a `WARNING!` message.",
-        mimeType: "image/png",
-        data: base64Data("ledger/bip32PathWarningV1/1-Warning.png"),
-      },
-      {
-        label: "Ledger screen displaying a message about an 'unusual path'.",
-        mimeType: "image/png",
-        data: base64Data("ledger/bip32PathWarningV1/2-PathUnusual.png"),
-      },
-      {
-        label: "Ledger screen displaying a derivation path.",
-        mimeType: "image/png",
-        data: base64Data("ledger/bip32PathWarningV1/3-Path.png"),
-      },
-      {
-        label: "Ledger screen displaying a prompt about being sure.",
-        mimeType: "image/png",
-        data: base64Data("ledger/bip32PathWarningV1/4-NotSure.png"),
-      },
-      {
-        label: "Ledger screen displaying a bitcoin address.",
-        mimeType: "image/png",
-        data: base64Data("ledger/bip32PathWarningV1/5-Address.png"),
-      },
-    ],
+    warning: {
+      label: "Ledger screen displaying a `WARNING!` message.",
+      mimeType: "image/png",
+      data: base64Data("ledger/warning.png"),
+    },
+    derivationPathIsUnusualV1: {
+      label: "Ledger screen displaying a message about an 'unusual path'.",
+      mimeType: "image/png",
+      data: base64Data("ledger/derivationPathIsUnusualV1.png"),
+    },
+    derivationPathV1: {
+      label: "Ledger screen displaying a derivation path.",
+      mimeType: "image/png",
+      data: base64Data("ledger/derivationPathV1.png"),
+    },
+    rejectIfNotSureV1: {
+      label: "Ledger screen displaying a prompt about being sure.",
+      mimeType: "image/png",
+      data: base64Data("ledger/rejectIfNotSureV1.png"),
+    },
+    addressScrollV1: {
+      label: "Ledger screen displaying a bitcoin address.",
+      mimeType: "image/png",
+      data: base64Data("ledger/addressScrollV1.png"),
+    },
   }
 };
 
-fs.writeFileSync(path.join(imagesDir, '../src/images.js'), "export default " + JSON.stringify(IMAGES) + ";");
+fs.writeFileSync(path.join(imagesDir, '../lib/images.js'), "export default " + JSON.stringify(IMAGES) + ";");

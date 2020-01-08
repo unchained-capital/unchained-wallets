@@ -100,8 +100,9 @@ export const LEVELS = [INFO, WARNING, ERROR];
  * @property {module:interaction.STATES} state - keystore state (*Optional for submessages*)
  * @property {module:interaction.LEVELS} level - message level (*Optional for submessages*)
  * @property {string} version - keystore version (can be a single version string or a range/spec) (*Optional*)
+ * @property {string} action - keystore action user is expected to take (*Optional*)
  * @property {module:interaction.MessageImage} image - image for this message (*Optional*)
- * @property {Message[]} steps - submessages (*Optional*)
+ * @property {Message[]} messages - submessages (*Optional*)
  */
 
 /**
@@ -288,8 +289,8 @@ export class KeystoreInteraction {
    * @param {string|regexp} options.version - version must match this regular expression
    * @returns {boolean}
    */
-  hasMessagesFor({state, level, code, text}) {
-    return this.messagesFor({state, level, code, text}).length > 0;
+  hasMessagesFor({state, level, code, text, version}) {
+    return this.messagesFor({state, level, code, text, version}).length > 0;
   }
 
   /**
@@ -303,8 +304,8 @@ export class KeystoreInteraction {
    * @param {string|regexp} options.version - version must match this regular expression
    * @returns {module:interaction.Message|null} the first matching `Message` object (or `null` if none is found)
    */
-  messageFor({state, level, code, text}) {
-    const messages = this.messagesFor({state, level, code, text});
+  messageFor({state, level, code, text, version}) {
+    const messages = this.messagesFor({state, level, code, text, version});
     if (messages.length > 0) { return messages[0]; }
     return null;
   }
@@ -321,8 +322,8 @@ export class KeystoreInteraction {
    * @param {string|regexp} options.version - version must match this regular expression
    * @returns {string|null} the text of the first matching message (or `null` if none is found)
    */
-  messageTextFor({state, level, code, text}) {
-    const message = this.messageFor({state, level, code, text});
+  messageTextFor({state, level, code, text, version}) {
+    const message = this.messageFor({state, level, code, text, version});
     return (message ? message.text : null);
   }
 
