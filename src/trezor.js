@@ -67,7 +67,9 @@ try {
 } catch(e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
-  console.error("Unable to call TrezorConnect.manifest.");
+  if (process.env.NODE_ENV !== 'test') {
+    console.error("Unable to call TrezorConnect.manifest.");
+  }
 }
 
 /**
@@ -131,7 +133,6 @@ try {
  *   }
  * 
  * }
- *
  * // usage
  * import {MAINNET} from "unchained-bitcoin";
  * const interaction = new SimpleTrezorInteraction({network: MAINNET, param: "foo"});
