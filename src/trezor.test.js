@@ -1,7 +1,6 @@
-import BigNumber from "bignumber.js";
+/* eslint-disable max-lines*/
 
 import { 
-  TESTNET,
   MAINNET,
   TEST_FIXTURES,
 } from "unchained-bitcoin";
@@ -38,7 +37,7 @@ function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
 
   it("throws an error on an unsuccessful request", async () => {
     const interaction = interactionBuilder();
-    interaction.connectParams = () => ([(params) => ({success: false, payload: {error: "foobar"}}), {}]);
+    interaction.connectParams = () => ([() => ({success: false, payload: {error: "foobar"}}), {}]);
     try  {
       await interaction.run();
     } catch(e) {
@@ -53,7 +52,7 @@ describe('trezor', () => {
 
   describe('TrezorInteraction', () => {
     
-    const interactionBuilder = () => (new TrezorInteraction({network: MAINNET}));
+    function interactionBuilder() { return new TrezorInteraction({network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -70,7 +69,7 @@ describe('trezor', () => {
 
   describe("TrezorGetMetadata", ()  => {
 
-    const interactionBuilder = () => (new TrezorGetMetadata({network: MAINNET}));
+    function interactionBuilder() { return new TrezorGetMetadata({network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -133,7 +132,7 @@ describe('trezor', () => {
   describe("TrezorExportHDNode", () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
-    const interactionBuilder = () => (new TrezorExportHDNode({bip32Path, network: MAINNET}));
+    function interactionBuilder() { return new TrezorExportHDNode({bip32Path, network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -152,7 +151,7 @@ describe('trezor', () => {
   describe("TrezorExportPublicKey", () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
-    const interactionBuilder = () => (new TrezorExportPublicKey({bip32Path, network: MAINNET}));
+    function interactionBuilder () { return new TrezorExportPublicKey({bip32Path, network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -176,7 +175,7 @@ describe('trezor', () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
 
-    const interactionBuilder = () => (new TrezorExportExtendedPublicKey({bip32Path, network: MAINNET}));
+    function interactionBuilder () { return new TrezorExportExtendedPublicKey({bip32Path, network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -202,7 +201,7 @@ describe('trezor', () => {
 
       describe(`signing for a transaction which ${fixture.description}`, () => {
 
-        const interactionBuilder = () => (new TrezorSignMultisigTransaction(fixture));
+        function interactionBuilder() { return new TrezorSignMultisigTransaction(fixture); }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -232,7 +231,8 @@ describe('trezor', () => {
     TEST_FIXTURES.multisigs.forEach((fixture) => {
 
       describe(`displaying a ${fixture.description}`, () => {
-        const interactionBuilder = () => (new TrezorConfirmMultisigAddress(fixture));
+
+        function interactionBuilder () { return new TrezorConfirmMultisigAddress(fixture); }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);

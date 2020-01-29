@@ -1,3 +1,5 @@
+/* eslint-disable max-lines*/
+
 /**
  * This module provides base classes for modeling interactions with
  * keystores.
@@ -177,7 +179,7 @@ export class KeystoreInteraction {
    * supported.  See the Bowser documentation for more details:
    * https://github.com/lancedikson/bowser
    * 
-   * @returns {boolean}
+   * @returns {boolean} whether this interaction is supported
    * @example
    * isSupported() {
    *   return this.environment.satisfies({
@@ -235,7 +237,7 @@ export class KeystoreInteraction {
    * Multiple options can be given at once to filter along multiple
    * dimensions.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
    * @param {string|regexp} options.code - code must match this regular expression
@@ -258,7 +260,7 @@ export class KeystoreInteraction {
    *   { code: "device.active", state: "active", level: "warning", text: "Your device will warn you about...", version: "2.x"}
    */
   messagesFor({state, level, code, text, version}) {
-    return this.messages().filter((message, i) => {
+    return this.messages().filter((message) => {
       if (state && message.state !== state) {
         return false;
       }
@@ -281,13 +283,13 @@ export class KeystoreInteraction {
   /**
    * Return whether there are any messages matching the given options.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
    * @param {string|regexp} options.code - code must match this regular expression
    * @param {string|regexp} options.text - text must match this regular expression
    * @param {string|regexp} options.version - version must match this regular expression
-   * @returns {boolean}
+   * @returns {boolean} - whether any messages match the given filters
    */
   hasMessagesFor({state, level, code, text, version}) {
     return this.messagesFor({state, level, code, text, version}).length > 0;
@@ -296,7 +298,7 @@ export class KeystoreInteraction {
   /**
    * Return the first message matching the given options (or `null` if none is found).
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
    * @param {string|regexp} options.code - code must match this regular expression
@@ -314,7 +316,7 @@ export class KeystoreInteraction {
    * Retrieve the text of the first message matching the given options
    * (or `null` if none is found).
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
    * @param {string|regexp} options.code - code must match this regular expression
@@ -353,7 +355,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    *
    * The `text` should be human-readable.  The `code` is for machines.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.text - the text of the error message
    * @param {string} options.code - the code of the error message
    * @constructor
@@ -365,9 +367,9 @@ export class UnsupportedInteraction extends KeystoreInteraction {
   }
 
   /**
-   * Always returns false.
+   * By design, this method always returns false.
    * 
-   * @returns {false}
+   * @returns {false} Always.
    */
   isSupported() {
     return false;
@@ -377,7 +379,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    * Returns a single `error` level message at the `unsupported`
    * state.
    *
-   * @returns {module:interaction.Message[]}
+   * @returns {module:interaction.Message[]} the messages for this class
    */
   messages() {
     const messages = super.messages();
@@ -387,6 +389,9 @@ export class UnsupportedInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
+   *
+   * @returns {void}
+   * @throws An error containing this `this.text`.
    * 
    */
   async run() {
@@ -395,6 +400,9 @@ export class UnsupportedInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
+   *
+   * @returns {void}
+   * @throws An error containing this `this.text`.
    * 
    */
   request() {
@@ -403,6 +411,9 @@ export class UnsupportedInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
+   * 
+   * @returns {void}
+   * @throws An error containing this `this.text`.
    * 
    */
   parse() {
@@ -461,7 +472,7 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
    * always return a promise as it is designed to be called within an
    * `await` block.
    *
-   * @returns {Promise}
+   * @returns {Promise} Does the work of interacting with the keystore.
    * 
    */
   async run() {
@@ -470,6 +481,9 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
+   *
+   * @throws An error since this is a direct interaction.
+   * @returns {void}
    * 
    */
   request() {
@@ -478,6 +492,9 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
+   * 
+   * @throws An error since this is a direct interaction.
+   * @returns {void}
    * 
    */
   parse() {
@@ -546,10 +563,11 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    * lines, functions, &c. are all allowed.  Whatever is appropriate
    * for the interaction.
    *
-   * @returns {Object}
+   * @returns {Object} the request data
    *
    */
   request() {
+    throw new Error("Override the `request` method in this interaction.");
   }
 
   /**
@@ -559,15 +577,20 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    * appropriate kind of `response` object and return the final result
    * of this interaction.
    *
-   * @param {Object} response
-   * @returns {Object}
+   * @param {Object} response - the raw response
+   * @returns {Object} the parsed response
    *
    */
   parse(response) {
+    console.log(response);
+    throw new Error("Override the `parse` method in this interaction.");
   }
 
   /**
    * Throws an error.
+   *
+   * @throws An error since this is an indirect interaction.
+   * @returns {void}
    * 
    */
   async run() {

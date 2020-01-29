@@ -1,14 +1,11 @@
 import {
-  TESTNET,
   TEST_FIXTURES,
 } from "unchained-bitcoin";
 import {
-  UNSUPPORTED,
   PENDING,
   ACTIVE,
   INFO,
   WARNING,
-  ERROR,
 } from "./interaction";
 import {
   LedgerGetMetadata,
@@ -52,14 +49,14 @@ describe('ledger', () => {
 
   describe("LedgerGetMetadata", () => {
 
-    const interactionBuilder = () => new LedgerGetMetadata();
+    function interactionBuilder () { return new LedgerGetMetadata(); }
 
     itHasDashboardMessages(interactionBuilder);
 
     describe("parseMetadata", () => {
 
-      it ("successfully parses metadata", () => {
-        const response = [49,16,0,3,5,49,46,52,46,50,4,166,0,0,0,4,49,46,54,0,32,52,200,225,237,153,74,68,110,247,12,155,37,109,138,110,1,235,148,154,186,75,24,185,249,163,155,127,56,120,37,49,3,144,0];
+      it("successfully parses metadata", () => {
+        const response = [49, 16, 0, 3, 5, 49, 46, 52, 46, 50, 4, 166, 0, 0, 0, 4, 49, 46, 54, 0, 32, 52, 200, 225, 237, 153, 74, 68, 110, 247, 12, 155, 37, 109, 138, 110, 1, 235, 148, 154, 186, 75, 24, 185, 249, 163, 155, 127, 56, 120, 37, 49, 3, 144, 0];
         const metadata = interactionBuilder().parseMetadata(response);
         expect(metadata).toBeTruthy();
         expect(metadata.spec).toEqual("Nano S v1.4.2 (MCU v1.6)");
@@ -87,7 +84,7 @@ describe('ledger', () => {
 
   describe("LedgerExportPublicKey", () => {
 
-    const interactionBuilder = (bip32Path) => new LedgerExportPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")});
+    function interactionBuilder(bip32Path) { return new LedgerExportPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")}); }
 
     itHasAppMessages(interactionBuilder);
 
@@ -101,7 +98,7 @@ describe('ledger', () => {
             it("for v <1.6.0", () => {
               const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: "<1.6.0", code: "ledger.path.warning"});
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBe(undefined);
+              expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(4);
             });
 
@@ -109,7 +106,7 @@ describe('ledger', () => {
             it("for v >=1.6.0", () => {
               const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: ">=1.6.0", code: "ledger.path.warning"});
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBe(undefined);
+              expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(4);
             });
 
@@ -142,7 +139,7 @@ describe('ledger', () => {
       it("version >=1.6.0", () => {
         const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.hdnode"});
         expect(message).not.toBe(null);
-        expect(message.messages).not.toBe(undefined);
+        expect(message.messages).not.toBeUndefined();
         expect(message.messages.length).toEqual(2);
       });
 
@@ -174,7 +171,7 @@ describe('ledger', () => {
     TEST_FIXTURES.transactions.forEach((fixture) => {
       describe(`for a transaction which ${fixture.description}`, () => {
 
-        const interactionBuilder = () => new LedgerSignMultisigTransaction(fixture);
+        function interactionBuilder () { return new LedgerSignMultisigTransaction(fixture); }
 
         itHasAppMessages(interactionBuilder);
         
@@ -199,7 +196,7 @@ describe('ledger', () => {
               const interaction = interactionBuilder();
               const message = interaction.messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.sign"});
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBe(undefined);
+              expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(5);
             });
             
@@ -211,7 +208,7 @@ describe('ledger', () => {
               const interaction = interactionBuilder();
               const message = interaction.messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.sign"});
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBe(undefined);
+              expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(2);
             });
 
@@ -219,7 +216,7 @@ describe('ledger', () => {
               const interaction = interactionBuilder();
               const message = interaction.messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.sign"});
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBe(undefined);
+              expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(7);
             });
             

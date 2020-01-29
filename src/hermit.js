@@ -1,3 +1,5 @@
+/* eslint-disable max-lines*/
+
 /**
  * Provides classes for interacting with a Hermit installation through
  * QR codes.
@@ -72,7 +74,7 @@ export function parseHermitQRCodeData(encodedString) {
  * Encode the given `data` as a string to be put into a
  * Hermit-readable QR code.
  *
- * @param {object} data
+ * @param {object} data plain JavaScript object to encode
  * @returns {string} base32-encoded, gzipped, JSON data
  */
 export function encodeHermitQRCodeData(data) {
@@ -286,7 +288,7 @@ export class HermitSignTransaction extends HermitDisplayer {
 
   /**
    *
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {array<object>} options.inputs - inputs for the transaction
    * @param {array<object>} options.outputs - outputs for the transaction
    * @param {array<string>} options.bip32Paths - BIP32 paths

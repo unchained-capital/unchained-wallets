@@ -43,9 +43,9 @@ export const KEYSTORES = {...DIRECT_KEYSTORES, ...INDIRECT_KEYSTORES};
  *
  * **Supported keystores:** Trezor, Ledger
  *
- * @param {Object} options
- * @param {KEYSTORES} options.keystore
- * @return {module:interaction.KeystoreInteraction}
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {GetMetadata, TREZOR} from "unchained-wallets";
  * // Works similarly for Ledger.
@@ -69,11 +69,11 @@ export function GetMetadata({keystore}) {
  *
  * **Supported keystores:** Trezor, Ledger, Hermit
  * 
- * @param {Object} options
- * @param {KEYSTORES} options.keystore
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
- * @return {module:interaction.KeystoreInteraction}
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {MAINNET} from "unchained-bitcoin";
  * import {ExportPublicKey, TREZOR, HERMIT} from "unchained-wallets";
@@ -101,11 +101,11 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  * **Supported keystores:** Trezor, Hermit
  *
  *
- * @param {Object} options
- * @param {KEYSTORES} options.keystore
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {string} options.bip32Path - the BIP32 path of the HD node of the extended public key
- * @return {module:interaction.KeystoreInteraction}
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {MAINNET} from "unchained-bitcoin";
  * import {ExportExtendedPublicKey, TREZOR, HERMIT} from "unchained-wallets";
@@ -141,13 +141,13 @@ export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
  * **Supported keystores:** Trezor, Ledger, Hermit
  *
  *
- * @param {Object} options
- * @param {KEYSTORES} options.keystore
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {object[]} options.inputs - transaction inputs
  * @param {object[]} options.outputs - transaction outputs
  * @param {string[]} options.bip32Paths - the BIP32 paths on this device corresponding to a public key in each input
- * @return {module:interaction.KeystoreInteraction}
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {
  *   generateMultisigFromHex, TESTNET, P2SH,
@@ -207,12 +207,12 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  *
  * **Supported keystores:** Trezor
  *
- * @param {Object} options
- * @param {KEYSTORES} options.keystore
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {object} options.multisig - `Multisig` object representing the address
  * @param {string} options.bip32Path - the BIP32 path on this device containing a public key from the address
- * @return {module:interaction.KeystoreInteraction}
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {
  *   generateMultisigFromHex, TESTNET, P2SH,

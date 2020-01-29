@@ -1,13 +1,6 @@
 import {
-  TESTNET,
-} from "unchained-bitcoin";
-import {
-  UNSUPPORTED,
   PENDING,
-  ACTIVE,
   INFO,
-  WARNING,
-  ERROR,
 } from "./interaction";
 import {
   parseHermitQRCodeData,
@@ -19,7 +12,7 @@ import {
 
 function itHasACommandMessage(interaction, command) {
   const message = interaction.messageFor({state: PENDING, level: INFO, code: "hermit.command"});
-  it ("has a command message with the correct command", () => {
+  it("has a command message with the correct command", () => {
     expect(message).not.toBeNull();
     expect(message.command).toEqual(command);
   });
@@ -27,17 +20,17 @@ function itHasACommandMessage(interaction, command) {
 
 describe("parseHermitQRCodeData", () => {
 
-  it ("throws an error on an empty string or non Base32 string", () => {
+  it("throws an error on an empty string or non Base32 string", () => {
     expect(() => { parseHermitQRCodeData(); }).toThrow(/base32 decode error/i);
     expect(() => { parseHermitQRCodeData(""); }).toThrow(/base32 decode error/i);
     expect(() => { parseHermitQRCodeData("foo"); }).toThrow(/base32 decode error/i);
   });
 
-  it ("throws an error on a non gzip-compressed string", () => {
+  it("throws an error on a non gzip-compressed string", () => {
     expect(() => { parseHermitQRCodeData("MZXW6==="); }).toThrow(/gzip decompression error/i);
   });
 
-  it ("throws an error on a non JSON data", () => {
+  it("throws an error on a non JSON data", () => {
     expect(() => { parseHermitQRCodeData("D6FQQAAAAAAAAAADJPF46BYAEFSXHDADAAAAA==="); }).toThrow(/json parse error/i);
   });
 
@@ -49,15 +42,18 @@ describe("parseHermitQRCodeData", () => {
 
 describe("encodeHermitQRCodeData", () => {
 
-  it ("throws an error on a non JSON-encodable object", () => {
-    expect(() => { encodeHermitQRCodeData(BigInt(3)); }).toThrow(/JSON encode error/i);
+  it("throws an error on a non JSON-encodable object", () => {
+    /* eslint-disable no-undef */
+    const wontJSONEncode = BigInt(3);
+    /* eslint-enable */
+    expect(() => { encodeHermitQRCodeData(wontJSONEncode); }).toThrow(/JSON encode error/i);
   });
 
-  it ("throws an error on an empty input or non gzip-compressable object", () => {
+  it("throws an error on an empty input or non gzip-compressable object", () => {
     expect(() => { encodeHermitQRCodeData(); }).toThrow(/gzip compression error/i);
   });
 
-  it ("throws an error on an empty input or non gzip-compressable object", () => {
+  it("throws an error on an empty input or non gzip-compressable object", () => {
     expect(() => { encodeHermitQRCodeData(); }).toThrow(/gzip compression error/i);
   });
 

@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 /**
  * This module provides classes for Ledger hardware wallets.
  *
@@ -124,7 +126,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * (`device.unlock`).  Adds an `active` message at the `info` level
    * when communicating with the device (`device.active`).
    *
-   * @return {module:interaction.Message[]}
+   * @return {module:interaction.Message[]} messages for ths interaction
    */
   messages() {
     const messages = super.messages();
@@ -143,7 +145,8 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *
    * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for general information or a [specific transport API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-transport-u2f} for examples of API calls.
    *
-   * @param {function} callback -- accepts a single parameter `transport`
+   * @param {function} callback -- asynchronous function accepting a single parameter `transport`
+   * @returns {Promise} does the work of setting up a transport connection
    * @example
    * async run() {
    *   return await this.withTransport(async (transport) => {
@@ -167,6 +170,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for genereal information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
    *
    * @param {function} callback -- accepts two parameters, `app` and `transport`, which are the Ledger APIs for the bitcoin app and the transport layer, respectively.
+   * @returns {Promise} does the work of setting up an app instance (and transport connection)g181
    * @example
    * async run() {
    *   return await this.withApp(async (app, transport) => {
@@ -197,7 +201,7 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
    * the user to be in the Ledger dashboard, not the bitcoin app
    * (`ledger.app.dashboard`).
    *
-   * @return {module:interaction.Message[]}
+   * @return {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -219,7 +223,7 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the bitcoin app (`ledger.app.bitcoin`).
    *
-   * @return {module:interaction.Message[]}
+   * @return {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -274,8 +278,8 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
    * Parses the binary data returned from the Ledger API call into a
    * metadata object.
    *
-   * @param {ByteArray} response
-   * @returns {Object}
+   * @param {ByteArray} response - binary response data
+   * @returns {Object} - device metadata
    */
   parseMetadata(response) {
     try {
@@ -324,6 +328,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
         mcuVersion = "";
       }
 
+      /* eslint-disable no-unused-vars, no-bitwise */
       const isOSU = seVersion.includes("-osu");
       const version = seVersion.replace("-osu", "");
       const m = seVersion.match(/([0-9]+.[0-9]+)(.[0-9]+)?(-(.*))?/);
@@ -331,8 +336,9 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       const providerId = PROVIDERS[providerName] || 1;
       const isBootloader = (targetId & 0xf0000000) !== 0x30000000;
       const flag = flags.length > 0 ? flags[0] : 0;
-      const managerAllowed = !!(flag & ManagerAllowedFlag);
-      const pin = !!(flag & PinValidatedFlag);
+      const managerAllowed = Boolean(flag & ManagerAllowedFlag);
+      const pin = Boolean(flag & PinValidatedFlag);
+      /* eslint-enable */
 
       const [majorVersion, minorVersion, patchVersion] = (version || '').split('.');
       const [mcuMajorVersion, mcuMinorVersion] = (mcuVersion || '').split('.');
@@ -422,7 +428,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   /**
    * Requires a valid BIP32 path to the node to export.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} bip32Path - the BIP32 path for the HD node
    */
   constructor({bip32Path}) {
@@ -433,7 +439,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   /**
    * Adds messages related to the warnings Ledger devices produce on various BIP32 paths.
    *
-   * @returns {module:interaction.Message[]}
+   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -546,7 +552,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * Any other kind of path is considered unusual and will trigger the
    * warning.
    *
-   * @returns {boolean}
+   * @returns {boolean} whether a BIP32 path warning will be displayed
    */
   hasBIP32PathWarning() {
     // 0 -> 44'
@@ -668,7 +674,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   /**
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    * @param {array<object>} options.inputs - inputs for the transaction
    * @param {array<object>} options.outputs - outputs for the transaction
@@ -685,7 +691,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   /**
    * Adds messages describing the signing flow.
    *
-   * @returns {module:interaction.Message[]}
+   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();

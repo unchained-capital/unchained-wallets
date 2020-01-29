@@ -50,11 +50,11 @@ describe("KeystoreInteraction", () => {
       expect(() => {interaction.messagesFor(); }).toThrow();
     });
 
-    it ("matches all messages when passed no known options", () => {
+    it("matches all messages when passed no known options", () => {
       expect(interaction.messagesFor({}).length).toEqual(2);
     });
 
-    it ("matches all messages when passed unknown options", () => {
+    it("matches all messages when passed unknown options", () => {
       expect(interaction.messagesFor({ding: "dong"}).length).toEqual(2);
     });
 
@@ -206,7 +206,7 @@ describe("UnsupportedInteraction", () => {
   });
 
   it("has a message explaining why it is unsupported", () => {
-    expect(interaction.hasMessagesFor({state: UNSUPPORTED, level: ERROR, code: code, text: text})).toBe(true);
+    expect(interaction.hasMessagesFor({state: UNSUPPORTED, level: ERROR, code, text})).toBe(true);
   });
   
 });
@@ -274,11 +274,11 @@ describe("IndirectKeystoreInteraction", () => {
     expect(interaction.param).toEqual(param);
   });
 
-  it("has a `request` method",() => {
+  it("has a `request` method", () => {
     expect(interaction.request()).toEqual(param);
   });
 
-  it("has a `parse` method",() => {
+  it("has a `parse` method", () => {
     expect(interaction.parse("BANG")).toEqual("bang");
   });
 

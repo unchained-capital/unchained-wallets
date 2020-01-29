@@ -1,3 +1,5 @@
+/* eslint-disable max-lines*/
+
 /**
  * Provides classes for interacting with Trezor hardware wallets.
  *
@@ -26,7 +28,6 @@
 import BigNumber from "bignumber.js";
 import {
   MAINNET,
-  TESTNET,
   bip32PathToSequence,
   multisigAddress,
   multisigPublicKeys,
@@ -43,7 +44,6 @@ import {
   ACTIVE,
   INFO,
   ERROR,
-  WARNING,
 } from "./interaction";
 
 /**
@@ -104,7 +104,9 @@ try {
 } catch(e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
+  /* eslint-disable no-process-env */
   if (process.env.NODE_ENV !== 'test') {
+    /* eslint-enable */
     console.error("Unable to call TrezorConnect.manifest.");
   }
 }
@@ -182,7 +184,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * Trezor interactions require knowing the bitcoin network they are
    * for.
    *
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    */
   constructor({network}) {
@@ -199,7 +201,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * Subclasses should override this method and add their own messages
    * (don't forget to call `super()`).
    *
-   * @returns {module:interaction.Message[]} messages
+   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -241,7 +243,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * Otherwise it returns the result of passing `result.payload` to
    * `this.parse`.
    *
-   * @returns {Promise}
+   * @returns {Promise} handles the work of calling TrezorConnect
    */
   async run() {
     const [method, params] = this.connectParams();
@@ -263,11 +265,11 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    *
    * By default, the function passed just throws an error.
    *
-   * @returns {Array<function,Object>}
+   * @returns {Array<function,Object>} the TrezorConnect parameters
    */
   connectParams() {
     return[
-      (params) => { throw new Error("Override the `connectParams` method on a subclass of TrezorInteraction."); },
+      () => { throw new Error("Override the `connectParams` method on a subclass of TrezorInteraction."); },
       {},
     ];
   }
@@ -278,8 +280,8 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    *
    * By default, the entire payload is returned.
    *
-   * @param {Object} payload
-   * @returns {Object}
+   * @param {Object} payload - the raw payload from the device response
+   * @returns {Object} - relevant or formatted data built from the raw payload
    */
   parse(payload) {
     return payload;
@@ -330,7 +332,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
    *
    * See {@link https://github.com/trezor/connect/blob/v8/src/js/core/methods/GetFeatures.js}.
    *
-   * @returns {Array<function, Object>}
+   * @returns {Array<function, Object>} TrezorConnect parameters
    */
   connectParams() {
     return [
@@ -343,8 +345,8 @@ export class TrezorGetMetadata extends TrezorInteraction {
    * Parses Trezor device featuress into an appropriate metadata
    * shape.
    *
-   * @param {Object} payload
-   * @returns {Object}
+   * @param {Object} payload - the original payload from the device response
+   * @returns {Object} device metadata & features
    */
   parse(payload) {
     // Example result:
@@ -430,7 +432,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
   /**
    * Requires a BIP32 path to the node to export as well as which network.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    * @param {string} bip32Path - the BIP32 path for the HD node
    */
@@ -443,7 +445,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
    * Adds messages related to warnings Trezor devices make depending
    * on the BIP32 path passed.
    * 
-   * @returns {module:interaction.Message[]}
+   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -471,7 +473,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
   /**
    * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/getPublicKey.md}.
    *
-   * @returns {Object}
+   * @returns {Array<function,Object>} TrezorConnect parameters
    */
   connectParams() {
     return [
@@ -503,7 +505,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
   /**
    * Parses the public key from the HD node response.
    *
-   * @param {object} payload
+   * @param {object} payload - the original payload from the device response
    * @returns {string} the (compressed) public key in hex
    */
   parse(payload) {
@@ -529,7 +531,7 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
   /**
    * Parses the extended public key from the HD node response.
    *
-   * @param {object} payload
+   * @param {object} payload the original payload from the device response
    * @returns {string} the extended public key
    */
   parse(payload) {
@@ -582,7 +584,7 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
 
   /**
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    * @param {UTXO[]} options.inputs - inputs for the transaction
    * @param {TransactionOutput[]} options.outputs - outputs for the transaction
@@ -598,7 +600,7 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   /**
    * Adds messages describing the signing flow.
    *
-   * @returns {module:interaction.Message[]}
+   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -655,7 +657,7 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   /**
    * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/signTransaction.md}.
    *
-   * @returns {Array<function, Object>}
+   * @returns {Array<function, Object>} TrezorConnect parameters
    */
   connectParams() {
     return [
@@ -673,7 +675,7 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
    *
    * Ensures each input's signature hasa a trailing `...01` {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL} byte.
    *
-   * @param {Object} payload
+   * @param {Object} payload - the original payload from the device response
    * @returns {string[]} array of input signatures, one per input
    */
   parse(payload) {
@@ -702,7 +704,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
    * Most of the information required to confirm a multisig address
    * lives in the `Multisig` object from `unchained-bitcoin`.
    * 
-   * @param {object} options
+   * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    * @param {string} options.bip32Path - BIP32 path to the public key on this device used in the multisig address
    * @param {Multisig} options.multisig - multisig object
@@ -715,6 +717,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
 
   /**
    * Adds messages about BIP32 path warnings.
+   *
+   * @returns {module:interaction.Message[]} messages for this interaction
    * 
    */
   messages() {
@@ -771,7 +775,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
   /**
    * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/getAddress.md}.
    *
-   * @returns {Array<function, Object>}
+   * @returns {Array<function, Object>} TrezorConnect parameters
    */
   connectParams() {
     return [
@@ -797,7 +801,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  * Returns the Trezor API version of the given network.
  *
  * @param {string} network - bitcoin network
- * @returns {string}
+ * @returns {string} Trezor API spelling for this network
  */
 export function trezorCoin(network) {
   return (network === MAINNET ? "Bitcoin" : "Testnet");
