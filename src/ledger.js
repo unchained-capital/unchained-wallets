@@ -72,7 +72,7 @@ export const LEDGER_RIGHT_BUTTON = 'ledger_right_button';
 
 /**
  * Constant representing the action of pushing both buttons on a
- * Ledger device..
+ * Ledger device.
  *
  * @type {string}
  * @default 'ledger_both_buttons'
@@ -555,15 +555,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     // 3 -> 0
     // 4 -> 0 - 50000
     const indices = bip32PathToSequence(this.bip32Path);
-    // FIXME  -- Error when calling `hardenedBIP32Index` here for some reason?
-    // const hardened0   = hardenedBIP32Index(0);
-    // const hardened44  = hardenedBIP32Index(44);
-    // const hardened100 = hardenedBIP32Index(100);
-
-    const hardeningOffset = Math.pow(2, 31);
-    const hardened0   =   0 + hardeningOffset;
-    const hardened44  =  44 + hardeningOffset;
-    const hardened100 = 100 + hardeningOffset;
+    const hardened0   = hardenedBIP32Index(0);
+    const hardened44  = hardenedBIP32Index(44);
+    const hardened100 = hardenedBIP32Index(100);
     if (indices.length !== 5) { return true; }
     if (indices[0] !== hardened44) { return true; }
     if (indices[2] < hardened0 || indices[2] > hardened100) { return true; }
@@ -821,14 +815,18 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   /**
    * See {@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc#signp2shtransaction}.
+   *
+   * Input signatures produced will always have a trailing `...01`
+   * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
+   * byte.
    * 
-   * @returns {string[]} signature, one per input
+   * @returns {string[]} array of input signatures, one per input
    */
   async run() {
     return await this.withApp(async (app, transport) => {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
-      return await app.signP2SHTransaction(
+      const transactionSignature = await app.signP2SHTransaction(
         this.ledgerInputs(app),
         this.ledgerKeysets(),
         this.ledgerOutputScriptHex(app),
@@ -837,6 +835,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
         this.anySegwitInputs(),
         1 // tx version
       );
+      return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
     });
   }
 

@@ -208,7 +208,7 @@ describe('trezor', () => {
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
         it("parses out the signatures from the response payload", () => {
-          expect(interactionBuilder().parse({signatures: "foobar"})).toEqual("foobar");
+          expect(interactionBuilder().parse({signatures: ["foobar"]})).toEqual(["foobar01"]);
         });
 
         it("uses TrezorConnect.signTransaction", () => {

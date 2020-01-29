@@ -157,8 +157,10 @@ describe("HermitSignTransaction", () => {
     });
 
     it("returns the signatures when present", () => {
-      const result = {signatures: ["deadbeef"]};
-      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(result.signatures);
+      const transactionSignatureNoSighashAll = ["deadbeef"];
+      const transactionSignatureSighashAll = ["deadbeef01"];
+      const result = {signatures: transactionSignatureNoSighashAll};
+      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(transactionSignatureSighashAll);
     });
 
   });

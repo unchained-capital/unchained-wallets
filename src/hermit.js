@@ -279,7 +279,7 @@ export class HermitExportExtendedPublicKey extends HermitReader {
  * const encodedString = readHermitQRCode(); // application dependent
  * const signatures = interaction.parse(encoodedString);
  * console.log(signatures);
- * // ["ababa...", ... ]
+ * // ["ababa...01", ... ]
  * 
  */
 export class HermitSignTransaction extends HermitDisplayer {
@@ -395,7 +395,7 @@ export class HermitSignTransaction extends HermitDisplayer {
     if ((! signatures) || signatures.length === 0) {
       throw new Error("No signatures in QR code.");
     }
-    return signatures;
+    return (signatures || []).map((inputSignature) => (`${inputSignature}01`));
   }
 
 }
