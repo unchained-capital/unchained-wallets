@@ -14,12 +14,8 @@ import {
 } from "./ledger";
 
 function itHasStandardMessages(interactionBuilder) {
-  it("has a message about ensuring your device is plugged in", () => {
+  it("has a message about ensuring your device is plugged in and unlocked", () => {
     expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.connect", text: "plugged in"})).toBe(true);
-  });
-
-  it("has a message about ensuring your device is unlocked", () => {
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.unlock", text: "unlocked"})).toBe(true);
   });
 
   it("has a message about communicating with your device", () => {

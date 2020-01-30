@@ -130,8 +130,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger is plugged in.", code: "device.connect"});
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have unlocked your Ledger.", code: "device.unlock"});
+    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger is plugged in and unlocked.", code: "device.connect"});
     messages.push({state: ACTIVE, level: INFO, text: "Communicating with Ledger...", code: "device.active"});
     return messages;
   }
@@ -484,18 +483,22 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
         code: "ledger.path.warning",
         messages: [
           {
+            image: IMAGES[LEDGER].unusualDerivationBeta,
             text: "Your Ledger will display a message about an unusual derivation path.",
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].fullDerivationPathBeta,
             text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].rejectIfNotSureBeta,
             text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].approveDerivationBeta,
             text: `Your Ledger will ask if you want to "Approve derivation path".`,
             action: LEDGER_BOTH_BUTTONS,
           },
@@ -522,10 +525,12 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       code: "ledger.export.hdnode",
       messages: [
         {
+          image: IMAGES[LEDGER].addressClickThroughBeta,
           text: `Your Ledger will display a bitcoin address in several parts.`,
           action: LEDGER_RIGHT_BUTTON,
         },
         {
+          image: IMAGES[LEDGER].approveAddressBeta,
           text: `Your Ledger will ask you if want to "Approve" this request.`,
           action: LEDGER_BOTH_BUTTONS,
         },
