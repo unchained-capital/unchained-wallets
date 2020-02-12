@@ -14,7 +14,7 @@
  * * HermitExportPublicKey
  * * HermitExportExtendedPublicKey
  * * HermitSignMultisigTransaction
- * 
+ *
  * @module hermit
  */
 import base32 from "hi-base32";
@@ -55,14 +55,14 @@ export function parseHermitQRCodeData(encodedString) {
         throw new Error(`${errorPrefix} (JSON parse error)`);
       }
     } catch(e) {
-      if (e.message && e.message.startsWith(errorPrefix)) { 
+      if (e.message && e.message.startsWith(errorPrefix)) {
         throw(e);
       } else {
         throw new Error(`${errorPrefix} (gzip decompression error)`);
       }
     }
   } catch(e) {
-    if (e.message && e.message.startsWith(errorPrefix)) { 
+    if (e.message && e.message.startsWith(errorPrefix)) {
       throw(e);
     } else {
       throw new Error(`${errorPrefix} (Base32 decode error)`);
@@ -89,14 +89,14 @@ export function encodeHermitQRCodeData(data) {
         throw new Error(`${errorPrefix} (Base32 encode error)`);
       }
     } catch(e) {
-      if (e.message && e.message.startsWith(errorPrefix)) { 
+      if (e.message && e.message.startsWith(errorPrefix)) {
         throw(e);
       } else {
         throw new Error(`${errorPrefix} (gzip compression error)`);
       }
     }
   } catch(e) {
-    if (e.message && e.message.startsWith(errorPrefix)) { 
+    if (e.message && e.message.startsWith(errorPrefix)) {
       throw(e);
     } else {
       throw new Error(`${errorPrefix} (JSON encode error)`);
@@ -119,7 +119,7 @@ function commandMessage(data) {
 
 /**
  * Base class for interactions with Hermit.
- * 
+ *
  * @extends {module:interaction.IndirectKeystoreInteraction}
  */
 export class HermitInteraction extends IndirectKeystoreInteraction {
@@ -128,7 +128,7 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
 /**
  * Base class for interactions which read a QR code displayed by a
  * Hermit command.
- * 
+ *
  * @extends {module:hermit.HermitInteraction}
  */
 export class HermitReader extends HermitInteraction {
@@ -155,7 +155,7 @@ export class HermitReader extends HermitInteraction {
  * Base class for interactions which display data as a QR code for
  * Hermit to read and then read the QR code Hermit displays in
  * response.
- * 
+ *
  * @extends {module:hermit.HermitInteraction}
  */
 export class HermitDisplayer extends HermitReader {
@@ -170,15 +170,15 @@ export class HermitDisplayer extends HermitReader {
 
 /**
  * Reads a public key from data in a Hermit QR code.
- * 
+ *
  * @extends {module:hermit.HermitReader}
  * @example
  * const interaction = new HermitExportPublicKey();
  * const encodedString = readHermitQRCode(); // application dependent
- * const {pubkey, bip32Path} = interaction.parse(encoodedString);
+ * const {pubkey, bip32_path} = interaction.parse(encoodedString);
  * console.log(pubkey);
  * // "03..."
- * console.log(bip32Path);
+ * console.log(bip32_path);
  * // "m/45'/0'/0'/0/0"
  */
 export class HermitExportPublicKey extends HermitReader {
@@ -199,7 +199,7 @@ export class HermitExportPublicKey extends HermitReader {
 
   parse(encodedString) {
     const result = parseHermitQRCodeData(encodedString);
-    const {xpub, pubkey, bip32Path} = result;
+    const {xpub, pubkey, bip32_path} = result;
     if (!pubkey) {
       if (xpub) {
         throw new Error("Make sure you export a plain public key and NOT an extended public key.");
@@ -207,7 +207,7 @@ export class HermitExportPublicKey extends HermitReader {
         throw new Error("No public key in QR code.");
       }
     }
-    if (!bip32Path) {
+    if (!bip32_path) {
       throw new Error("No BIP32 path in QR code.");
     }
     return result;
@@ -217,15 +217,15 @@ export class HermitExportPublicKey extends HermitReader {
 
 /**
  * Reads an extended public key from data in a Hermit QR code.
- * 
+ *
  * @extends {module:hermit.HermitReader}
  * @example
  * const interaction = new HermitExportExtendedPublicKey();
  * const encodedString = readHermitQRCode(); // application dependent
- * const {xpub, bip32Path} = interaction.parse(encoodedString);
+ * const {xpub, bip32_path} = interaction.parse(encoodedString);
  * console.log(xpub);
  * // "xpub..."
- * console.log(bip32Path);
+ * console.log(bip32_path);
  * // "m/45'/0'/0'"
  */
 export class HermitExportExtendedPublicKey extends HermitReader {
@@ -246,7 +246,7 @@ export class HermitExportExtendedPublicKey extends HermitReader {
 
   parse(encodedString) {
     const result = parseHermitQRCodeData(encodedString);
-    const {xpub, pubkey, bip32Path} = result;
+    const {xpub, pubkey, bip32_path} = result;
     if (!xpub) {
       if (pubkey) {
         throw new Error("Make sure you export an extended public key and NOT a plain public key.");
@@ -254,7 +254,7 @@ export class HermitExportExtendedPublicKey extends HermitReader {
         throw new Error("No extended public key in QR code.");
       }
     }
-    if (!bip32Path) {
+    if (!bip32_path) {
       throw new Error("No BIP32 path in QR code.");
     }
     return result;
@@ -268,13 +268,13 @@ export class HermitExportExtendedPublicKey extends HermitReader {
  * code.
  *
  * NOTE: Transactions with inputs & outputs to non-P2SH addresses are not supported by Hermit.
- * 
+ *
  * @extends {module:hermit.HermitDisplayer}
  * @example
  * const interaction = new HermitSignTransaction({inputs, outputs, bip32Paths});
  * console.log(interaction.request());
  * // "IJQXGZI..."
- * 
+ *
  * // Display a QR code containing the above data to Hermit running
  * // `sign-bitcoin` and it will return another QR code which needs
  * // parsed.
@@ -282,7 +282,7 @@ export class HermitExportExtendedPublicKey extends HermitReader {
  * const signatures = interaction.parse(encoodedString);
  * console.log(signatures);
  * // ["ababa...01", ... ]
- * 
+ *
  */
 export class HermitSignTransaction extends HermitDisplayer {
 
