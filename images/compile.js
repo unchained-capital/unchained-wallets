@@ -13,33 +13,38 @@ function base64Data(imagePath) {
   return Buffer.from(bytes).toString('base64');
 }
 
+function mimeType(imagePath) {
+  if (imagePath.endsWith(".png")) {
+    return "image/png";
+  }
+  if (imagePath.endsWith(".jpg")) {
+    return "image/jpeg";
+  }
+  return null;
+}
+
+function imageData(imagePath, label) {
+  return {
+    label,
+    data: base64Data(imagePath),
+    mimeType: mimeType(imagePath),
+  };
+}
+
 const IMAGES = {
   ledger: {
-    warning: {
-      label: "Ledger screen displaying a `WARNING!` message.",
-      mimeType: "image/png",
-      data: base64Data("ledger/warning.png"),
-    },
-    derivationPathIsUnusualV1: {
-      label: "Ledger screen displaying a message about an 'unusual path'.",
-      mimeType: "image/png",
-      data: base64Data("ledger/derivationPathIsUnusualV1.png"),
-    },
-    derivationPathV1: {
-      label: "Ledger screen displaying a derivation path.",
-      mimeType: "image/png",
-      data: base64Data("ledger/derivationPathV1.png"),
-    },
-    rejectIfNotSureV1: {
-      label: "Ledger screen displaying a prompt about being sure.",
-      mimeType: "image/png",
-      data: base64Data("ledger/rejectIfNotSureV1.png"),
-    },
-    addressScrollV1: {
-      label: "Ledger screen displaying a bitcoin address.",
-      mimeType: "image/png",
-      data: base64Data("ledger/addressScrollV1.png"),
-    },
+    warning: imageData("ledger/warning.png", "Ledger screen displaying a `WARNING!` message."),
+    derivationPathIsUnusualV1: imageData("ledger/derivationPathIsUnusualV1.png" ,"Ledger screen displaying a message about an 'unusual path'."),
+    derivationPathV1: imageData("ledger/derivationPathV1.png",  "Ledger screen displaying a derivation path."),
+    rejectIfNotSureV1: imageData("ledger/rejectIfNotSureV1.png", "Ledger screen displaying a prompt about being sure."),
+    addressScrollV1: imageData("ledger/addressScrollV1.png", "Ledger screen displaying a bitcoin address."),
+    unusualDerivationBeta: imageData("ledger/unusualDerivationBeta.png", "The derivation path is unusual."),
+    fullDerivationPathBeta: imageData("ledger/fullDerivationPathBeta.png", "Ledger screen displaying a derivation path."),
+    rejectIfNotSureBeta: imageData("ledger/rejectIfNotSureBeta.png", "Reject if you're not sure."),
+    approveDerivationBeta: imageData("ledger/approveDerivationBeta.png", "Approve the derivation path if you are sure."),
+    derivationPathBeta: imageData("ledger/derivationPathBeta.png", "Ledger screen displaying a derivation path."),
+    addressClickThroughBeta: imageData("ledger/addressClickThroughBeta.png", "Ledger screen will display your corresponding public key."),
+    approveAddressBeta: imageData("ledger/approveAddressBeta.png", "Ledger screen asks for your approval."),
   }
 };
 
