@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: LedgerExportPublicKey</title>
+    <title>JSDoc: Class: LedgerExportExtendedPublicKey</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: LedgerExportPublicKey</h1>
+    <h1 class="page-title">Class: LedgerExportExtendedPublicKey</h1>
 
     
 
@@ -29,9 +29,9 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerExportPublicKey<span class="signature">()</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerExportExtendedPublicKey<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Returns the public key at a given BIP32 path.</p></div>
+            <div class="class-description"><p>Class for wallet extended public key(xpub) interaction at a given BIP32 path.</p></div>
         
     
 </header>
@@ -46,7 +46,7 @@
     
 
     
-    <h4 class="name" id="LedgerExportPublicKey"><span class="type-signature"></span>new LedgerExportPublicKey<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LedgerExportExtendedPublicKey"><span class="type-signature"></span>new LedgerExportExtendedPublicKey<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
@@ -94,7 +94,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line605">line 605</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line643">line 643</a>
     </li></ul></dd>
     
 
@@ -121,15 +121,6 @@
 
 
 
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>import {LedgerExportPublicKey} from "unchained-wallets";
-const interaction = new LedgerExportPublicKey({bip32Path: "m/48'/0'/0'/2'/0"});
-const publicKey = await interaction.run();
-console.log(publicKey);
-// "03..."</code></pre>
 
 
 
@@ -170,167 +161,6 @@ console.log(publicKey);
     
 
     
-    <h4 class="name" id="parsePublicKey"><span class="type-signature"></span>parsePublicKey<span class="signature">(publicKey)</span><span class="type-signature"> &rarr; {string}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Compress the given public key.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>publicKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the uncompressed public key in hex</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line624">line 624</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <ul>
-<li>the compressed public key in hex</li>
-</ul>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
     <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
     
 
@@ -339,8 +169,7 @@ console.log(publicKey);
 
 
 <div class="description">
-    <p>Parses out and compresses the public key from the response of
-<code>LedgerExportHDNode</code>.</p>
+    <p>Retrieve extended public key(xpub) from Ledger device for a given instance</p>
 </div>
 
 
@@ -384,7 +213,7 @@ console.log(publicKey);
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line613">line 613</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line685">line 685</a>
     </li></ul></dd>
     
 
@@ -413,7 +242,7 @@ console.log(publicKey);
 
         
 <div class="param-desc">
-    <p>-- (compressed) public key in hex</p>
+    <p>extended public key(xpub) for the BIP32 path of a given instance</p>
 </div>
 
 
@@ -433,6 +262,14 @@ console.log(publicKey);
     
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>import {LedgerExportExtendedPublicKey} from "unchained-wallets";
+const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
+const xpub = await interaction.run();
+console.log(xpub);</code></pre>
 
 
 

@@ -50,6 +50,7 @@ import IMAGES from "./images";
 export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
+const bip32 = require('bip32');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
@@ -613,7 +614,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     const result = await super.run();
     return this.parsePublicKey((result || {}).publicKey);
   }
-
   /**
    * Compress the given public key.
    *
@@ -633,7 +633,65 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
       throw new Error("Received no public key from Ledger device.");
     }
   }
+}
 
+/**
+ * Class for wallet extended public key(xpub) interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerExportHDNode}
+ */
+export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
+  constructor({bip32Path, network}) {
+    super({bip32Path});
+    this.network = network;
+  }
+  
+  messages() {
+    const messages = super.messages();
+
+    if (this.hasBIP32PathWarning()) { 
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyBeta,
+        state: ACTIVE, 
+        level: INFO, 
+        version: ">=1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyV1,
+        state: ACTIVE, 
+        level: INFO, 
+        version: "<1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+    }
+
+    return messages;
+  }
+
+  /**
+   * Retrieve extended public key(xpub) from Ledger device for a given instance
+   * @example
+   * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
+   * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
+   * const xpub = await interaction.run();
+   * console.log(xpub);
+   * @returns {string} extended public key(xpub) for the BIP32 path of a given instance
+   */
+  async run() {
+    const walletPublicKey = await super.run();
+    let node;
+    await this.withApp(async (app) => {
+      const parentWalletPublicKey = await getParentWalletPublicKey(this.bip32Path, app);
+      node = generateHDNode(parentWalletPublicKey, walletPublicKey, this.bip32Path);
+      node.network.bip32.public = "testnet" === this.network ? 0x043587cf : 0x0488b21e; // TODO: export constants in unchained-bitcoin
+    });
+    return node.toBase58();
+  }
 }
 
 /**
@@ -901,4 +959,37 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return false;
   }
 
+}
+
+function generateHDNode(parentWalletPublicKey, childWalletPublicKey, bip32Path) {
+  // parentWalletPublicKey and childWalletPublicKey are data structures returned from getWalletPublicKey()
+  // ledger methods
+  // e.g. {publicKey: "048998c3655b16e1d74f6cab21651eb1be67394b2726356...,
+  //       bitcoinAddress: "1A92zVckrWBk1abTjBqndd3Axr7ijtuWd9",
+  //       chainCode: "8f16c9fc56caa5ece39b485c990e0f934146f4a9fa7bb0a...
+  //      }
+  const keyPath = bip32Path.split("/").slice(1).join("/"); // remove leading 'm/'
+
+  const node = getNodeForWalletPublicKey(childWalletPublicKey);
+  const parentNode = getNodeForWalletPublicKey(parentWalletPublicKey);
+
+  node.parentFingerprint = parentNode.fingerprint;
+  node.depth = keyPath.split("/").length - 1;
+  const sequence = bip32PathToSequence(keyPath);
+  node.index = sequence.slice(-1)[0];
+  node.path = keyPath;
+  return node;
+}
+
+function getNodeForWalletPublicKey(walletPublicKey) {
+  const compressedPublicKey = compressPublicKey(walletPublicKey.publicKey);
+  const node = bip32.fromPublicKey(Buffer.from(compressedPublicKey, 'hex'),
+    Buffer.from(walletPublicKey.chainCode, 'hex'));
+  return node;
+}
+
+async function getParentWalletPublicKey(bip32Path, ledgerbtc) {
+  const parentKeyPath = bip32Path.split("/").slice(1, -1).join("/");
+  const parentWalletPublicKey = await ledgerbtc.getWalletPublicKey(parentKeyPath, {verify: false});
+  return parentWalletPublicKey;
 }

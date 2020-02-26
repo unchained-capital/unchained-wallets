@@ -10,6 +10,7 @@ import {
 import {
   LedgerGetMetadata,
   LedgerExportPublicKey,
+  LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
 } from "./ledger";
 
@@ -43,6 +44,35 @@ function itHasAppMessages(interactionBuilder) {
     expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "ledger.app.bitcoin", text: "Bitcoin app open"})).toBe(true);
     expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "ledger.app.bitcoin", text: "Bitcoin app open"})).toBe(true);
   });
+}
+
+const consideredUnusual = ["m/45'/0'/0'/0/0", "m/44'/0'/101'/0/0", "m/44'/0'/0'/1/0", "m/44'/0'/0'/0/50001"];
+const notConsideredUnusual = ["m/44'/0'/0'/0/0", "m/44'/1'/0'/0/0", "m/44'/50000'/0'/0/0", "m/44'/0'/100'/0/0", "m/44'/0'/0'/0/50000"];
+
+function itHasBIP32WarningMessages(interactionBuilder, bip32Path) {
+  it("for v <1.6.0", () => {
+    const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: "<1.6.0", code: "ledger.path.warning"});
+    expect(message).not.toBe(null);
+    expect(message.messages).not.toBeUndefined();
+    expect(message.messages.length).toEqual(4);
+    message.messages.forEach(message => expect(message.image).not.toBe(null))
+  });
+
+
+  it("for v >=1.6.0", () => {
+    const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: ">=1.6.0", code: "ledger.path.warning"});
+    expect(message).not.toBe(null);
+    expect(message.messages).not.toBeUndefined();
+    expect(message.messages.length).toEqual(4);
+    message.messages.forEach((message) => {
+      expect(message.image).not.toBe(null);
+      expect(message.image.mimeType).not.toBe(null);
+      expect(message.image.data).not.toBe(null);
+      expect(message.image.label).not.toBe(null);
+    })
+  });
+
+
 }
 
 describe('ledger', () => {
@@ -89,34 +119,19 @@ describe('ledger', () => {
     itHasAppMessages(interactionBuilder);
 
     describe("when the BIP32 path is considered unusual", () => {
-      ["m/45'/0'/0'/0/0", "m/44'/0'/101'/0/0", "m/44'/0'/0'/1/0", "m/44'/0'/0'/0/50001"].forEach((bip32Path) => {
+      consideredUnusual.forEach((bip32Path) => {
 
         describe(`for BIP32 path ${bip32Path}`, () => {
           
           describe("it has a message about an unusual BIP32 path", () => {
-
-            it("for v <1.6.0", () => {
-              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: "<1.6.0", code: "ledger.path.warning"});
-              expect(message).not.toBe(null);
-              expect(message.messages).not.toBeUndefined();
-              expect(message.messages.length).toEqual(4);
-            });
-
-
-            it("for v >=1.6.0", () => {
-              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: ">=1.6.0", code: "ledger.path.warning"});
-              expect(message).not.toBe(null);
-              expect(message.messages).not.toBeUndefined();
-              expect(message.messages.length).toEqual(4);
-            });
-
+            itHasBIP32WarningMessages(interactionBuilder, bip32Path)
           });
         });
       });
     });
 
     describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
-      ["m/44'/0'/0'/0/0", "m/44'/1'/0'/0/0", "m/44'/50000'/0'/0/0", "m/44'/0'/100'/0/0", "m/44'/0'/0'/0/50000"].forEach((bip32Path) => {
+      notConsideredUnusual.forEach((bip32Path) => {
 
         describe(`for BIP32 path ${bip32Path}`, () => {
           
@@ -228,4 +243,73 @@ describe('ledger', () => {
 
 
   });
+
+  describe("LedgerExportExtendedPublicKey", () => {
+
+    function interactionBuilder(bip32Path) { return new LedgerExportExtendedPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")}); }
+
+    itHasAppMessages(interactionBuilder);
+
+    describe("when the BIP32 path is considered unusual", () => {
+      consideredUnusual.forEach((bip32Path) => {
+
+        describe(`for BIP32 path ${bip32Path}`, () => {
+          
+          describe("it has a message about an unusual BIP32 path", () => {
+            itHasBIP32WarningMessages(interactionBuilder, bip32Path)
+          });
+
+          describe("it has a message about an exporting public key", () => {
+
+            it("for v <1.6.0", () => {
+              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.export.xpub"});
+              expect(message).not.toBe(null);
+              expect(message.image).not.toBe(null);
+            });
+
+
+            it("for v >=1.6.0", () => {
+              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.xpub"});
+              expect(message).not.toBe(null);
+              expect(message.image).not.toBe(null);
+            });
+
+          });
+        });
+      });
+    });
+
+    describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
+      notConsideredUnusual.forEach((bip32Path) => {
+
+        describe(`for BIP32 path ${bip32Path}`, () => {
+          
+          it("has no message about an unusual BIP32 path", () => {
+            expect(interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, code: "ledger.path.warning"})).toBe(null);
+          });
+
+        });
+      });
+    });
+
+    
+    describe("has a message about displaying an address and exporting the corresponding public key", () => {
+
+      it("for version <1.6.0", () => {
+        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.export.hdnode"});
+        expect(message).not.toBe(null);
+      });
+
+      it("version >=1.6.0", () => {
+        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.hdnode"});
+        expect(message).not.toBe(null);
+        expect(message.messages).not.toBeUndefined();
+        expect(message.messages.length).toEqual(2);
+      });
+
+    });
+
+  });
+
+
 });

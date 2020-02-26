@@ -45,6 +45,8 @@ const IMAGES = {
     derivationPathBeta: imageData("ledger/derivationPathBeta.png", "Ledger screen displaying a derivation path."),
     addressClickThroughBeta: imageData("ledger/addressClickThroughBeta.png", "Ledger screen will display your corresponding public key."),
     approveAddressBeta: imageData("ledger/approveAddressBeta.png", "Ledger screen asks for your approval."),
+    exportPublicKeyBeta: imageData("ledger/exportPublicKeyBeta.png", "Ledger screen asking to export public key"),
+    exportPublicKeyV1: imageData("ledger/exportPublicKeyV1.png", "Ledger screen asking to export public key"),
   }
 };
 
