@@ -198,7 +198,7 @@ This simple example illustrates several useful patterns:
 * The `messagesFor` and `renderMessages` methods will work regardless
   of the values of `network`, `bip32Path`, or `keystore`.  If a user
   is allowed to change these input values, appropriate warning and
-  informational messages will be rendered for each keeystore given the
+  informational messages will be rendered for each keystore given the
   arguments.  This makes handling "edge cases" between keystores much
   easier for developers.
 
@@ -269,7 +269,7 @@ discouraged.
 ### DirectInteraction classes
 
 Some devices (such as a Trezor) support "direct" interactions --
-JavaScript code directly obtain a response from the device.
+JavaScript code can directly obtain a response from the device.
 
 Developers implementing these kinds of interactions should subclass
 `DirectInteraction` and provide an `async run()` method which performs
