@@ -6,7 +6,7 @@ branch=gh-pages
 build_command() {
   mkdir $tempDir
   # generate the jsdoc
-  jsdoc -c docs/config.json -d docs -r src README.md
+  jsdoc -c docs-config.json -d docs -r src README.md
   # add nojekyll so github pages builds correctly
   touch "$directory/.nojekyll"
   # move jsdocs into deploying directory
