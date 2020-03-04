@@ -3,15 +3,19 @@ node_js:
   - 8
 
 deploy:
-  provider: script
-  script: "cp .npmrc.template $HOME/.npmrc && npm publish"
-  skip_cleanup: true
-  on:
-    tags: true
+  - provider: script
+    script: "cp .npmrc.template $HOME/.npmrc && npm publish"
+    skip_cleanup: true
+    on:
+      tags: true
+  - provider: script
+    script: "npm run docs"
+    on:
+      branch: master
 
 notifications:
   email:
     recipients:
-    - chris@unchained-capital.com
+      - chris@unchained-capital.com
     on_success: change
     on_failure: always
