@@ -4,7 +4,7 @@ node_js:
 
 deploy:
   provider: script
-  script: "cp .npmrc.template $HOME/.npmrc && npm publish"
+  script: "npm run docs && cp .npmrc.template $HOME/.npmrc && npm publish"
   skip_cleanup: true
   on:
     tags: true
@@ -12,6 +12,6 @@ deploy:
 notifications:
   email:
     recipients:
-    - chris@unchained-capital.com
+      - chris@unchained-capital.com
     on_success: change
     on_failure: always
