@@ -5,12 +5,12 @@ node_js:
 deploy:
   - provider: script
     script: "cp .npmrc.template $HOME/.npmrc && npm publish"
-    skip_cleanup: true
+    cleanup: false
     on:
       tags: true
   - provider: script
     script: "npm run docs"
-    skip_cleanup: true
+    cleanup: false
     on:
       branch: master
 

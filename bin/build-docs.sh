@@ -4,7 +4,7 @@ branch=gh-pages
 
 build_command() {
   # generate the jsdoc
-  jsdoc -c ./docs-config.json -d $directory -r src README.md
+  jsdoc -c bin/docs-config.json -d $directory -r src README.md
   # add nojekyll so github pages builds correctly
   touch "$directory/.nojekyll"
 }
