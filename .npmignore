@@ -2,3 +2,4 @@ src/
 .npmrc.template
 .travis.yml
 docs/
+bin/

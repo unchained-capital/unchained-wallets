@@ -1,18 +1,12 @@
-#!/bin/bash
+#!/bin/bash -ex
 directory=docs
-tempDir=_docs
 branch=gh-pages
 
 build_command() {
-  mkdir $tempDir
   # generate the jsdoc
-  jsdoc -c docs-config.json -d docs -r src README.md
+  jsdoc -c bin/docs-config.json -d $directory -r src README.md
   # add nojekyll so github pages builds correctly
   touch "$directory/.nojekyll"
-  # move jsdocs into deploying directory
-  mv $tempDir/* $directory
-  # remove temporary directory
-  rm -rf $tempDir
 }
 
 echo -e "\033[0;32mDeleting old content...\033[0m"
