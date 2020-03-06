@@ -198,7 +198,7 @@ This simple example illustrates several useful patterns:
 * The `messagesFor` and `renderMessages` methods will work regardless
   of the values of `network`, `bip32Path`, or `keystore`.  If a user
   is allowed to change these input values, appropriate warning and
-  informational messages will be rendered for each keeystore given the
+  informational messages will be rendered for each keystore given the
   arguments.  This makes handling "edge cases" between keystores much
   easier for developers.
 

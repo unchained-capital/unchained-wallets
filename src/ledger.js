@@ -11,8 +11,8 @@
  *
  * * LedgerGetMetadata
  * * LedgerExportPublicKey
+ * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
- * 
  * 
  * @module ledger
  */
@@ -674,7 +674,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 
   /**
-   * Retrieve extended public key(xpub) from Ledger device for a given instance
+   * Retrieve extended public key(xpub) from Ledger device for a given BIP32 path
    * @example
    * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
    * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});

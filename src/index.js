@@ -98,7 +98,7 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  * Return an interaction class for exporting an extended public key
  * from the given `keystore` for the given `bip32Path` and `network`.
  *
- * **Supported keystores:** Trezor, Hermit
+ * **Supported keystores:** Trezor, Hermit, Ledger
  *
  *
  * @param {Object} options - options argument
