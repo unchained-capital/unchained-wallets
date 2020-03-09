@@ -28,6 +28,7 @@
   "scripts": {
     "compile-images": "node images/compile.js",
     "compile": "babel -d lib/ src/ && npm run compile-images",
+    "compile:watch": "babel --watch -d lib/ src/ && npm run compile-images",
     "prepublish": "npm run compile",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
