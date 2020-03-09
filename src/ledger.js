@@ -30,7 +30,7 @@ import {
   P2WSH,
   multisigAddressType,
 } from "unchained-bitcoin";
-
+import bs58check from 'bs58check'
 import {
   ACTIVE,
   PENDING,
@@ -414,7 +414,8 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  * Base class for interactions exporting information about an HD node
  * at a given BIP32 path.
  *
- * You may want to use `LedgerExportPublicKey` directly.
+ * You may want to use `LedgerExportPublicKey` or
+ * `TrezorExportExtendedPublicKey` directly.
  * 
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
@@ -674,6 +675,24 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 
   /**
+   * Get fingerprint for given path. This is useful for generating xpubs
+   * which need the fingerprint of the parent pubkey
+   * @param {string} path - path of pubkey to retrieve fingerprint for
+   * @returns {string} fingerprint
+   */
+   async getFingerprint(path) {
+    let fingerprint
+    await this.withApp(async (app) => {
+      const key = await app.getWalletPublicKey(path)
+      let compressed = compressPublicKey(key.publicKey)
+      compressed = Buffer.from(compressed, 'hex')
+      const hash = hash160(compressed)
+      fingerprint = ((hash[0] << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3]) >>> 0;
+    })
+    return fingerprint
+   }
+   
+  /**
    * Retrieve extended public key(xpub) from Ledger device for a given BIP32 path
    * @example
    * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
@@ -684,10 +703,21 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    */
   async run() {
     const walletPublicKey = await super.run();
+    const compressedPubkey = compressPublicKey(walletPublicKey.publicKey)
+
     let node;
     await this.withApp(async (app) => {
-      const parentWalletPublicKey = await getParentWalletPublicKey(this.bip32Path, app);
-      node = generateHDNode(parentWalletPublicKey, walletPublicKey, this.bip32Path);
+      // get the hd wallet node and fill in missing properties
+      node = bip32.fromPublicKey(Buffer.from(compressedPubkey, 'hex'),
+        Buffer.from(walletPublicKey.chainCode, 'hex'));
+      
+      // extended key fingerprint is from the parent pubkey
+      const parentKeyPath = getParentPath(this.bip32Path)
+      node.parentFingerprint = await this.getFingerprint(parentKeyPath)
+      node.depth = this.bip32Path.split("/").length - 1;
+      const sequence = bip32PathToSequence(this.bip32Path);
+      node.index = sequence.slice(-1)[0];
+      node.path = this.bip32Path;
       node.network.bip32.public = "testnet" === this.network ? 0x043587cf : 0x0488b21e; // TODO: export constants in unchained-bitcoin
     });
     return node.toBase58();
@@ -961,35 +991,23 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
 }
 
-function generateHDNode(parentWalletPublicKey, childWalletPublicKey, bip32Path) {
-  // parentWalletPublicKey and childWalletPublicKey are data structures returned from getWalletPublicKey()
-  // ledger methods
-  // e.g. {publicKey: "048998c3655b16e1d74f6cab21651eb1be67394b2726356...,
-  //       bitcoinAddress: "1A92zVckrWBk1abTjBqndd3Axr7ijtuWd9",
-  //       chainCode: "8f16c9fc56caa5ece39b485c990e0f934146f4a9fa7bb0a...
-  //      }
-  const keyPath = bip32Path.split("/").slice(1).join("/"); // remove leading 'm/'
+/** Local helper functions **/
 
-  const node = getNodeForWalletPublicKey(childWalletPublicKey);
-  const parentNode = getNodeForWalletPublicKey(parentWalletPublicKey);
-
-  node.parentFingerprint = parentNode.fingerprint;
-  node.depth = keyPath.split("/").length - 1;
-  const sequence = bip32PathToSequence(keyPath);
-  node.index = sequence.slice(-1)[0];
-  node.path = keyPath;
-  return node;
+/**
+ * get the path of the parent of the given path
+ * @param {string} bip32Path 
+ * @returns {string}
+ */
+function getParentPath(bip32Path) {
+  return bip32Path.split("/").slice(1, -1).join("/");
 }
 
-function getNodeForWalletPublicKey(walletPublicKey) {
-  const compressedPublicKey = compressPublicKey(walletPublicKey.publicKey);
-  const node = bip32.fromPublicKey(Buffer.from(compressedPublicKey, 'hex'),
-    Buffer.from(walletPublicKey.chainCode, 'hex'));
-  return node;
-}
-
-async function getParentWalletPublicKey(bip32Path, ledgerbtc) {
-  const parentKeyPath = bip32Path.split("/").slice(1, -1).join("/");
-  const parentWalletPublicKey = await ledgerbtc.getWalletPublicKey(parentKeyPath, {verify: false});
-  return parentWalletPublicKey;
+/**
+ * Given a buffer as a digest, pass through sha256 and ripemd160
+ * hash functions. Returns the result
+ * @param {Buffer} buf - buffer to get hash160 of
+ * @returns {Buffer}
+ */
+function hash160(buf) {
+  return bitcoin.crypto.ripemd160(bitcoin.crypto.sha256(buf))
 }
