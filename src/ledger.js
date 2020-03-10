@@ -31,6 +31,7 @@ import {
   multisigAddressType,
   getParentPath,
   getFingerprintFromPublicKey,
+  deriveExtendedPublicKey,
 } from "unchained-bitcoin";
 
 import {
@@ -677,20 +678,22 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 
   /**
-   * Get fingerprint for given path. This is useful for generating xpubs
+   * Get fingerprint from parent pubkey. This is useful for generating xpubs
    * which need the fingerprint of the parent pubkey
-   * @param {string} path - path of pubkey to retrieve fingerprint for
    * @returns {string} fingerprint
    */
-   async getFingerprint(path) {
-    let fingerprint
-    await this.withApp(async (app) => {
-      const key = await app.getWalletPublicKey(path)
-      fingerprint = getFingerprintFromPublicKey(key.publicKey)
-    })
-    return fingerprint
+   async getFingerprint() {
+    const pubkey = await this.getParentPublicKey()
+    return getFingerprintFromPublicKey(pubkey)
    }
-   
+  
+  async getParentPublicKey() {
+    return await this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path)
+      return (await app.getWalletPublicKey(parentPath)).publicKey
+    })
+  }
+  
   /**
    * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
    * @example
@@ -702,24 +705,14 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    */
   async run() {
     const walletPublicKey = await super.run();
-    const compressedPubkey = compressPublicKey(walletPublicKey.publicKey)
-
-    let node;
-    await this.withApp(async (app) => {
-      // get the hd wallet node and fill in missing properties
-      node = bip32.fromPublicKey(Buffer.from(compressedPubkey, 'hex'),
-        Buffer.from(walletPublicKey.chainCode, 'hex'));
-      
-      // extended key fingerprint is from the parent pubkey
-      const parentKeyPath = getParentPath(this.bip32Path)
-      node.parentFingerprint = await this.getFingerprint(parentKeyPath)
-      node.depth = this.bip32Path.split("/").length - 1;
-      const sequence = bip32PathToSequence(this.bip32Path);
-      node.index = sequence.slice(-1)[0];
-      node.path = this.bip32Path;
-      node.network.bip32.public = "testnet" === this.network ? 0x043587cf : 0x0488b21e; // TODO: export constants in unchained-bitcoin
-    });
-    return node.toBase58();
+    const fingerprint = await this.getFingerprint()
+    return deriveExtendedPublicKey(
+      this.bip32Path, 
+      walletPublicKey.publicKey, 
+      walletPublicKey.chainCode, 
+      fingerprint, 
+      this.network
+    )
   }
 }
 
