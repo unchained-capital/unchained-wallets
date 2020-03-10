@@ -30,7 +30,7 @@ import {
   P2WSH,
   multisigAddressType,
 } from "unchained-bitcoin";
-import bs58check from 'bs58check'
+
 import {
   ACTIVE,
   PENDING,
@@ -415,7 +415,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  * at a given BIP32 path.
  *
  * You may want to use `LedgerExportPublicKey` or
- * `TrezorExportExtendedPublicKey` directly.
+ * `LedgerExportExtendedPublicKey` directly.
  * 
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
@@ -637,7 +637,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 }
 
 /**
- * Class for wallet extended public key(xpub) interaction at a given BIP32 path.
+ * Class for wallet extended public key (xpub) interaction at a given BIP32 path.
  * @extends {module:ledger.LedgerExportHDNode}
  */
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
