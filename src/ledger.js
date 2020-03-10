@@ -29,6 +29,8 @@ import {
   P2SH_P2WSH,
   P2WSH,
   multisigAddressType,
+  getParentPath,
+  hash160
 } from "unchained-bitcoin";
 
 import {
@@ -693,7 +695,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    }
    
   /**
-   * Retrieve extended public key(xpub) from Ledger device for a given BIP32 path
+   * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
    * @example
    * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
    * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
@@ -989,25 +991,4 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return false;
   }
 
-}
-
-/** Local helper functions **/
-
-/**
- * get the path of the parent of the given path
- * @param {string} bip32Path 
- * @returns {string}
- */
-function getParentPath(bip32Path) {
-  return bip32Path.split("/").slice(1, -1).join("/");
-}
-
-/**
- * Given a buffer as a digest, pass through sha256 and ripemd160
- * hash functions. Returns the result
- * @param {Buffer} buf - buffer to get hash160 of
- * @returns {Buffer}
- */
-function hash160(buf) {
-  return bitcoin.crypto.ripemd160(bitcoin.crypto.sha256(buf))
 }
