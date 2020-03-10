@@ -30,7 +30,7 @@ import {
   P2WSH,
   multisigAddressType,
   getParentPath,
-  hash160
+  getFingerprintFromPublicKey,
 } from "unchained-bitcoin";
 
 import {
@@ -686,10 +686,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
     let fingerprint
     await this.withApp(async (app) => {
       const key = await app.getWalletPublicKey(path)
-      let compressed = compressPublicKey(key.publicKey)
-      compressed = Buffer.from(compressed, 'hex')
-      const hash = hash160(compressed)
-      fingerprint = ((hash[0] << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3]) >>> 0;
+      fingerprint = getFingerprintFromPublicKey(key.publicKey)
     })
     return fingerprint
    }
