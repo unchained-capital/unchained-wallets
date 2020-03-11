@@ -11,8 +11,8 @@
  *
  * * LedgerGetMetadata
  * * LedgerExportPublicKey
+ * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
- * 
  * 
  * @module ledger
  */
@@ -29,6 +29,9 @@ import {
   P2SH_P2WSH,
   P2WSH,
   multisigAddressType,
+  getParentPath,
+  getFingerprintFromPublicKey,
+  deriveExtendedPublicKey,
 } from "unchained-bitcoin";
 
 import {
@@ -50,6 +53,7 @@ import IMAGES from "./images";
 export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
+const bip32 = require('bip32');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
@@ -413,7 +417,8 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  * Base class for interactions exporting information about an HD node
  * at a given BIP32 path.
  *
- * You may want to use `LedgerExportPublicKey` directly.
+ * You may want to use `LedgerExportPublicKey` or
+ * `LedgerExportExtendedPublicKey` directly.
  * 
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
@@ -484,18 +489,22 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
         code: "ledger.path.warning",
         messages: [
           {
+            image: IMAGES[LEDGER].unusualDerivationBeta,
             text: "Your Ledger will display a message about an unusual derivation path.",
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].fullDerivationPathBeta,
             text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].rejectIfNotSureBeta,
             text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].approveDerivationBeta,
             text: `Your Ledger will ask if you want to "Approve derivation path".`,
             action: LEDGER_BOTH_BUTTONS,
           },
@@ -522,10 +531,12 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       code: "ledger.export.hdnode",
       messages: [
         {
+          image: IMAGES[LEDGER].addressClickThroughBeta,
           text: `Your Ledger will display a bitcoin address in several parts.`,
           action: LEDGER_RIGHT_BUTTON,
         },
         {
+          image: IMAGES[LEDGER].approveAddressBeta,
           text: `Your Ledger will ask you if want to "Approve" this request.`,
           action: LEDGER_BOTH_BUTTONS,
         },
@@ -607,7 +618,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     const result = await super.run();
     return this.parsePublicKey((result || {}).publicKey);
   }
-
   /**
    * Compress the given public key.
    *
@@ -627,7 +637,83 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
       throw new Error("Received no public key from Ledger device.");
     }
   }
+}
 
+/**
+ * Class for wallet extended public key (xpub) interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerExportHDNode}
+ */
+export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
+  constructor({bip32Path, network}) {
+    super({bip32Path});
+    this.network = network;
+  }
+  
+  messages() {
+    const messages = super.messages();
+
+    if (this.hasBIP32PathWarning()) { 
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyBeta,
+        state: ACTIVE, 
+        level: INFO, 
+        version: ">=1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyV1,
+        state: ACTIVE, 
+        level: INFO, 
+        version: "<1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+    }
+
+    return messages;
+  }
+
+  /**
+   * Get fingerprint from parent pubkey. This is useful for generating xpubs
+   * which need the fingerprint of the parent pubkey
+   * @returns {string} fingerprint
+   */
+   async getFingerprint() {
+    const pubkey = await this.getParentPublicKey()
+    return getFingerprintFromPublicKey(pubkey)
+   }
+  
+  async getParentPublicKey() {
+    return await this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path)
+      return (await app.getWalletPublicKey(parentPath)).publicKey
+    })
+  }
+  
+  /**
+   * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
+   * @example
+   * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
+   * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
+   * const xpub = await interaction.run();
+   * console.log(xpub);
+   * @returns {string} extended public key(xpub) for the BIP32 path of a given instance
+   */
+  async run() {
+    const walletPublicKey = await super.run();
+    const fingerprint = await this.getFingerprint()
+    return deriveExtendedPublicKey(
+      this.bip32Path, 
+      walletPublicKey.publicKey, 
+      walletPublicKey.chainCode, 
+      fingerprint, 
+      this.network
+    )
+  }
 }
 
 /**

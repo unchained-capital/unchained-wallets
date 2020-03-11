@@ -1,7 +1,7 @@
 import {version} from "../package.json";
 import {UnsupportedInteraction} from "./interaction";
 import {TREZOR, TrezorGetMetadata, TrezorExportPublicKey, TrezorExportExtendedPublicKey, TrezorSignMultisigTransaction, TrezorConfirmMultisigAddress} from "./trezor";
-import {LEDGER, LedgerGetMetadata, LedgerExportPublicKey, LedgerSignMultisigTransaction} from "./ledger";
+import {LEDGER, LedgerGetMetadata, LedgerExportPublicKey, LedgerExportExtendedPublicKey, LedgerSignMultisigTransaction} from "./ledger";
 import {HERMIT, HermitExportPublicKey, HermitExportExtendedPublicKey, HermitSignTransaction} from "./hermit";
 
 /**
@@ -98,7 +98,7 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  * Return an interaction class for exporting an extended public key
  * from the given `keystore` for the given `bip32Path` and `network`.
  *
- * **Supported keystores:** Trezor, Hermit
+ * **Supported keystores:** Trezor, Hermit, Ledger
  *
  *
  * @param {Object} options - options argument
@@ -119,6 +119,8 @@ export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
     return new TrezorExportExtendedPublicKey({network, bip32Path});
   case HERMIT:
     return new HermitExportExtendedPublicKey({bip32Path});
+  case LEDGER:
+    return new LedgerExportExtendedPublicKey({network, bip32Path});
   default:
     return new UnsupportedInteraction({code: "unsupported", text: "This keystore is not supported when exporting extended public keys."});
   }

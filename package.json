@@ -28,6 +28,7 @@
   "scripts": {
     "compile-images": "node images/compile.js",
     "compile": "babel -d lib/ src/ && npm run compile-images",
+    "compile:watch": "babel --watch -d lib/ src/ && npm run compile-images",
     "prepublish": "npm run compile",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
@@ -49,7 +50,7 @@
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
     "trezor-connect": "^8.0.13",
-    "unchained-bitcoin": "0.0.7"
+    "unchained-bitcoin": "0.0.8"
   },
   "directories": {
     "lib": "lib"
