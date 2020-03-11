@@ -39,8 +39,8 @@
  *
  * * LedgerGetMetadata
  * * LedgerExportPublicKey
+ * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
- * 
  * 
  * @module ledger
  */
@@ -57,6 +57,9 @@ import {
   P2SH_P2WSH,
   P2WSH,
   multisigAddressType,
+  getParentPath,
+  getFingerprintFromPublicKey,
+  deriveExtendedPublicKey,
 } from "unchained-bitcoin";
 
 import {
@@ -78,6 +81,7 @@ import IMAGES from "./images";
 export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
+const bip32 = require('bip32');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
@@ -441,7 +445,8 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  * Base class for interactions exporting information about an HD node
  * at a given BIP32 path.
  *
- * You may want to use `LedgerExportPublicKey` directly.
+ * You may want to use `LedgerExportPublicKey` or
+ * `LedgerExportExtendedPublicKey` directly.
  * 
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
@@ -512,18 +517,22 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
         code: "ledger.path.warning",
         messages: [
           {
+            image: IMAGES[LEDGER].unusualDerivationBeta,
             text: "Your Ledger will display a message about an unusual derivation path.",
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].fullDerivationPathBeta,
             text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].rejectIfNotSureBeta,
             text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
             action: LEDGER_RIGHT_BUTTON,
           },
           {
+            image: IMAGES[LEDGER].approveDerivationBeta,
             text: `Your Ledger will ask if you want to "Approve derivation path".`,
             action: LEDGER_BOTH_BUTTONS,
           },
@@ -550,10 +559,12 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       code: "ledger.export.hdnode",
       messages: [
         {
+          image: IMAGES[LEDGER].addressClickThroughBeta,
           text: `Your Ledger will display a bitcoin address in several parts.`,
           action: LEDGER_RIGHT_BUTTON,
         },
         {
+          image: IMAGES[LEDGER].approveAddressBeta,
           text: `Your Ledger will ask you if want to "Approve" this request.`,
           action: LEDGER_BOTH_BUTTONS,
         },
@@ -635,7 +646,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     const result = await super.run();
     return this.parsePublicKey((result || {}).publicKey);
   }
-
   /**
    * Compress the given public key.
    *
@@ -655,7 +665,83 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
       throw new Error("Received no public key from Ledger device.");
     }
   }
+}
 
+/**
+ * Class for wallet extended public key (xpub) interaction at a given BIP32 path.
+ * @extends {module:ledger.LedgerExportHDNode}
+ */
+export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
+  constructor({bip32Path, network}) {
+    super({bip32Path});
+    this.network = network;
+  }
+  
+  messages() {
+    const messages = super.messages();
+
+    if (this.hasBIP32PathWarning()) { 
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyBeta,
+        state: ACTIVE, 
+        level: INFO, 
+        version: ">=1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+
+      messages.push({
+        image: IMAGES[LEDGER].exportPublicKeyV1,
+        state: ACTIVE, 
+        level: INFO, 
+        version: "&lt;1.6.0",
+        text: `Your Ledger will ask to confirm "Export public key?"`,
+        code: "ledger.export.xpub",
+        action: LEDGER_RIGHT_BUTTON,
+      });
+    }
+
+    return messages;
+  }
+
+  /**
+   * Get fingerprint from parent pubkey. This is useful for generating xpubs
+   * which need the fingerprint of the parent pubkey
+   * @returns {string} fingerprint
+   */
+   async getFingerprint() {
+    const pubkey = await this.getParentPublicKey()
+    return getFingerprintFromPublicKey(pubkey)
+   }
+  
+  async getParentPublicKey() {
+    return await this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path)
+      return (await app.getWalletPublicKey(parentPath)).publicKey
+    })
+  }
+  
+  /**
+   * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
+   * @example
+   * import {LedgerExportExtendedPublicKey} from "unchained-wallets";
+   * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
+   * const xpub = await interaction.run();
+   * console.log(xpub);
+   * @returns {string} extended public key(xpub) for the BIP32 path of a given instance
+   */
+  async run() {
+    const walletPublicKey = await super.run();
+    const fingerprint = await this.getFingerprint()
+    return deriveExtendedPublicKey(
+      this.bip32Path, 
+      walletPublicKey.publicKey, 
+      walletPublicKey.chainCode, 
+      fingerprint, 
+      this.network
+    )
+  }
 }
 
 /**
@@ -934,13 +1020,13 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Mar 11 2020 03:32:31 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Mar 11 2020 04:44:55 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>
