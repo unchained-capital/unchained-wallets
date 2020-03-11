@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 0.0.10
+
+### Added
+
+* `ExportExtendedPublicKey` API works for Ledger devices now.
+
+## Version 0.0.9
+
+### Changed
+
+* Major refactoring of API, interaction class hierarchy, and documentation.
+
 ## Version 0.0.8
 
 ### Added
