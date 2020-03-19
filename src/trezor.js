@@ -98,9 +98,22 @@ export const TREZOR_BOTH_BUTTONS = 'trezor_both_buttons';
  */
 export const TREZOR_PUSH_AND_HOLD_BUTTON = 'trezor_push_and_hold_button';
 
-
+const TREZOR_DEV = process.env.TREZOR_DEV
 try {
-  TrezorConnect.manifest({email: "help@unchained-capital.com", appUrl: "https://github.com/unchained-capital/unchained-wallets"});
+  if (TREZOR_DEV)
+    TrezorConnect.init({
+      connectSrc: 'https://localhost:8088/',
+      lazyLoad: true,
+      manifest: {
+        email: "help@unchained-capital.com", 
+        appUrl: "https://github.com/unchained-capital/unchained-wallets" 
+      }
+    })
+  else 
+    TrezorConnect.manifest({
+      email: "help@unchained-capital.com", 
+      appUrl: "https://github.com/unchained-capital/unchained-wallets"
+    });
 } catch(e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
