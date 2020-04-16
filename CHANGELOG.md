@@ -1,4 +1,8 @@
 # Changelog
+## Version 0.0.11
+
+### Changed
+* (Minor) bumped dependency versions
 
 ## Version 0.0.10
 

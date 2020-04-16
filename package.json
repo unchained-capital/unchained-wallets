@@ -50,7 +50,7 @@
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
     "trezor-connect": "^8.0.13",
-    "unchained-bitcoin": "0.0.8"
+    "unchained-bitcoin": "^0.0.12"
   },
   "directories": {
     "lib": "lib"
