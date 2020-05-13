@@ -76,7 +76,7 @@ describe("HermitExportPublicKey", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({})); }).toThrow(/no public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({foo: "bar"})); }).toThrow(/no public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: ""})); }).toThrow(/no public key/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32Path: "m/45'/0'/0'/0/0"})); }).toThrow(/no public key/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32_path: "m/45'/0'/0'/0/0"})); }).toThrow(/no public key/i);
     });
 
     it("throws an error when an extended public key is returned instead", () => {
@@ -85,12 +85,13 @@ describe("HermitExportPublicKey", () => {
 
     it("throws an error when no BIP32 path is returned", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: "03..."})); }).toThrow(/no bip32 path/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: "03...", bip32Path: ""})); }).toThrow(/no bip32 path/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: "03...", bip32_path: ""})); }).toThrow(/no bip32 path/i);
     });
 
     it("returns the result when public key and BIP32 path are present", () => {
+      const data = {pubkey: "03...", bip32_path: "m/45'/0'/0'/0/0"};
       const result = {pubkey: "03...", bip32Path: "m/45'/0'/0'/0/0"};
-      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(result);
+      expect(interaction.parse(encodeHermitQRCodeData(data))).toEqual(result);
     });
 
   });
@@ -110,7 +111,7 @@ describe("HermitExportExtendedPublicKey", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({})); }).toThrow(/no extended public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({foo: "bar"})); }).toThrow(/no extended public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: ""})); }).toThrow(/no extended public key/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32Path: "m/45'/0'/0'"})); }).toThrow(/no extended public key/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32_path: "m/45'/0'/0'"})); }).toThrow(/no extended public key/i);
     });
 
     it("throws an error when a public key is returned instead", () => {
@@ -119,12 +120,13 @@ describe("HermitExportExtendedPublicKey", () => {
 
     it("throws an error when no BIP32 path is returned", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: "xpub..."})); }).toThrow(/no bip32 path/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: "xpub...", bip32Path: ""})); }).toThrow(/no bip32 path/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: "xpub...", bip32_path: ""})); }).toThrow(/no bip32 path/i);
     });
 
     it("returns the result when extended public key and BIP32 path are present", () => {
+      const data = {xpub: "xpub...", bip32_path: "bar"};      
       const result = {xpub: "xpub...", bip32Path: "bar"};
-      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(result);
+      expect(interaction.parse(encodeHermitQRCodeData(data))).toEqual(result);
     });
 
   });

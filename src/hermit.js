@@ -199,7 +199,8 @@ export class HermitExportPublicKey extends HermitReader {
 
   parse(encodedString) {
     const result = parseHermitQRCodeData(encodedString);
-    const {xpub, pubkey, bip32Path} = result;
+    const {xpub, pubkey} = result;
+    const bip32Path = result.bip32_path;
     if (!pubkey) {
       if (xpub) {
         throw new Error("Make sure you export a plain public key and NOT an extended public key.");
@@ -210,6 +211,8 @@ export class HermitExportPublicKey extends HermitReader {
     if (!bip32Path) {
       throw new Error("No BIP32 path in QR code.");
     }
+    result.bip32Path = bip32Path;
+    delete result.bip32_path;
     return result;
   }
 
@@ -246,7 +249,9 @@ export class HermitExportExtendedPublicKey extends HermitReader {
 
   parse(encodedString) {
     const result = parseHermitQRCodeData(encodedString);
-    const {xpub, pubkey, bip32Path} = result;
+    const {xpub, pubkey} = result;
+    const bip32Path = result.bip32_path;
+    
     if (!xpub) {
       if (pubkey) {
         throw new Error("Make sure you export an extended public key and NOT a plain public key.");
@@ -257,6 +262,8 @@ export class HermitExportExtendedPublicKey extends HermitReader {
     if (!bip32Path) {
       throw new Error("No BIP32 path in QR code.");
     }
+    result.bip32Path = bip32Path;
+    delete result.bip32_path;
     return result;
   }
 
