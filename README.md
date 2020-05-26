@@ -31,7 +31,7 @@ an application and a keystore, e.g. - exporting a public key at a
 certain BIP32 path from a Trezor model T.
 
 The classes are designed to be stateless; all keystore interaction
-state (are we currrently talking to the Trezor?) is meant to be stored
+state (are we currently talking to the Trezor?) is meant to be stored
 by the calling application.
 
 The classes will also provide messages back to the developer suitable
@@ -116,6 +116,7 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
       publicKey: '',
       error: '',
     };
+    this.importPublicKey = this.importPublicKey.bind(this);
   }
 
 
@@ -133,7 +134,7 @@ export class HardwareWalletPublicKeyImporter extends React.Component {
       return (
         <div>
           <p>Click here to import public key for BIP32 path {bip32Path}.</p>
-          <button disabled={keystoreState !== PENDING} onClick={this.importPublicKey}>Import Public Key</buttton>
+          <button disabled={keystoreState !== PENDING} onClick={this.importPublicKey}>Import Public Key</button>
           {this.renderMessages()}
           {error && <p>{error}</p>}
         </div>
@@ -215,15 +216,15 @@ pass in the keystore `state`, and other filtering properties.
 A message in the `messages()` array is an object with the following
 keys:
 
-* `code` -- a dot-separrated string describing the message (e.g. - `device.connect`)
+* `code` -- a dot-separated string describing the message (e.g. - `device.connect`)
 * `state` -- the keystore state the message is for (e.g. - `pending`, `active`, or `unsupported`)
 * `level` -- the level of the message (e.g. - `info`, `warning`, or `error`)
 * `text` -- the message text (e.g. - `Make sure your Trezor hardware wallet is plugged in.`)
 * `version` -- (optional) a version string or range/spec describing which versions of the keystore this message applies to
 * `image` -- (optional) an object with `label`, `mimeType`, and base64-encoded `data` for an image
-* `steps` -- (optional) an array of sub-messages for this message.  `code`, `state`, and `level` are optional for submessages.
+* `steps` -- (optional) an array of sub-messages for this message.  `code`, `state`, and `level` are optional for sub-messages.
   
-Messages are hierachical and well-structured, allowing applications to
+Messages are hierarchical and well-structured, allowing applications to
 display them appropriately.
 
 Several methods such as `hasMessage`, `messageTextFor()`, &c. are
@@ -231,7 +232,7 @@ available to filter and extract data from messages.
 
 See the [API
 documentation](https://unchained-capital.github.io/unchained-wallets)
-for more details on messages..
+for more details on messages.
 
 ## Developers
 
