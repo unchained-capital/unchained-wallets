@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   UNSUPPORTED,
   PENDING,
@@ -19,18 +20,31 @@ describe("KeystoreInteraction", () => {
       super();
       this.param = param;
     }
-    
+
     messages() {
       const messages = super.messages();
-      messages.push({state: PENDING, level: WARNING, text: "First message", code: "alpha", param: this.param});
-      messages.push({state: ACTIVE, level: INFO, text: "Second message", code: "beta", param: this.param, version: '2.x'});
+      messages.push({
+        state: PENDING,
+        level: WARNING,
+        text: "First message",
+        code: "alpha",
+        param: this.param,
+      });
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        text: "Second message",
+        code: "beta",
+        param: this.param,
+        version: '2.x',
+      });
       return messages;
     }
-    
+
   }
 
   const param = "foo";
-  const interaction  = new TestKeystoreInteraction({param});
+  const interaction = new TestKeystoreInteraction({param});
 
   it("has an environment", () => {
     expect(interaction.environment).toBeDefined();
@@ -141,13 +155,19 @@ describe("KeystoreInteraction", () => {
     describe("by multiple options", () => {
 
       it("can find matching messages", () => {
-        expect(interaction.messagesFor({state: PENDING, level: WARNING}).length).toEqual(1);
+        expect(interaction.messagesFor({
+          state: PENDING,
+          level: WARNING,
+        }).length).toEqual(1);
       });
 
       it("returns an empty array if there are no matches", () => {
-        expect(interaction.messagesFor({state: PENDING, level: INFO}).length).toEqual(0);
+        expect(interaction.messagesFor({
+          state: PENDING,
+          level: INFO,
+        }).length).toEqual(0);
       });
-      
+
     });
 
   });
@@ -191,7 +211,7 @@ describe("KeystoreInteraction", () => {
     });
 
   });
-    
+
 
 });
 
@@ -199,16 +219,24 @@ describe("UnsupportedInteraction", () => {
 
   const text = "Unsupported interaction";
   const code = "alpha";
-  const interaction = new UnsupportedInteraction({text, code});
-  
+  const interaction = new UnsupportedInteraction({
+    text,
+    code,
+  });
+
   it("is not supported", () => {
     expect(interaction.isSupported()).toBe(false);
   });
 
   it("has a message explaining why it is unsupported", () => {
-    expect(interaction.hasMessagesFor({state: UNSUPPORTED, level: ERROR, code, text})).toBe(true);
+    expect(interaction.hasMessagesFor({
+      state: UNSUPPORTED,
+      level: ERROR,
+      code,
+      text,
+    })).toBe(true);
   });
-  
+
 });
 
 
@@ -264,7 +292,7 @@ describe("IndirectKeystoreInteraction", () => {
     parse(response) {
       return (response || '').toLowerCase();
     }
-    
+
   }
 
   const param = "foo";

@@ -1,16 +1,15 @@
-/* eslint-disable max-lines*/
-
-import { 
+/* eslint-disable max-lines */
+import {
   MAINNET,
   TEST_FIXTURES,
 } from "unchained-bitcoin";
-import { 
+import {
   PENDING,
   ACTIVE,
   INFO,
 } from "./interaction";
 
-import { 
+import {
   trezorCoin,
   TrezorInteraction,
   TrezorGetMetadata,
@@ -25,11 +24,21 @@ const TrezorConnect = require("trezor-connect").default;
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.connect", text: "plugged in"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "device.connect",
+      text: "plugged in",
+    })).toBe(true);
   });
 
   it("has a message about the TrezorConnect popup and enabling popups", () => {
-    expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "trezor.connect.generic", text: "enabled popups"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: ACTIVE,
+      level: INFO,
+      code: "trezor.connect.generic",
+      text: "enabled popups",
+    })).toBe(true);
   });
 }
 
@@ -37,21 +46,26 @@ function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
 
   it("throws an error on an unsuccessful request", async () => {
     const interaction = interactionBuilder();
-    interaction.connectParams = () => ([() => ({success: false, payload: {error: "foobar"}}), {}]);
-    try  {
+    interaction.connectParams = () => ([
+      () => ({
+        success: false,
+        payload: {error: "foobar"},
+      }), {},
+    ]);
+    try {
       await interaction.run();
-    } catch(e) {
+    } catch (e) {
       expect(e.message).toMatch(/foobar/i);
     }
   });
-  
+
 }
 
 
 describe('trezor', () => {
 
   describe('TrezorInteraction', () => {
-    
+
     function interactionBuilder() { return new TrezorInteraction({network: MAINNET}); }
 
     itHasStandardMessages(interactionBuilder);
@@ -60,14 +74,14 @@ describe('trezor', () => {
     it("sets the default method to throw an error", async () => {
       try {
         await interactionBuilder().run();
-      } catch(e) {
+      } catch (e) {
         expect(e.message).toMatch(/subclass of TrezorInteraction/i);
       }
     });
 
   });
 
-  describe("TrezorGetMetadata", ()  => {
+  describe("TrezorGetMetadata", () => {
 
     function interactionBuilder() { return new TrezorGetMetadata({network: MAINNET}); }
 
@@ -106,18 +120,18 @@ describe('trezor', () => {
           unfinished_backup: null,
           vendor: "bitcointrezor.com",
         })).toEqual({
-          spec: "Model 1 v.1.6.3 w/PIN",
-          model: "Model 1",
-          version: {
-            major: 1,
-            minor: 6,
-            patch: 3,
-            string: "1.6.3",
-          },
-          label: "My Trezor",
-          pin: true,
-          passphrase: false,
-        });
+        spec: "Model 1 v.1.6.3 w/PIN",
+        model: "Model 1",
+        version: {
+          major: 1,
+          minor: 6,
+          patch: 3,
+          string: "1.6.3",
+        },
+        label: "My Trezor",
+        pin: true,
+        passphrase: false,
+      });
     });
 
     it("uses TrezorConnect.getFeatures", () => {
@@ -132,7 +146,13 @@ describe('trezor', () => {
   describe("TrezorExportHDNode", () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
-    function interactionBuilder() { return new TrezorExportHDNode({bip32Path, network: MAINNET}); }
+
+    function interactionBuilder() {
+      return new TrezorExportHDNode({
+        bip32Path,
+        network: MAINNET,
+      });
+    }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -151,7 +171,13 @@ describe('trezor', () => {
   describe("TrezorExportPublicKey", () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
-    function interactionBuilder () { return new TrezorExportPublicKey({bip32Path, network: MAINNET}); }
+
+    function interactionBuilder() {
+      return new TrezorExportPublicKey({
+        bip32Path,
+        network: MAINNET,
+      });
+    }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -175,7 +201,12 @@ describe('trezor', () => {
 
     const bip32Path = "m/45'/0'/0'/0'";
 
-    function interactionBuilder () { return new TrezorExportExtendedPublicKey({bip32Path, network: MAINNET}); }
+    function interactionBuilder() {
+      return new TrezorExportExtendedPublicKey({
+        bip32Path,
+        network: MAINNET,
+      });
+    }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -219,7 +250,7 @@ describe('trezor', () => {
           expect(params.outputs.length).toEqual(fixture.outputs.length);
           // FIXME check inputs & output details
         });
-        
+
       });
 
     });
@@ -232,7 +263,7 @@ describe('trezor', () => {
 
       describe(`displaying a ${fixture.description}`, () => {
 
-        function interactionBuilder () { return new TrezorConfirmMultisigAddress(fixture); }
+        function interactionBuilder() { return new TrezorConfirmMultisigAddress(fixture); }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -253,7 +284,7 @@ describe('trezor', () => {
 
     });
   });
-  
+
 });
 
 

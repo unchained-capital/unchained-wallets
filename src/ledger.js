@@ -13,7 +13,7 @@
  * * LedgerExportPublicKey
  * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
- * 
+ *
  * @module ledger
  */
 import BigNumber from "bignumber.js";
@@ -53,10 +53,9 @@ import IMAGES from "./images";
 export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
-const bip32 = require('bip32');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
-const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
+const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
  * Constant representing the action of pushing the left button on a
@@ -95,7 +94,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  *
  * Errors are not caught, so users of this class (and its subclasses)
  * should use `try...catch` as always.
- * 
+ *
  * @extends {module:interaction.DirectKeystoreInteraction}
  * @example
  * import {LedgerInteraction} from "unchained-wallets";
@@ -120,7 +119,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  * const interaction = new SimpleLedgerInteraction({param: "foo"});
  * const result = await interaction.run();
  * console.log(result); // whatever value `app.doSomething(...)` returns
- * 
+ *
  */
 export class LedgerInteraction extends DirectKeystoreInteraction {
 
@@ -134,9 +133,24 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger is plugged in.", code: "device.connect"});
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have unlocked your Ledger.", code: "device.unlock"});
-    messages.push({state: ACTIVE, level: INFO, text: "Communicating with Ledger...", code: "device.active"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Make sure your Ledger is plugged in.",
+      code: "device.connect",
+    });
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Make sure you have unlocked your Ledger.",
+      code: "device.unlock",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Communicating with Ledger...",
+      code: "device.active",
+    });
     return messages;
   }
 
@@ -160,7 +174,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   async withTransport(callback) {
     const transport = await TransportU2F.create();
-    return await callback(transport);
+    return callback(transport);
   }
 
   /**
@@ -183,9 +197,9 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withApp(callback) {
-    return await this.withTransport(async (transport) => {
+    return this.withTransport(async (transport) => {
       const app = new LedgerBtc(transport);
-      return await callback(app, transport);
+      return callback(app, transport);
     });
   }
 
@@ -196,7 +210,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
  * is not in any app but in the dashboard.
  *
  * @extends {module:ledger.LedgerInteraction}
- * 
+ *
  */
 export class LedgerDashboardInteraction extends LedgerInteraction {
 
@@ -209,8 +223,18 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.", code: "ledger.app.dashboard"});
-    messages.push({state: ACTIVE, level: INFO, text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.", code: "ledger.app.dashboard"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.",
+      code: "ledger.app.dashboard",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.",
+      code: "ledger.app.dashboard",
+    });
     return messages;
   }
 }
@@ -218,7 +242,7 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
 /**
  * Base class for interactions which must occur when the Ledger device
  * is open to the bitcoin app.
- * 
+ *
  * @extends {module:ledger.LedgerInteraction}
  */
 export class LedgerBitcoinInteraction extends LedgerInteraction {
@@ -231,8 +255,18 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have the Bitcoin app open.", code: "ledger.app.bitcoin"});
-    messages.push({state: ACTIVE, level: INFO, text: "Make sure you have the Bitcoin app open.", code: "ledger.app.bitcoin"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Make sure you have the Bitcoin app open.",
+      code: "ledger.app.bitcoin",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Make sure you have the Bitcoin app open.",
+      code: "ledger.app.bitcoin",
+    });
     return messages;
   }
 
@@ -264,14 +298,14 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
  *     string: "1.7",
  *   }
  * }
- * 
+ *
  */
 export class LedgerGetMetadata extends LedgerDashboardInteraction {
   // FIXME entire implementation here is rickety AF.
 
   async run() {
-    
-    return await this.withTransport(async (transport) => {
+
+    return this.withTransport(async (transport) => {
       transport.setScrambleKey('B0L0S');
       const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
       return this.parseMetadata(rawResult);
@@ -298,7 +332,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
         das: 2,
         club: 3,
         shitcoins: 4,
-        ee: 5
+        ee: 5,
       };
       const ManagerAllowedFlag = 0x08;
       const PinValidatedFlag = 0x80;
@@ -311,15 +345,15 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       let seVersion = Buffer.from(data.slice(5, 5 + seVersionLength)).toString();
       const flagsLength = data[5 + seVersionLength];
       let flags = Buffer.from(
-        data.slice(5 + seVersionLength + 1, 5 + seVersionLength + 1 + flagsLength)
+        data.slice(5 + seVersionLength + 1, 5 + seVersionLength + 1 + flagsLength),
       );
 
       const mcuVersionLength = data[5 + seVersionLength + 1 + flagsLength];
       let mcuVersion = Buffer.from(
         data.slice(
           7 + seVersionLength + flagsLength,
-          7 + seVersionLength + flagsLength + mcuVersionLength
-        )
+          7 + seVersionLength + flagsLength + mcuVersionLength,
+        ),
       );
       if (mcuVersion[mcuVersion.length - 1] === 0) {
         mcuVersion = mcuVersion.slice(0, mcuVersion.length - 1);
@@ -367,14 +401,26 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       //
       //  Order matters -- high to low minTargetId
       const MODEL_RANGES = [
-        {minTargetId: 0x33000004,  model: "Nano X"},
-        {minTargetId: 0x31100002,  model: "Nano S"},
-        {minTargetId: 0x31100002, model: "Blue"},
-        {minTargetId: 0x01000001, model: "MCU"},
+        {
+          minTargetId: 0x33000004,
+          model: "Nano X",
+        },
+        {
+          minTargetId: 0x31100002,
+          model: "Nano S",
+        },
+        {
+          minTargetId: 0x31100002,
+          model: "Blue",
+        },
+        {
+          minTargetId: 0x01000001,
+          model: "MCU",
+        },
       ];
       let model = 'Unknown';
       if (targetId) {
-        for (let i=0; i<MODEL_RANGES.length; i++) {
+        for (let i = 0; i < MODEL_RANGES.length; i++) {
           const range = MODEL_RANGES[i];
           if (targetId >= range.minTargetId) {
             model = range.model;
@@ -419,7 +465,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  *
  * You may want to use `LedgerExportPublicKey` or
  * `LedgerExportExtendedPublicKey` directly.
- * 
+ *
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
  * import {MAINNET} from "unchained-bitcoin";
@@ -432,7 +478,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
    * Requires a valid BIP32 path to the node to export.
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} bip32Path - the BIP32 path for the HD node
    */
@@ -449,11 +495,11 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   messages() {
     const messages = super.messages();
 
-    if (this.hasBIP32PathWarning()) { 
+    if (this.hasBIP32PathWarning()) {
 
       messages.push({
-        state: ACTIVE, 
-        level: WARNING, 
+        state: ACTIVE,
+        level: WARNING,
         version: "<1.6.0",
         text: `Your Ledger will display a "WARNING!" message.  It is safe to continue through the prompts till you see a bitcoin address.`,
         code: "ledger.path.warning",
@@ -482,8 +528,8 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       });
 
       messages.push({
-        state: ACTIVE, 
-        level: WARNING, 
+        state: ACTIVE,
+        level: WARNING,
         version: ">=1.6.0",
         text: `Your Ledger will display a message saying "derivation path is unusual".  It is safe to continue through the prompts till you see a bitcoin address.`,
         code: "ledger.path.warning",
@@ -512,10 +558,10 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       });
 
     }
-  
+
     messages.push({
-      state: ACTIVE, 
-      level: INFO, 
+      state: ACTIVE,
+      level: INFO,
       version: "<1.6.0",
       text: `Your Ledger will scroll a bitcoin address across its screen.`,
       code: "ledger.export.hdnode",
@@ -524,8 +570,8 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     });
 
     messages.push({
-      state: ACTIVE, 
-      level: INFO, 
+      state: ACTIVE,
+      level: INFO,
       version: ">=1.6.0",
       text: `Your Ledger will display a bitcoin address in several parts.  Approve exporting the corresponding public key.`,
       code: "ledger.export.hdnode",
@@ -543,7 +589,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       ],
 
     });
-    
+
     return messages;
   }
 
@@ -572,14 +618,24 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     // 3 -> 0
     // 4 -> 0 - 50000
     const indices = bip32PathToSequence(this.bip32Path);
-    const hardened0   = hardenedBIP32Index(0);
-    const hardened44  = hardenedBIP32Index(44);
+    const hardened0 = hardenedBIP32Index(0);
+    const hardened44 = hardenedBIP32Index(44);
     const hardened100 = hardenedBIP32Index(100);
-    if (indices.length !== 5) { return true; }
-    if (indices[0] !== hardened44) { return true; }
-    if (indices[2] < hardened0 || indices[2] > hardened100) { return true; }
-    if (indices[3] !== 0) { return true; }
-    if (indices[4] < 0 || indices[4] > 50000) { return true; }
+    if (indices.length !== 5) {
+      return true;
+    }
+    if (indices[0] !== hardened44) {
+      return true;
+    }
+    if (indices[2] < hardened0 || indices[2] > hardened100) {
+      return true;
+    }
+    if (indices[3] !== 0) {
+      return true;
+    }
+    if (indices[4] < 0 || indices[4] > 50000) {
+      return true;
+    }
     return false;
   }
 
@@ -589,15 +645,15 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * @returns {object} the HD node object.
    */
   async run() {
-    return await this.withApp(async (app) => {
-      return await app.getWalletPublicKey(this.bip32Path, {verify: true});
+    return this.withApp(async (app) => {
+      return app.getWalletPublicKey(this.bip32Path, {verify: true});
     });
   }
 }
 
 /**
  * Returns the public key at a given BIP32 path.
- * 
+ *
  * @extends {module:ledger.LedgerExportHDNode}
  * @example
  * import {LedgerExportPublicKey} from "unchained-wallets";
@@ -611,25 +667,26 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
   /**
    * Parses out and compresses the public key from the response of
    * `LedgerExportHDNode`.
-   * 
-   * @returns {string} -- (compressed) public key in hex 
+   *
+   * @returns {string} -- (compressed) public key in hex
    */
   async run() {
     const result = await super.run();
     return this.parsePublicKey((result || {}).publicKey);
   }
+
   /**
    * Compress the given public key.
    *
    * @param {string} publicKey - the uncompressed public key in hex
    * @returns {string} - the compressed public key in hex
-   * 
+   *
    */
   parsePublicKey(publicKey) {
     if (publicKey) {
       try {
         return compressPublicKey(publicKey);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
         throw new Error("Unable to compress public key from Ledger device.");
       }
@@ -648,15 +705,15 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
     super({bip32Path});
     this.network = network;
   }
-  
+
   messages() {
     const messages = super.messages();
 
-    if (this.hasBIP32PathWarning()) { 
+    if (this.hasBIP32PathWarning()) {
       messages.push({
         image: IMAGES[LEDGER].exportPublicKeyBeta,
-        state: ACTIVE, 
-        level: INFO, 
+        state: ACTIVE,
+        level: INFO,
         version: ">=1.6.0",
         text: `Your Ledger will ask to confirm "Export public key?"`,
         code: "ledger.export.xpub",
@@ -665,8 +722,8 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
       messages.push({
         image: IMAGES[LEDGER].exportPublicKeyV1,
-        state: ACTIVE, 
-        level: INFO, 
+        state: ACTIVE,
+        level: INFO,
         version: "<1.6.0",
         text: `Your Ledger will ask to confirm "Export public key?"`,
         code: "ledger.export.xpub",
@@ -682,18 +739,18 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    * which need the fingerprint of the parent pubkey
    * @returns {string} fingerprint
    */
-   async getFingerprint() {
-    const pubkey = await this.getParentPublicKey()
-    return getFingerprintFromPublicKey(pubkey)
-   }
-  
-  async getParentPublicKey() {
-    return await this.withApp(async (app) => {
-      const parentPath = getParentPath(this.bip32Path)
-      return (await app.getWalletPublicKey(parentPath)).publicKey
-    })
+  async getFingerprint() {
+    const pubkey = await this.getParentPublicKey();
+    return getFingerprintFromPublicKey(pubkey);
   }
-  
+
+  async getParentPublicKey() {
+    return this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path);
+      return (await app.getWalletPublicKey(parentPath)).publicKey;
+    });
+  }
+
   /**
    * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
    * @example
@@ -705,14 +762,14 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    */
   async run() {
     const walletPublicKey = await super.run();
-    const fingerprint = await this.getFingerprint()
+    const fingerprint = await this.getFingerprint();
     return deriveExtendedPublicKey(
-      this.bip32Path, 
-      walletPublicKey.publicKey, 
-      walletPublicKey.chainCode, 
-      fingerprint, 
-      this.network
-    )
+      this.bip32Path,
+      walletPublicKey.publicKey,
+      walletPublicKey.chainCode,
+      fingerprint,
+      this.network,
+    );
   }
 }
 
@@ -911,11 +968,11 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * Input signatures produced will always have a trailing `...01`
    * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
    * byte.
-   * 
+   *
    * @returns {string[]} array of input signatures, one per input
    */
   async run() {
-    return await this.withApp(async (app, transport) => {
+    return this.withApp(async (app, transport) => {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
       const transactionSignature = await app.signP2SHTransaction(
@@ -925,7 +982,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
         0, // locktime, 0 is no locktime
         1, // sighash type, 1 is SIGHASH_ALL
         this.anySegwitInputs(),
-        1 // tx version
+        1, // tx version
       );
       return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
     });
@@ -953,10 +1010,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     if (this.network === TESTNET) {
       txTmp.network = bitcoin.networks.testnet;
     }
-    for (var i = 0; i < this.outputs.length; i++) {
+    for (let i = 0; i < this.outputs.length; i++) {
       txTmp.addOutput(this.outputs[i].address, new BigNumber(this.outputs[i].amountSats).toNumber());
     }
-    for (var j = 0; j < this.inputs.length; j++) {
+    for (let j = 0; j < this.inputs.length; j++) {
       txTmp.addInput(this.inputs[j].txid, this.inputs[j].index);
     }
 
@@ -971,7 +1028,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   }
 
   anySegwitInputs() {
-    for (let i=0; i<this.inputs.length; i++) {
+    for (let i = 0; i < this.inputs.length; i++) {
       const input = this.inputs[i];
       const addressType = multisigAddressType(input.multisig);
       if (addressType === P2SH_P2WSH || addressType === P2WSH) {

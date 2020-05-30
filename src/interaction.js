@@ -10,7 +10,7 @@
  * Integrations with new wallets should begin by creating a base class
  * for that wallet by subclassing either `DirectKeystoreInteraction`
  * or `IndirectKeystoreInteraction`.
- * 
+ *
  * @module interaction
  */
 
@@ -19,63 +19,63 @@ import Bowser from "bowser";
 /**
  * Constant representing a keystore which is unsupported due to the
  * kind of interaction or combination of paramters provided.
- * 
+ *
  * @type {string}
  */
 export const UNSUPPORTED = "unsupported";
 
 /**
  * Constant representing a keystore pending activation by the user.
- * 
+ *
  * @type {string}
  */
 export const PENDING = "pending";
 
 /**
  * Constant representing a keystore in active use.
- * 
+ *
  * @type {string}
  */
 export const ACTIVE = "active";
 
 /**
  * Constant for messages at the "info" level.
- * 
+ *
  * @type {string}
  */
-export const INFO    = "info";
+export const INFO = "info";
 
 /**
  * Constant for messages at the "warning" level.
- * 
+ *
  * @type {string}
  */
 export const WARNING = "warning";
 
 /**
  * Constant for messages at the "error" level.
- * 
+ *
  * @type {string}
  */
-export const ERROR   = "error";
+export const ERROR = "error";
 
 /**
  * Enumeration of possible keystore states ([PENDING]{@link module:interaction.PENDING}|[ACTIVE]{@link module:interaction.ACTIVE}|[UNSUPPORTED]{@link module:interaction.UNSUPPORTED}).
- * 
+ *
  * @constant
  * @enum {string}
  * @default
- * 
+ *
  */
 export const STATES = [PENDING, ACTIVE, UNSUPPORTED];
 
 /**
  * Enumeration of possible message levels ([INFO]{@link module:interaction.INFO}|[WARNING]{@link module:interaction.WARNING}|[ERROR]{@link module:interaction.ERROR}).
- * 
+ *
  * @constant
  * @enum {string}
  * @default
- * 
+ *
  */
 export const LEVELS = [INFO, WARNING, ERROR];
 
@@ -121,7 +121,7 @@ export const LEVELS = [INFO, WARNING, ERROR];
  *
  * - Subclasses may override the default constructor in order to allow
  *   users to pass in parameters.
- * 
+ *
  * - Subclasses should override the `messages` method to customize
  *   what messages are surfaced in applications at what state of the
  *   user interface.
@@ -152,7 +152,7 @@ export const LEVELS = [INFO, WARNING, ERROR];
  * const interaction = new DoNothingInteraction({param: "foo"});
  * console.log(interaction.messageTextFor({state: ACTIVE})); // "Interaction active: foo"
  * console.log(interaction.messageTextFor({state: PENDING})); // "Interaction pending: foo"
- * 
+ *
  */
 export class KeystoreInteraction {
 
@@ -162,7 +162,7 @@ export class KeystoreInteraction {
    * Subclasses will often override this constructor to accept options.
    *
    * Just make sure to call `super()` if you do that!
-   * 
+   *
    * @constructor
    */
   constructor() {
@@ -178,7 +178,7 @@ export class KeystoreInteraction {
    * `this.environment` to determine whether the functionality is
    * supported.  See the Bowser documentation for more details:
    * https://github.com/lancedikson/bowser
-   * 
+   *
    * @returns {boolean} whether this interaction is supported
    * @example
    * isSupported() {
@@ -223,7 +223,7 @@ export class KeystoreInteraction {
    * Subclasses should override this method and add messages as
    * needed.  Make sure to call `super.messages()` to return an empty
    * messages array for you to begin populating.
-   * 
+   *
    * @returns {module:interaction.Message[]} []
    */
   messages() {
@@ -236,7 +236,7 @@ export class KeystoreInteraction {
    *
    * Multiple options can be given at once to filter along multiple
    * dimensions.
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
@@ -282,7 +282,7 @@ export class KeystoreInteraction {
 
   /**
    * Return whether there are any messages matching the given options.
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
@@ -292,12 +292,18 @@ export class KeystoreInteraction {
    * @returns {boolean} - whether any messages match the given filters
    */
   hasMessagesFor({state, level, code, text, version}) {
-    return this.messagesFor({state, level, code, text, version}).length > 0;
+    return this.messagesFor({
+      state,
+      level,
+      code,
+      text,
+      version,
+    }).length > 0;
   }
 
   /**
    * Return the first message matching the given options (or `null` if none is found).
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
@@ -307,15 +313,23 @@ export class KeystoreInteraction {
    * @returns {module:interaction.Message|null} the first matching `Message` object (or `null` if none is found)
    */
   messageFor({state, level, code, text, version}) {
-    const messages = this.messagesFor({state, level, code, text, version});
-    if (messages.length > 0) { return messages[0]; }
+    const messages = this.messagesFor({
+      state,
+      level,
+      code,
+      text,
+      version,
+    });
+    if (messages.length > 0) {
+      return messages[0];
+    }
     return null;
   }
 
   /**
    * Retrieve the text of the first message matching the given options
    * (or `null` if none is found).
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} options.state - must equal this keystore state
    * @param {string} options.level - must equal this message level
@@ -325,7 +339,13 @@ export class KeystoreInteraction {
    * @returns {string|null} the text of the first matching message (or `null` if none is found)
    */
   messageTextFor({state, level, code, text, version}) {
-    const message = this.messageFor({state, level, code, text, version});
+    const message = this.messageFor({
+      state,
+      level,
+      code,
+      text,
+      version,
+    });
     return (message ? message.text : null);
   }
 
@@ -346,7 +366,7 @@ export class KeystoreInteraction {
  * import {UnsupportedInteraction} from "unchained-wallets";
  * const interaction = new UnsupportedInteraction({text: "failure text", code: "fail"});
  * console.log(interaction.isSupported()); // false
- * 
+ *
  */
 export class UnsupportedInteraction extends KeystoreInteraction {
 
@@ -354,7 +374,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    * Accepts parameters to describe what is unsupported and why.
    *
    * The `text` should be human-readable.  The `code` is for machines.
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} options.text - the text of the error message
    * @param {string} options.code - the code of the error message
@@ -368,7 +388,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
 
   /**
    * By design, this method always returns false.
-   * 
+   *
    * @returns {false} Always.
    */
   isSupported() {
@@ -383,7 +403,12 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: UNSUPPORTED, level: ERROR, code: this.code, text: this.text});
+    messages.push({
+      state: UNSUPPORTED,
+      level: ERROR,
+      code: this.code,
+      text: this.text,
+    });
     return messages;
   }
 
@@ -392,7 +417,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    *
    * @returns {void}
    * @throws An error containing this `this.text`.
-   * 
+   *
    */
   async run() {
     throw new Error(this.text);
@@ -403,7 +428,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    *
    * @returns {void}
    * @throws An error containing this `this.text`.
-   * 
+   *
    */
   request() {
     throw new Error(this.text);
@@ -411,10 +436,10 @@ export class UnsupportedInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
-   * 
+   *
    * @returns {void}
    * @throws An error containing this `this.text`.
-   * 
+   *
    */
   parse() {
     throw new Error(this.text);
@@ -446,11 +471,11 @@ export class UnsupportedInteraction extends KeystoreInteraction {
  * }
  *
  * const interaction = new SimpleDirectInteraction({param: "foo"});
- * 
+ *
  * const result = await interaction.run();
  * console.log(result);
  * // "foo"
- * 
+ *
  */
 export class DirectKeystoreInteraction extends KeystoreInteraction {
 
@@ -473,7 +498,7 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
    * `await` block.
    *
    * @returns {Promise} Does the work of interacting with the keystore.
-   * 
+   *
    */
   async run() {
     throw new Error("Override the `run` method in this interaction.");
@@ -484,7 +509,7 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
    *
    * @throws An error since this is a direct interaction.
    * @returns {void}
-   * 
+   *
    */
   request() {
     throw new Error("This interaction is direct and does not support a `request` method.");
@@ -492,10 +517,10 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
 
   /**
    * Throws an error.
-   * 
+   *
    * @throws An error since this is a direct interaction.
    * @returns {void}
-   * 
+   *
    */
   parse() {
     throw new Error("This interaction is direct and does not support a `parse` method.");
@@ -534,13 +559,13 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
  * }
  *
  * const interaction = new SimpleIndirectInteraction({param: "foo"});
- * 
+ *
  * const request = interaction.request();
  * const response = "bar"; // Or do something complicated with `request`
  * const result = interaction.parse(response);
  * console.log(result);
  * // "bar"
- * 
+ *
  */
 export class IndirectKeystoreInteraction extends KeystoreInteraction {
 
@@ -591,7 +616,7 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    *
    * @throws An error since this is an indirect interaction.
    * @returns {void}
-   * 
+   *
    */
   async run() {
     throw new Error("This interaction is indirect and does not support a `run` method.");
