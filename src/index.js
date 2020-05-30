@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {version} from "../package.json";
 import {UnsupportedInteraction} from "./interaction";
 import {

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {
   MAINNET,
   TEST_FIXTURES,

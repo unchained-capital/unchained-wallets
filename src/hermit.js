@@ -1,5 +1,3 @@
-/* eslint-disable max-lines*/
-
 /**
  * Provides classes for interacting with a Hermit installation through
  * QR codes.

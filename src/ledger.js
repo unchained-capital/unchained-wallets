@@ -1,5 +1,3 @@
-/* eslint-disable max-lines */
-
 /**
  * This module provides classes for Ledger hardware wallets.
  *

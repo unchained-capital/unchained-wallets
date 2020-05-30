@@ -1,5 +1,3 @@
-/* eslint-disable max-lines*/
-
 /**
  * This module provides base classes for modeling interactions with
  * keystores.

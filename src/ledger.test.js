@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {
   TEST_FIXTURES,
 } from "unchained-bitcoin";
