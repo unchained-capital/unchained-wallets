@@ -52,7 +52,8 @@ export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
 
-const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
+// const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
+const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
 const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
@@ -171,7 +172,8 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withTransport(callback) {
-    const transport = await TransportU2F.create();
+    const transport = await TransportWebUsb.create();
+    // const transport = await TransportU2F.create();
     return callback(transport);
   }
 
@@ -644,7 +646,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    */
   async run() {
     return this.withApp(async (app) => {
-      return app.getWalletPublicKey(this.bip32Path, {verify: true});
+      return app.getWalletPublicKey(this.bip32Path);
     });
   }
 }

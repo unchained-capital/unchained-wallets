@@ -1,6 +1,6 @@
 {
   "name": "unchained-wallets",
-  "version": "0.0.12",
+  "version": "0.0.12b",
   "description": "Unchained Capital's HD Wallets Library",
   "main": "lib/index.js",
   "repository": {
@@ -42,6 +42,7 @@
     "@ledgerhq/hw-app-btc": "^4.21.0",
     "@ledgerhq/hw-transport-node-hid": "^4.22.0",
     "@ledgerhq/hw-transport-u2f": "^4.21.0",
+    "@ledgerhq/hw-transport-webusb": "^5.16.0",
     "bignumber.js": "^8.1.1",
     "bitcoinjs-lib": "^4.0.5",
     "bowser": "^2.6.1",
