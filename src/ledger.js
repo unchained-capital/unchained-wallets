@@ -196,7 +196,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *   });
    * }
    */
-  async withApp(callback) {
+  withApp(callback) {
     return this.withTransport(async (transport) => {
       const app = new LedgerBtc(transport);
       return callback(app, transport);
