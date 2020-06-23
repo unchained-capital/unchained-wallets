@@ -742,7 +742,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
     return getFingerprintFromPublicKey(pubkey);
   }
 
-  async getParentPublicKey() {
+  getParentPublicKey() {
     return this.withApp(async (app) => {
       const parentPath = getParentPath(this.bip32Path);
       return (await app.getWalletPublicKey(parentPath)).publicKey;
@@ -969,7 +969,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    *
    * @returns {string[]} array of input signatures, one per input
    */
-  async run() {
+  run() {
     return this.withApp(async (app, transport) => {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
