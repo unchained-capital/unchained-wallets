@@ -52,7 +52,6 @@ export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
 
-// const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
 const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
@@ -173,7 +172,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   async withTransport(callback) {
     const transport = await TransportWebUsb.create();
-    // const transport = await TransportU2F.create();
     return callback(transport);
   }
 
@@ -185,10 +183,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * app API as the first argument to the function and the transport
    * API as the second.
    *
-   * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for genereal information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
+   * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for general information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
    *
    * @param {function} callback -- accepts two parameters, `app` and `transport`, which are the Ledger APIs for the bitcoin app and the transport layer, respectively.
-   * @returns {Promise} does the work of setting up an app instance (and transport connection)g181
+   * @returns {Promise} does the work of setting up an app instance (and transport connection)
    * @example
    * async run() {
    *   return await this.withApp(async (app, transport) => {
@@ -644,7 +642,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    *
    * @returns {object} the HD node object.
    */
-  async run() {
+  run() {
     return this.withApp(async (app) => {
       return app.getWalletPublicKey(this.bip32Path);
     });
