@@ -81,45 +81,6 @@ function itHasAppMessages(interactionBuilder) {
   });
 }
 
-// const consideredUnusual = ["m/45'/0'/0'/0/0", "m/44'/0'/101'/0/0", "m/44'/0'/0'/1/0", "m/44'/0'/0'/0/50001"];
-// const notConsideredUnusual = ["m/44'/0'/0'/0/0", "m/44'/1'/0'/0/0", "m/44'/50000'/0'/0/0", "m/44'/0'/100'/0/0", "m/44'/0'/0'/0/50000"];
-//
-// function itHasBIP32WarningMessages(interactionBuilder, bip32Path) {
-//   it("for v <1.6.0", () => {
-//     const message = interactionBuilder(bip32Path).messageFor({
-//       state: ACTIVE,
-//       level: WARNING,
-//       version: "<1.6.0",
-//       code: "ledger.path.warning",
-//     });
-//     expect(message).not.toBe(null);
-//     expect(message.messages).not.toBeUndefined();
-//     expect(message.messages.length).toEqual(4);
-//     message.messages.forEach(msg => expect(msg.image).not.toBe(null));
-//   });
-//
-//
-//   it("for v >=1.6.0", () => {
-//     const message = interactionBuilder(bip32Path).messageFor({
-//       state: ACTIVE,
-//       level: WARNING,
-//       version: ">=1.6.0",
-//       code: "ledger.path.warning",
-//     });
-//     expect(message).not.toBe(null);
-//     expect(message.messages).not.toBeUndefined();
-//     expect(message.messages.length).toEqual(4);
-//     message.messages.forEach((msg) => {
-//       expect(msg.image).not.toBe(null);
-//       expect(msg.image.mimeType).not.toBe(null);
-//       expect(msg.image.data).not.toBe(null);
-//       expect(msg.image.label).not.toBe(null);
-//     });
-//   });
-//
-//
-// }
-
 describe('ledger', () => {
 
   describe("LedgerGetMetadata", () => {
@@ -163,78 +124,23 @@ describe('ledger', () => {
 
     itHasAppMessages(interactionBuilder);
 
-    // describe("when the BIP32 path is considered unusual", () => {
-    //   consideredUnusual.forEach((bip32Path) => {
-    //
-    //     describe(`for BIP32 path ${bip32Path}`, () => {
-    //
-    //       describe("it has a message about an unusual BIP32 path", () => {
-    //         itHasBIP32WarningMessages(interactionBuilder, bip32Path);
-    //       });
-    //     });
-    //   });
-    // });
-    //
-    // describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
-    //   notConsideredUnusual.forEach((bip32Path) => {
-    //
-    //     describe(`for BIP32 path ${bip32Path}`, () => {
-    //
-    //       it("has no message about an unusual BIP32 path", () => {
-    //         expect(interactionBuilder(bip32Path).messageFor({
-    //           state: ACTIVE,
-    //           level: WARNING,
-    //           code: "ledger.path.warning",
-    //         })).toBe(null);
-    //       });
-    //
-    //     });
-    //   });
-    // });
+    describe("parsePublicKey", () => {
 
+      it("throws an error when no public key is found", () => {
+        expect(() => {interactionBuilder().parsePublicKey(); }).toThrow(/no public key/);
+      });
 
-    describe("has a message about displaying an address and exporting the corresponding public key", () => {
+      it("throws and logs an error when the public key can't be compressed", () => {
+        console.error = jest.fn();
+        expect(() => {interactionBuilder().parsePublicKey({}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({foo: "bar"}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({publicKey: 1}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({publicKey: ""}); }).toThrow(/unable to compress/i);
+        expect(console.error).toHaveBeenCalled();
+      });
 
-      // it("for version <1.6.0", () => {
-      //   const message = interactionBuilder().messageFor({
-      //     state: ACTIVE,
-      //     level: INFO,
-      //     version: "<1.6.0",
-      //     code: "ledger.export.hdnode",
-      //   });
-      //   expect(message).not.toBe(null);
-      // });
-      //
-      // it("version >=1.6.0", () => {
-      //   const message = interactionBuilder().messageFor({
-      //     state: ACTIVE,
-      //     level: INFO,
-      //     version: ">=1.6.0",
-      //     code: "ledger.export.hdnode",
-      //   });
-      //   expect(message).not.toBe(null);
-      //   expect(message.messages).not.toBeUndefined();
-      //   expect(message.messages.length).toEqual(2);
-      // });
-
-      describe("parsePublicKey", () => {
-
-        it("throws an error when no public key is found", () => {
-          expect(() => {interactionBuilder().parsePublicKey(); }).toThrow(/no public key/);
-        });
-
-        it("throws and logs an error when the public key can't be compressed", () => {
-          console.error = jest.fn();
-          expect(() => {interactionBuilder().parsePublicKey({}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({foo: "bar"}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({publicKey: 1}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({publicKey: ""}); }).toThrow(/unable to compress/i);
-          expect(console.error).toHaveBeenCalled();
-        });
-
-        it("extracts and compresses the public key", () => {
-          expect(interactionBuilder().parsePublicKey("0429b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898d6881e81d2e0163348ff07b3a9a3968401572aa79c79e7edb522f41addc8e6ce")).toEqual("0229b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898");
-        });
+      it("extracts and compresses the public key", () => {
+        expect(interactionBuilder().parsePublicKey("0429b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898d6881e81d2e0163348ff07b3a9a3968401572aa79c79e7edb522f41addc8e6ce")).toEqual("0229b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898");
       });
     });
 
@@ -332,89 +238,6 @@ describe('ledger', () => {
     function interactionBuilder(bip32Path) { return new LedgerExportExtendedPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")}); }
 
     itHasAppMessages(interactionBuilder);
-
-    // describe("when the BIP32 path is considered unusual", () => {
-    //   consideredUnusual.forEach((bip32Path) => {
-    //
-    //     describe(`for BIP32 path ${bip32Path}`, () => {
-    //
-    //       describe("it has a message about an unusual BIP32 path", () => {
-    //         itHasBIP32WarningMessages(interactionBuilder, bip32Path);
-    //       });
-    //
-    //       describe("it has a message about an exporting public key", () => {
-    //
-    //         it("for v <1.6.0", () => {
-    //           const message = interactionBuilder(bip32Path).messageFor({
-    //             state: ACTIVE,
-    //             level: INFO,
-    //             version: "<1.6.0",
-    //             code: "ledger.export.xpub",
-    //           });
-    //           expect(message).not.toBe(null);
-    //           expect(message.image).not.toBe(null);
-    //         });
-    //
-    //
-    //         it("for v >=1.6.0", () => {
-    //           const message = interactionBuilder(bip32Path).messageFor({
-    //             state: ACTIVE,
-    //             level: INFO,
-    //             version: ">=1.6.0",
-    //             code: "ledger.export.xpub",
-    //           });
-    //           expect(message).not.toBe(null);
-    //           expect(message.image).not.toBe(null);
-    //         });
-    //
-    //       });
-    //     });
-    //   });
-    // });
-
-    // describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
-    //   notConsideredUnusual.forEach((bip32Path) => {
-    //
-    //     describe(`for BIP32 path ${bip32Path}`, () => {
-    //
-    //       it("has no message about an unusual BIP32 path", () => {
-    //         expect(interactionBuilder(bip32Path).messageFor({
-    //           state: ACTIVE,
-    //           level: WARNING,
-    //           code: "ledger.path.warning",
-    //         })).toBe(null);
-    //       });
-    //
-    //     });
-    //   });
-    // });
-
-
-    // describe("has a message about displaying an address and exporting the corresponding public key", () => {
-    //
-    //   it("for version <1.6.0", () => {
-    //     const message = interactionBuilder().messageFor({
-    //       state: ACTIVE,
-    //       level: INFO,
-    //       version: "<1.6.0",
-    //       code: "ledger.export.hdnode",
-    //     });
-    //     expect(message).not.toBe(null);
-    //   });
-    //
-    //   it("version >=1.6.0", () => {
-    //     const message = interactionBuilder().messageFor({
-    //       state: ACTIVE,
-    //       level: INFO,
-    //       version: ">=1.6.0",
-    //       code: "ledger.export.hdnode",
-    //     });
-    //     expect(message).not.toBe(null);
-    //     expect(message.messages).not.toBeUndefined();
-    //     expect(message.messages.length).toEqual(2);
-    //   });
-    //
-    // });
 
   });
 
