@@ -40,8 +40,6 @@ import {
   DirectKeystoreInteraction,
 } from "./interaction";
 
-//import IMAGES from "./images";
-
 /**
  * Constant defining Ledger interactions.
  *
