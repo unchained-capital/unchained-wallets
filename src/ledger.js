@@ -715,31 +715,31 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 
   messages() {
-    const messages = super.messages();
+    return super.messages();
 
-    if (this.hasBIP32PathWarning()) {
-      messages.push({
-        image: IMAGES[LEDGER].exportPublicKeyBeta,
-        state: ACTIVE,
-        level: INFO,
-        version: ">=1.6.0",
-        text: `Your Ledger will ask to confirm "Export public key?"`,
-        code: "ledger.export.xpub",
-        action: LEDGER_RIGHT_BUTTON,
-      });
-
-      messages.push({
-        image: IMAGES[LEDGER].exportPublicKeyV1,
-        state: ACTIVE,
-        level: INFO,
-        version: "<1.6.0",
-        text: `Your Ledger will ask to confirm "Export public key?"`,
-        code: "ledger.export.xpub",
-        action: LEDGER_RIGHT_BUTTON,
-      });
-    }
-
-    return messages;
+    // if (this.hasBIP32PathWarning()) {
+    //   messages.push({
+    //     image: IMAGES[LEDGER].exportPublicKeyBeta,
+    //     state: ACTIVE,
+    //     level: INFO,
+    //     version: ">=1.6.0",
+    //     text: `Your Ledger will ask to confirm "Export public key?"`,
+    //     code: "ledger.export.xpub",
+    //     action: LEDGER_RIGHT_BUTTON,
+    //   });
+    //
+    //   messages.push({
+    //     image: IMAGES[LEDGER].exportPublicKeyV1,
+    //     state: ACTIVE,
+    //     level: INFO,
+    //     version: "<1.6.0",
+    //     text: `Your Ledger will ask to confirm "Export public key?"`,
+    //     code: "ledger.export.xpub",
+    //     action: LEDGER_RIGHT_BUTTON,
+    //   });
+    // }
+    //
+    // return messages;
   }
 
   /**
