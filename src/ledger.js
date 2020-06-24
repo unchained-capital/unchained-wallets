@@ -52,6 +52,7 @@ export const LEDGER = 'ledger';
 
 const bitcoin = require('bitcoinjs-lib');
 
+const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
 const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
@@ -171,8 +172,18 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withTransport(callback) {
-    const transport = await TransportWebUsb.create();
-    return callback(transport);
+    try {
+      const transport = await TransportWebUsb.create();
+      return callback(transport);
+    }
+    catch (e) {
+      if (e.message && e.message === "navigator.usb is undefined") { // webusb failed, so try u2f
+        const transport = await TransportU2F.create();
+        return callback(transport);
+      } else {
+        throw new Error("Error with Ledger transport");
+      }
+    }
   }
 
   /**
@@ -491,104 +502,103 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
-    const messages = super.messages();
-
-    if (this.hasBIP32PathWarning()) {
-
-      messages.push({
-        state: ACTIVE,
-        level: WARNING,
-        version: "<1.6.0",
-        text: `Your Ledger will display a "WARNING!" message.  It is safe to continue through the prompts till you see a bitcoin address.`,
-        code: "ledger.path.warning",
-        messages: [
-          {
-            image: IMAGES[LEDGER].warning,
-            text: `Your Ledger will display a "WARNING!" message.`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].derivationPathIsUnusualV1,
-            text: `Your Ledger will display a message saying the "derivation path is unusual".`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].derivationPathV1,
-            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].rejectIfNotSureV1,
-            text: `Your Ledger will ask if you to "Reject if you're not sure".`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-        ],
-      });
-
-      messages.push({
-        state: ACTIVE,
-        level: WARNING,
-        version: ">=1.6.0",
-        text: `Your Ledger will display a message saying "derivation path is unusual".  It is safe to continue through the prompts till you see a bitcoin address.`,
-        code: "ledger.path.warning",
-        messages: [
-          {
-            image: IMAGES[LEDGER].unusualDerivationBeta,
-            text: "Your Ledger will display a message about an unusual derivation path.",
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].fullDerivationPathBeta,
-            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].rejectIfNotSureBeta,
-            text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].approveDerivationBeta,
-            text: `Your Ledger will ask if you want to "Approve derivation path".`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-        ],
-      });
-
-    }
-
-    messages.push({
-      state: ACTIVE,
-      level: INFO,
-      version: "<1.6.0",
-      text: `Your Ledger will scroll a bitcoin address across its screen.`,
-      code: "ledger.export.hdnode",
-      image: IMAGES[LEDGER].addressScrollV1,
-      action: LEDGER_RIGHT_BUTTON,
-    });
-
-    messages.push({
-      state: ACTIVE,
-      level: INFO,
-      version: ">=1.6.0",
-      text: `Your Ledger will display a bitcoin address in several parts.  Approve exporting the corresponding public key.`,
-      code: "ledger.export.hdnode",
-      messages: [
-        {
-          image: IMAGES[LEDGER].addressClickThroughBeta,
-          text: `Your Ledger will display a bitcoin address in several parts.`,
-          action: LEDGER_RIGHT_BUTTON,
-        },
-        {
-          image: IMAGES[LEDGER].approveAddressBeta,
-          text: `Your Ledger will ask you if want to "Approve" this request.`,
-          action: LEDGER_BOTH_BUTTONS,
-        },
-      ],
-
-    });
-
-    return messages;
+    return super.messages();
+    // if (this.hasBIP32PathWarning()) {
+    //
+    //   messages.push({
+    //     state: ACTIVE,
+    //     level: WARNING,
+    //     version: "<1.6.0",
+    //     text: `Your Ledger will display a "WARNING!" message.  It is safe to continue through the prompts till you see a bitcoin address.`,
+    //     code: "ledger.path.warning",
+    //     messages: [
+    //       {
+    //         image: IMAGES[LEDGER].warning,
+    //         text: `Your Ledger will display a "WARNING!" message.`,
+    //         action: LEDGER_BOTH_BUTTONS,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].derivationPathIsUnusualV1,
+    //         text: `Your Ledger will display a message saying the "derivation path is unusual".`,
+    //         action: LEDGER_BOTH_BUTTONS,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].derivationPathV1,
+    //         text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
+    //         action: LEDGER_BOTH_BUTTONS,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].rejectIfNotSureV1,
+    //         text: `Your Ledger will ask if you to "Reject if you're not sure".`,
+    //         action: LEDGER_RIGHT_BUTTON,
+    //       },
+    //     ],
+    //   });
+    //
+    //   messages.push({
+    //     state: ACTIVE,
+    //     level: WARNING,
+    //     version: ">=1.6.0",
+    //     text: `Your Ledger will display a message saying "derivation path is unusual".  It is safe to continue through the prompts till you see a bitcoin address.`,
+    //     code: "ledger.path.warning",
+    //     messages: [
+    //       {
+    //         image: IMAGES[LEDGER].unusualDerivationBeta,
+    //         text: "Your Ledger will display a message about an unusual derivation path.",
+    //         action: LEDGER_RIGHT_BUTTON,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].fullDerivationPathBeta,
+    //         text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
+    //         action: LEDGER_RIGHT_BUTTON,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].rejectIfNotSureBeta,
+    //         text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
+    //         action: LEDGER_RIGHT_BUTTON,
+    //       },
+    //       {
+    //         image: IMAGES[LEDGER].approveDerivationBeta,
+    //         text: `Your Ledger will ask if you want to "Approve derivation path".`,
+    //         action: LEDGER_BOTH_BUTTONS,
+    //       },
+    //     ],
+    //   });
+    //
+    // }
+    //
+    // messages.push({
+    //   state: ACTIVE,
+    //   level: INFO,
+    //   version: "<1.6.0",
+    //   text: `Your Ledger will scroll a bitcoin address across its screen.`,
+    //   code: "ledger.export.hdnode",
+    //   image: IMAGES[LEDGER].addressScrollV1,
+    //   action: LEDGER_RIGHT_BUTTON,
+    // });
+    //
+    // messages.push({
+    //   state: ACTIVE,
+    //   level: INFO,
+    //   version: ">=1.6.0",
+    //   text: `Your Ledger will display a bitcoin address in several parts.  Approve exporting the corresponding public key.`,
+    //   code: "ledger.export.hdnode",
+    //   messages: [
+    //     {
+    //       image: IMAGES[LEDGER].addressClickThroughBeta,
+    //       text: `Your Ledger will display a bitcoin address in several parts.`,
+    //       action: LEDGER_RIGHT_BUTTON,
+    //     },
+    //     {
+    //       image: IMAGES[LEDGER].approveAddressBeta,
+    //       text: `Your Ledger will ask you if want to "Approve" this request.`,
+    //       action: LEDGER_BOTH_BUTTONS,
+    //     },
+    //   ],
+    //
+    // });
+    //
+    // return messages;
   }
 
   /**
