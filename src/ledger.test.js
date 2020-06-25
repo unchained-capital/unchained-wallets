@@ -16,70 +16,76 @@ import {
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.connect", text: "plugged in"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "device.connect",
+      text: "plugged in",
+    })).toBe(true);
   });
 
   it("has a message about ensuring your device is unlocked", () => {
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "device.unlock", text: "unlocked"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "device.unlock",
+      text: "unlocked",
+    })).toBe(true);
   });
 
   it("has a message about communicating with your device", () => {
-    expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "device.active", text: "Communicating"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: ACTIVE,
+      level: INFO,
+      code: "device.active",
+      text: "Communicating",
+    })).toBe(true);
   });
 }
 
 function itHasDashboardMessages(interactionBuilder) {
   itHasStandardMessages(interactionBuilder);
-  
+
   it("has messages about being in the dashboard, not an app", () => {
-    expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "ledger.app.dashboard", text: "NOT the Bitcoin app"})).toBe(true);
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "ledger.app.dashboard", text: "NOT the Bitcoin app"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: ACTIVE,
+      level: INFO,
+      code: "ledger.app.dashboard",
+      text: "NOT the Bitcoin app",
+    })).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "ledger.app.dashboard",
+      text: "NOT the Bitcoin app",
+    })).toBe(true);
   });
 }
 
 function itHasAppMessages(interactionBuilder) {
   itHasStandardMessages(interactionBuilder);
-  
+
   it("has messages about being in the Bitcoin app", () => {
-    expect(interactionBuilder().hasMessagesFor({state: ACTIVE, level: INFO, code: "ledger.app.bitcoin", text: "Bitcoin app open"})).toBe(true);
-    expect(interactionBuilder().hasMessagesFor({state: PENDING, level: INFO, code: "ledger.app.bitcoin", text: "Bitcoin app open"})).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: ACTIVE,
+      level: INFO,
+      code: "ledger.app.bitcoin",
+      text: "Bitcoin app open",
+    })).toBe(true);
+    expect(interactionBuilder().hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "ledger.app.bitcoin",
+      text: "Bitcoin app open",
+    })).toBe(true);
   });
-}
-
-const consideredUnusual = ["m/45'/0'/0'/0/0", "m/44'/0'/101'/0/0", "m/44'/0'/0'/1/0", "m/44'/0'/0'/0/50001"];
-const notConsideredUnusual = ["m/44'/0'/0'/0/0", "m/44'/1'/0'/0/0", "m/44'/50000'/0'/0/0", "m/44'/0'/100'/0/0", "m/44'/0'/0'/0/50000"];
-
-function itHasBIP32WarningMessages(interactionBuilder, bip32Path) {
-  it("for v <1.6.0", () => {
-    const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: "<1.6.0", code: "ledger.path.warning"});
-    expect(message).not.toBe(null);
-    expect(message.messages).not.toBeUndefined();
-    expect(message.messages.length).toEqual(4);
-    message.messages.forEach(message => expect(message.image).not.toBe(null))
-  });
-
-
-  it("for v >=1.6.0", () => {
-    const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, version: ">=1.6.0", code: "ledger.path.warning"});
-    expect(message).not.toBe(null);
-    expect(message.messages).not.toBeUndefined();
-    expect(message.messages.length).toEqual(4);
-    message.messages.forEach((message) => {
-      expect(message.image).not.toBe(null);
-      expect(message.image.mimeType).not.toBe(null);
-      expect(message.image.data).not.toBe(null);
-      expect(message.image.label).not.toBe(null);
-    })
-  });
-
-
 }
 
 describe('ledger', () => {
 
   describe("LedgerGetMetadata", () => {
 
-    function interactionBuilder () { return new LedgerGetMetadata(); }
+    function interactionBuilder() { return new LedgerGetMetadata(); }
 
     itHasDashboardMessages(interactionBuilder);
 
@@ -118,64 +124,23 @@ describe('ledger', () => {
 
     itHasAppMessages(interactionBuilder);
 
-    describe("when the BIP32 path is considered unusual", () => {
-      consideredUnusual.forEach((bip32Path) => {
+    describe("parsePublicKey", () => {
 
-        describe(`for BIP32 path ${bip32Path}`, () => {
-          
-          describe("it has a message about an unusual BIP32 path", () => {
-            itHasBIP32WarningMessages(interactionBuilder, bip32Path)
-          });
-        });
-      });
-    });
-
-    describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
-      notConsideredUnusual.forEach((bip32Path) => {
-
-        describe(`for BIP32 path ${bip32Path}`, () => {
-          
-          it("has no message about an unusual BIP32 path", () => {
-            expect(interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, code: "ledger.path.warning"})).toBe(null);
-          });
-
-        });
-      });
-    });
-
-    
-    describe("has a message about displaying an address and exporting the corresponding public key", () => {
-
-      it("for version <1.6.0", () => {
-        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.export.hdnode"});
-        expect(message).not.toBe(null);
+      it("throws an error when no public key is found", () => {
+        expect(() => {interactionBuilder().parsePublicKey(); }).toThrow(/no public key/);
       });
 
-      it("version >=1.6.0", () => {
-        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.hdnode"});
-        expect(message).not.toBe(null);
-        expect(message.messages).not.toBeUndefined();
-        expect(message.messages.length).toEqual(2);
+      it("throws and logs an error when the public key can't be compressed", () => {
+        console.error = jest.fn();
+        expect(() => {interactionBuilder().parsePublicKey({}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({foo: "bar"}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({publicKey: 1}); }).toThrow(/unable to compress/i);
+        expect(() => {interactionBuilder().parsePublicKey({publicKey: ""}); }).toThrow(/unable to compress/i);
+        expect(console.error).toHaveBeenCalled();
       });
 
-      describe("parsePublicKey", () => {
-
-        it("throws an error when no public key is found", () => {
-          expect(() => {interactionBuilder().parsePublicKey(); }).toThrow(/no public key/);
-        });
-
-        it("throws and logs an error when the public key can't be compressed", () => {
-          console.error = jest.fn();
-          expect(() => {interactionBuilder().parsePublicKey({}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({foo: "bar"}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({publicKey: 1}); }).toThrow(/unable to compress/i);
-          expect(() => {interactionBuilder().parsePublicKey({publicKey: ""}); }).toThrow(/unable to compress/i);
-          expect(console.error).toHaveBeenCalled();
-        });
-
-        it("extracts and compresses the public key", () => {
-          expect(interactionBuilder().parsePublicKey("0429b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898d6881e81d2e0163348ff07b3a9a3968401572aa79c79e7edb522f41addc8e6ce")).toEqual("0229b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898");
-        });
+      it("extracts and compresses the public key", () => {
+        expect(interactionBuilder().parsePublicKey("0429b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898d6881e81d2e0163348ff07b3a9a3968401572aa79c79e7edb522f41addc8e6ce")).toEqual("0229b3e0919adc41a316aad4f41444d9bf3a9b639550f2aa735676ffff25ba3898");
       });
     });
 
@@ -186,42 +151,61 @@ describe('ledger', () => {
     TEST_FIXTURES.transactions.forEach((fixture) => {
       describe(`for a transaction which ${fixture.description}`, () => {
 
-        function interactionBuilder () { return new LedgerSignMultisigTransaction(fixture); }
+        function interactionBuilder() { return new LedgerSignMultisigTransaction(fixture); }
 
         itHasAppMessages(interactionBuilder);
-        
+
         it("has a message about delays during signing", () => {
           const interaction = interactionBuilder();
-          const message = interaction.messageFor({state: ACTIVE, level: WARNING, code: "ledger.sign.delay"});
+          const message = interaction.messageFor({
+            state: ACTIVE,
+            level: WARNING,
+            code: "ledger.sign.delay",
+          });
           expect(message).not.toBe(null);
           expect(message.preProcessingTime).toEqual(interaction.preProcessingTime());
           expect(message.postProcessingTime).toEqual(interaction.postProcessingTime());
         });
 
         if (fixture.segwit) {
-          describe("a message about approving the transacton", () => {
+          describe("a message about approving the transaction", () => {
 
             it("for version <1.6.0", () => {
               const interaction = interactionBuilder();
-              const message = interaction.messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.sign"});
+              const message = interaction.messageFor({
+                state: ACTIVE,
+                level: INFO,
+                version: "<1.6.0",
+                code: "ledger.sign",
+              });
               expect(message).not.toBe(null);
             });
 
             it("for version >=1.6.0", () => {
               const interaction = interactionBuilder();
-              const message = interaction.messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.sign"});
+              const message = interaction.messageFor({
+                state: ACTIVE,
+                level: INFO,
+                version: ">=1.6.0",
+                code: "ledger.sign",
+              });
               expect(message).not.toBe(null);
               expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(5);
             });
-            
+
           });
         } else {
-          describe("a message about approving the transacton", () => {
+          describe("a message about approving the transaction", () => {
 
             it("for version <1.6.0", () => {
               const interaction = interactionBuilder();
-              const message = interaction.messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.sign"});
+              const message = interaction.messageFor({
+                state: ACTIVE,
+                level: INFO,
+                version: "<1.6.0",
+                code: "ledger.sign",
+              });
               expect(message).not.toBe(null);
               expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(2);
@@ -229,12 +213,17 @@ describe('ledger', () => {
 
             it("for version >=1.6.0", () => {
               const interaction = interactionBuilder();
-              const message = interaction.messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.sign"});
+              const message = interaction.messageFor({
+                state: ACTIVE,
+                level: INFO,
+                version: ">=1.6.0",
+                code: "ledger.sign",
+              });
               expect(message).not.toBe(null);
               expect(message.messages).not.toBeUndefined();
               expect(message.messages.length).toEqual(7);
             });
-            
+
           });
         }
 
@@ -249,65 +238,6 @@ describe('ledger', () => {
     function interactionBuilder(bip32Path) { return new LedgerExportExtendedPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")}); }
 
     itHasAppMessages(interactionBuilder);
-
-    describe("when the BIP32 path is considered unusual", () => {
-      consideredUnusual.forEach((bip32Path) => {
-
-        describe(`for BIP32 path ${bip32Path}`, () => {
-          
-          describe("it has a message about an unusual BIP32 path", () => {
-            itHasBIP32WarningMessages(interactionBuilder, bip32Path)
-          });
-
-          describe("it has a message about an exporting public key", () => {
-
-            it("for v <1.6.0", () => {
-              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.export.xpub"});
-              expect(message).not.toBe(null);
-              expect(message.image).not.toBe(null);
-            });
-
-
-            it("for v >=1.6.0", () => {
-              const message = interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.xpub"});
-              expect(message).not.toBe(null);
-              expect(message.image).not.toBe(null);
-            });
-
-          });
-        });
-      });
-    });
-
-    describe("when the BIP32 path is NOT considered unusual by Ledger", () => {
-      notConsideredUnusual.forEach((bip32Path) => {
-
-        describe(`for BIP32 path ${bip32Path}`, () => {
-          
-          it("has no message about an unusual BIP32 path", () => {
-            expect(interactionBuilder(bip32Path).messageFor({state: ACTIVE, level: WARNING, code: "ledger.path.warning"})).toBe(null);
-          });
-
-        });
-      });
-    });
-
-    
-    describe("has a message about displaying an address and exporting the corresponding public key", () => {
-
-      it("for version <1.6.0", () => {
-        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: "<1.6.0", code: "ledger.export.hdnode"});
-        expect(message).not.toBe(null);
-      });
-
-      it("version >=1.6.0", () => {
-        const message = interactionBuilder().messageFor({state: ACTIVE, level: INFO, version: ">=1.6.0", code: "ledger.export.hdnode"});
-        expect(message).not.toBe(null);
-        expect(message.messages).not.toBeUndefined();
-        expect(message.messages.length).toEqual(2);
-      });
-
-    });
 
   });
 

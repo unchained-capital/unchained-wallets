@@ -1,7 +1,20 @@
 import {version} from "../package.json";
 import {UnsupportedInteraction} from "./interaction";
-import {TREZOR, TrezorGetMetadata, TrezorExportPublicKey, TrezorExportExtendedPublicKey, TrezorSignMultisigTransaction, TrezorConfirmMultisigAddress} from "./trezor";
-import {LEDGER, LedgerGetMetadata, LedgerExportPublicKey, LedgerExportExtendedPublicKey, LedgerSignMultisigTransaction} from "./ledger";
+import {
+  TREZOR,
+  TrezorGetMetadata,
+  TrezorExportPublicKey,
+  TrezorExportExtendedPublicKey,
+  TrezorSignMultisigTransaction,
+  TrezorConfirmMultisigAddress,
+} from "./trezor";
+import {
+  LEDGER,
+  LedgerGetMetadata,
+  LedgerExportPublicKey,
+  LedgerExportExtendedPublicKey,
+  LedgerSignMultisigTransaction,
+} from "./ledger";
 import {HERMIT, HermitExportPublicKey, HermitExportExtendedPublicKey, HermitSignTransaction} from "./hermit";
 
 /**
@@ -18,7 +31,10 @@ export const VERSION = version;
  * @enum {string}
  * @default
  */
-export const DIRECT_KEYSTORES = {TREZOR, LEDGER};
+export const DIRECT_KEYSTORES = {
+  TREZOR,
+  LEDGER,
+};
 
 /**
  * Enumeration of keystores which support indirect interactions.
@@ -54,12 +70,15 @@ export const KEYSTORES = {...DIRECT_KEYSTORES, ...INDIRECT_KEYSTORES};
  */
 export function GetMetadata({keystore}) {
   switch (keystore) {
-  case TREZOR:
-    return new TrezorGetMetadata();
-  case LEDGER:
-    return new LedgerGetMetadata();
-  default:
-    return new UnsupportedInteraction({code: "unsupported", text: "This keystore does not return a version."});
+    case TREZOR:
+      return new TrezorGetMetadata();
+    case LEDGER:
+      return new LedgerGetMetadata();
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore does not return a version.",
+      });
   }
 }
 
@@ -68,7 +87,7 @@ export function GetMetadata({keystore}) {
  * given `keystore` for the given `bip32Path` and `network`.
  *
  * **Supported keystores:** Trezor, Ledger, Hermit
- * 
+ *
  * @param {Object} options - options argument
  * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
@@ -83,14 +102,20 @@ export function GetMetadata({keystore}) {
  */
 export function ExportPublicKey({keystore, network, bip32Path}) {
   switch (keystore) {
-  case TREZOR:
-    return new TrezorExportPublicKey({network, bip32Path});
-  case LEDGER:
-    return new LedgerExportPublicKey({bip32Path});
-  case HERMIT:
-    return new HermitExportPublicKey({bip32Path});
-  default:
-    return new UnsupportedInteraction({code: "unsupported", text: "This keystore is not supported when exporting public keys."});
+    case TREZOR:
+      return new TrezorExportPublicKey({
+        network,
+        bip32Path,
+      });
+    case LEDGER:
+      return new LedgerExportPublicKey({bip32Path});
+    case HERMIT:
+      return new HermitExportPublicKey({bip32Path});
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when exporting public keys.",
+      });
   }
 }
 
@@ -115,14 +140,23 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  */
 export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
   switch (keystore) {
-  case TREZOR:
-    return new TrezorExportExtendedPublicKey({network, bip32Path});
-  case HERMIT:
-    return new HermitExportExtendedPublicKey({bip32Path});
-  case LEDGER:
-    return new LedgerExportExtendedPublicKey({network, bip32Path});
-  default:
-    return new UnsupportedInteraction({code: "unsupported", text: "This keystore is not supported when exporting extended public keys."});
+    case TREZOR:
+      return new TrezorExportExtendedPublicKey({
+        network,
+        bip32Path,
+      });
+    case HERMIT:
+      return new HermitExportExtendedPublicKey({bip32Path});
+    case LEDGER:
+      return new LedgerExportExtendedPublicKey({
+        network,
+        bip32Path,
+      });
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when exporting extended public keys.",
+      });
   }
 }
 
@@ -182,18 +216,35 @@ export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
  * const signature = await interaction.run();
  * console.log(signatures);
  * // ["ababab...", // 1 per input]
- * 
+ *
  */
 export function SignMultisigTransaction({keystore, network, inputs, outputs, bip32Paths}) {
   switch (keystore) {
-  case TREZOR:
-    return new TrezorSignMultisigTransaction({network, inputs, outputs, bip32Paths});
-  case LEDGER:
-    return new LedgerSignMultisigTransaction({network, inputs, outputs, bip32Paths});
-  case HERMIT:
-    return new HermitSignTransaction({inputs, outputs, bip32Paths});
-  default:
-    return new UnsupportedInteraction({code: "unsupported", text: "This keystore is not supported when signing multisig transactions."});
+    case TREZOR:
+      return new TrezorSignMultisigTransaction({
+        network,
+        inputs,
+        outputs,
+        bip32Paths,
+      });
+    case LEDGER:
+      return new LedgerSignMultisigTransaction({
+        network,
+        inputs,
+        outputs,
+        bip32Paths,
+      });
+    case HERMIT:
+      return new HermitSignTransaction({
+        inputs,
+        outputs,
+        bip32Paths,
+      });
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when signing multisig transactions.",
+      });
   }
 }
 
@@ -229,14 +280,21 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  *   bip32Path: "m/45'/1'/0'/0/0",
  * });
  * await interaction.run();
- * 
+ *
  */
 export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig}) {
   switch (keystore) {
-  case TREZOR:
-    return new TrezorConfirmMultisigAddress({network, bip32Path, multisig});
-  default:
-    return new UnsupportedInteraction({code: "unsupported", text: "This keystore is not supported when confirming multisig addresses."});
+    case TREZOR:
+      return new TrezorConfirmMultisigAddress({
+        network,
+        bip32Path,
+        multisig,
+      });
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when confirming multisig addresses.",
+      });
   }
 }
 
