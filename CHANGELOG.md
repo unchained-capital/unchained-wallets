@@ -1,4 +1,10 @@
 # Changelog
+## Version 0.1.0
+# Changed
+* Using webusb for ledger interactions rather than u2f
+* not requiring verification for public key export
+* updating ledger dependencies
+
 ## Version 0.0.11
 
 ### Changed
