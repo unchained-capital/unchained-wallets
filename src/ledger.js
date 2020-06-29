@@ -47,6 +47,8 @@ import {
  * @default ledger
  */
 export const LEDGER = 'ledger';
+import {splitTransaction} from "@ledgerhq/hw-app-btc/lib/splitTransaction";
+import {serializeTransactionOutputs} from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -861,9 +863,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
       const transactionSignature = await app.signP2SHTransaction(
-        this.ledgerInputs(app),
+        this.ledgerInputs(),
         this.ledgerKeysets(),
-        this.ledgerOutputScriptHex(app),
+        this.ledgerOutputScriptHex(),
         0, // locktime, 0 is no locktime
         1, // sighash type, 1 is SIGHASH_ALL
         this.anySegwitInputs(),
@@ -873,10 +875,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     });
   }
 
-  ledgerInputs(app) {
+  ledgerInputs() {
     return this.inputs.map(input => {
       const addressType = multisigAddressType(input.multisig);
-      const inputTransaction = app.splitTransaction(input.transactionHex, true); // FIXME: should the 2nd parameter here always be true?
+      const inputTransaction = splitTransaction(input.transactionHex, true); // FIXME: should the 2nd parameter here always be true?
       const scriptFn = (addressType === P2SH ? multisigRedeemScript : multisigWitnessScript);
       const scriptHex = scriptToHex(scriptFn(input.multisig));
       return [inputTransaction, input.index, scriptHex]; // can add sequence number for RBF as an additional element
@@ -887,7 +889,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return this.bip32Paths.map((bip32Path) => this.ledgerBIP32Path(bip32Path));
   }
 
-  ledgerOutputScriptHex(app) {
+  ledgerOutputScriptHex() {
     // This seems like an inefficient way to achieve the final
     // result...
     let txTmp = new bitcoin.TransactionBuilder();
@@ -904,8 +906,8 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
     const txToSign = txTmp.buildIncomplete();
     const txHex = txToSign.toHex();
-    const splitTx = app.splitTransaction(txHex, this.anySegwitInputs());
-    return app.serializeTransactionOutputs(splitTx).toString('hex');
+    const splitTx = splitTransaction(txHex, this.anySegwitInputs());
+    return serializeTransactionOutputs(splitTx).toString('hex');
   }
 
   ledgerBIP32Path(bip32Path) {
