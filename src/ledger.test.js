@@ -19,17 +19,8 @@ function itHasStandardMessages(interactionBuilder) {
     expect(interactionBuilder().hasMessagesFor({
       state: PENDING,
       level: INFO,
-      code: "device.connect",
-      text: "plugged in",
-    })).toBe(true);
-  });
-
-  it("has a message about ensuring your device is unlocked", () => {
-    expect(interactionBuilder().hasMessagesFor({
-      state: PENDING,
-      level: INFO,
-      code: "device.unlock",
-      text: "unlocked",
+      code: "device.setup",
+      text: "plug in and unlock",
     })).toBe(true);
   });
 
@@ -70,13 +61,13 @@ function itHasAppMessages(interactionBuilder) {
       state: ACTIVE,
       level: INFO,
       code: "ledger.app.bitcoin",
-      text: "Bitcoin app open",
+      text: "opened the Bitcoin app",
     })).toBe(true);
     expect(interactionBuilder().hasMessagesFor({
       state: PENDING,
       level: INFO,
       code: "ledger.app.bitcoin",
-      text: "Bitcoin app open",
+      text: "open the Bitcoin app",
     })).toBe(true);
   });
 }
