@@ -228,7 +228,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
     messages.push({
       state: ACTIVE,
       level: INFO,
-      text: "Your browser should open a new Trezor Connect window.  If you do not see this window, ensure you have enabled popups for this site.",
+      text: "Your browser should now open a new window to Trezor Connect. Ensure you have enabled popups for this site.",
       code: "trezor.connect.generic",
     });
 
@@ -466,7 +466,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
     messages.push({
       state: ACTIVE,
       level: INFO,
-      text: "Confirm in the Trezor Connect window that you want to 'Export public key'.  You may be prompted to enter your PIN.",
+      text: "Confirm in the Trezor Connect window that you want to 'Export public key'. You may be prompted to enter your PIN.",
       code: "trezor.connect.export_hdnode",
     });
 

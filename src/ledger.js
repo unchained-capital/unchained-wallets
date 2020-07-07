@@ -135,14 +135,8 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     messages.push({
       state: PENDING,
       level: INFO,
-      text: "Make sure your Ledger is plugged in.",
-      code: "device.connect",
-    });
-    messages.push({
-      state: PENDING,
-      level: INFO,
-      text: "Make sure you have unlocked your Ledger.",
-      code: "device.unlock",
+      text: "Please plug in and unlock your Ledger.",
+      code: "device.setup",
     });
     messages.push({
       state: ACTIVE,
@@ -266,13 +260,13 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
     messages.push({
       state: PENDING,
       level: INFO,
-      text: "Make sure you have the Bitcoin app open.",
+      text: "Then open the Bitcoin app.",
       code: "ledger.app.bitcoin",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
-      text: "Make sure you have the Bitcoin app open.",
+      text: "Make sure you have opened the Bitcoin app.",
       code: "ledger.app.bitcoin",
     });
     return messages;
