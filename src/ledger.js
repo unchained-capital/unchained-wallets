@@ -14,7 +14,7 @@
  *
  * @module ledger
  */
-import BigNumber from "bignumber.js";
+
 import {
   bip32PathToSequence,
   hardenedBIP32Index,
@@ -22,7 +22,6 @@ import {
   scriptToHex,
   multisigRedeemScript,
   multisigWitnessScript,
-  TESTNET,
   P2SH,
   P2SH_P2WSH,
   P2WSH,
@@ -30,6 +29,7 @@ import {
   getParentPath,
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
+  unsignedMultisigTransaction,
 } from "unchained-bitcoin";
 
 import {
@@ -40,6 +40,9 @@ import {
   DirectKeystoreInteraction,
 } from "./interaction";
 
+import {splitTransaction} from "@ledgerhq/hw-app-btc/lib/splitTransaction";
+import {serializeTransactionOutputs} from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
+
 /**
  * Constant defining Ledger interactions.
  *
@@ -47,10 +50,6 @@ import {
  * @default ledger
  */
 export const LEDGER = 'ledger';
-import {splitTransaction} from "@ledgerhq/hw-app-btc/lib/splitTransaction";
-import {serializeTransactionOutputs} from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
-
-const bitcoin = require('bitcoinjs-lib');
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
@@ -166,16 +165,32 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withTransport(callback) {
+    const useU2F = this.environment.satisfies({
+      firefox: ">70",
+    });
+
+    if (useU2F) {
+      try {
+        const transport = await TransportU2F.create();
+        return callback(transport);
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    }
+
     try {
       const transport = await TransportWebUsb.create();
       return callback(transport);
     } catch (e) {
-      if (e.message && e.message === "navigator.usb is undefined") { // webusb failed, so try u2f
-        const transport = await TransportU2F.create();
-        return callback(transport);
-      } else {
-        throw new Error("Error with Ledger transport");
+      if (e.message) {
+        if (e.message === 'No device selected.') {
+          e.message = `Select your device in the WebUSB dialog box. Make sure it's plugged in, unlocked, and has the Bitcoin app open.`;
+        }
+        if (e.message === 'undefined is not an object (evaluating \'navigator.usb.getDevices\')') {
+          e.message = `Safari is not a supported browser.`;
+        }
       }
+      throw new Error(e.message);
     }
   }
 
@@ -857,13 +872,15 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
       const transactionSignature = await app.signP2SHTransaction(
-        this.ledgerInputs(),
-        this.ledgerKeysets(),
-        this.ledgerOutputScriptHex(),
-        0, // locktime, 0 is no locktime
-        1, // sighash type, 1 is SIGHASH_ALL
-        this.anySegwitInputs(),
-        1, // tx version
+        {
+          inputs: this.ledgerInputs(),
+          associatedKeysets: this.ledgerKeysets(),
+          outputScriptHex: this.ledgerOutputScriptHex(),
+          lockTime: 0, // locktime, 0 is no locktime
+          sigHashType: 1, // sighash type, 1 is SIGHASH_ALL
+          segwit: this.anySegwitInputs(),
+          transactionVersion: 1, // tx version
+        },
       );
       return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
     });
@@ -884,22 +901,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   }
 
   ledgerOutputScriptHex() {
-    // This seems like an inefficient way to achieve the final
-    // result...
-    let txTmp = new bitcoin.TransactionBuilder();
-    txTmp.setVersion(1);
-    if (this.network === TESTNET) {
-      txTmp.network = bitcoin.networks.testnet;
-    }
-    for (let i = 0; i < this.outputs.length; i++) {
-      txTmp.addOutput(this.outputs[i].address, new BigNumber(this.outputs[i].amountSats).toNumber());
-    }
-    for (let j = 0; j < this.inputs.length; j++) {
-      txTmp.addInput(this.inputs[j].txid, this.inputs[j].index);
-    }
-
-    const txToSign = txTmp.buildIncomplete();
-    const txHex = txToSign.toHex();
+    const txHex = unsignedMultisigTransaction(this.network, this.inputs, this.outputs).toHex();
     const splitTx = splitTransaction(txHex, this.anySegwitInputs());
     return serializeTransactionOutputs(splitTx).toString('hex');
   }
