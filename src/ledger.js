@@ -165,27 +165,29 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withTransport(callback) {
+    const useU2F = this.environment.satisfies({
+      firefox: ">70",
+    });
+
+    if (useU2F) {
+      try {
+        const transport = await TransportU2F.create();
+        return callback(transport);
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    }
+
     try {
       const transport = await TransportWebUsb.create();
       return callback(transport);
     } catch (e) {
       if (e.message) {
-        //WebUSB Errors:
-        // If you hit cancel on the browser webusb popup
         if (e.message === 'No device selected.') {
           e.message = `Select your device in the WebUSB dialog box. Make sure it's plugged in, unlocked, and has the Bitcoin app open.`;
         }
         if (e.message === 'undefined is not an object (evaluating \'navigator.usb.getDevices\')') {
           e.message = `Safari is not a supported browser.`;
-        }
-        // If you ask for a Transport in Firefox, fallback to U2F
-        if (e.message === "navigator.usb is undefined") {
-          try {
-            const transport = await TransportU2F.create();
-            return callback(transport);
-          } catch(err) {
-            throw new Error(err.message);
-          }
         }
       }
       throw new Error(e.message);
@@ -878,7 +880,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
           sigHashType: 1, // sighash type, 1 is SIGHASH_ALL
           segwit: this.anySegwitInputs(),
           transactionVersion: 1, // tx version
-        }
+        },
       );
       return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
     });
