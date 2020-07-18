@@ -814,14 +814,15 @@ export function trezorCoin(network) {
 
 function trezorInput(input, bip32Path) {
   const requiredSigners = multisigRequiredSigners(input.multisig);
+  const publicKeys = multisigPublicKeys(input.multisig);
   const addressType = multisigAddressType(input.multisig);
   const spendType = ADDRESS_SCRIPT_TYPES[addressType];
   return {
     script_type: spendType,
     multisig: {
       m: requiredSigners,
-      pubkeys: multisigPublicKeys(input.multisig).map((publicKey) => trezorPublicKey(publicKey)),
-      signatures: Array(requiredSigners).fill(''),
+      pubkeys: publicKeys.map((publicKey) => trezorPublicKey(publicKey)),
+      signatures: Array(publicKeys.length).fill(''),
     },
     prev_hash: input.txid,
     prev_index: input.index,
