@@ -218,6 +218,20 @@ describe('ledger', () => {
           });
         }
 
+        it("checks signatures include proper SIGHASH byte", () => {
+          // Signature format:
+          //   first byte signifies DER encoding           (0x30)
+          //   second byte is length of signature in bytes (0x03)
+          // The string length is however long the signature is minus these two starting bytes
+          // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
+          expect(interactionBuilder().parse(["3003foobar"])).toEqual(["3003foobar01"]);
+          // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
+          expect(interactionBuilder().parse(["3003foob01"])).toEqual(["3003foob0101"]);
+          // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
+          // we expect this to chop off the 01 and add it back
+          expect(interactionBuilder().parse(["3003foobar01"])).toEqual(["3003foobar01"]);
+        });
+
       });
     });
 

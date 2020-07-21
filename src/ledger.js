@@ -30,6 +30,7 @@ import {
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
+  signatureNoSighashType,
 } from "unchained-bitcoin";
 
 import {
@@ -882,8 +883,14 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
           transactionVersion: 1, // tx version
         },
       );
-      return (transactionSignature || []).map(inputSignature => `${inputSignature}01`);
+      return this.parse(transactionSignature);
     });
+  }
+
+  parse(transactionSignature) {
+    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
+    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
+    return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
   }
 
   ledgerInputs() {
