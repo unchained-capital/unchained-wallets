@@ -882,7 +882,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
           transactionVersion: 1, // tx version
         },
       );
-      return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
+      return (transactionSignature || []).map(inputSignature => `${inputSignature}01`);
     });
   }
 
