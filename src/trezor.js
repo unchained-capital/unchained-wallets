@@ -36,6 +36,7 @@ import {
   P2SH,
   P2SH_P2WSH,
   P2WSH,
+  signatureNoSighashType,
 } from "unchained-bitcoin";
 
 import {
@@ -683,7 +684,10 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
    * @returns {string[]} array of input signatures, one per input
    */
   parse(payload) {
-    return (payload.signatures || []).map((inputSignature) => (`${inputSignature}01`));
+    // While we don't anticipate Trezor making firmware changes to include SIGHASH bytes with signatures,
+    // let's go ahead and make sure that we're not double adding the SIGHASH byte in case they do in the future.
+
+    return (payload.signatures || []).map((inputSignature) => (`${signatureNoSighashType(inputSignature)}01`));
   }
 
 }
