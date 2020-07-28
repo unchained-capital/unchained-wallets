@@ -24,6 +24,8 @@ import {HERMIT, HermitExportPublicKey, HermitExportExtendedPublicKey, HermitSign
  */
 export const VERSION = version;
 
+export const MULTISIG_ROOT = "m/45'";
+
 /**
  * Enumeration of keystores which support direct interactions.
  *
@@ -92,6 +94,7 @@ export function GetMetadata({keystore}) {
  * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
+ * @param {string} options.includeXFP - also return root fingerprint
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {MAINNET} from "unchained-bitcoin";
@@ -100,15 +103,24 @@ export function GetMetadata({keystore}) {
  * const interaction = ExportPublicKey({keystore: TREZOR, network: MAINNET, bip32Path: "m/45'/0'/0'/0/0"});
  * const publicKey = await interaction.run();
  */
-export function ExportPublicKey({keystore, network, bip32Path}) {
+export function ExportPublicKey({
+                                  keystore,
+                                  network,
+                                  bip32Path,
+                                  includeXFP,
+                                }) {
   switch (keystore) {
     case TREZOR:
       return new TrezorExportPublicKey({
         network,
         bip32Path,
+        includeXFP,
       });
     case LEDGER:
-      return new LedgerExportPublicKey({bip32Path});
+      return new LedgerExportPublicKey({
+        bip32Path,
+        includeXFP,
+      });
     case HERMIT:
       return new HermitExportPublicKey({bip32Path});
     default:
@@ -130,6 +142,7 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  * @param {KEYSTORES} options.keystore - keystore to use
  * @param {string} options.network - bitcoin network
  * @param {string} options.bip32Path - the BIP32 path of the HD node of the extended public key
+ * @param {string} options.includeXFP - also return root fingerprint
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {MAINNET} from "unchained-bitcoin";
@@ -138,12 +151,18 @@ export function ExportPublicKey({keystore, network, bip32Path}) {
  * const interaction = ExportExtendedPublicKey({keystore: TREZOR, network: MAINNET, bip32Path: "m/45'/0'/0'/0/0"});
  * const xpub = await interaction.run();
  */
-export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
+export function ExportExtendedPublicKey({
+                                          keystore,
+                                          network,
+                                          bip32Path,
+                                          includeXFP,
+                                        }) {
   switch (keystore) {
     case TREZOR:
       return new TrezorExportExtendedPublicKey({
         network,
         bip32Path,
+        includeXFP,
       });
     case HERMIT:
       return new HermitExportExtendedPublicKey({bip32Path});
@@ -151,6 +170,7 @@ export function ExportExtendedPublicKey({keystore, network, bip32Path}) {
       return new LedgerExportExtendedPublicKey({
         network,
         bip32Path,
+        includeXFP,
       });
     default:
       return new UnsupportedInteraction({
