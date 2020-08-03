@@ -94,7 +94,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line533">line 533</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line590">line 590</a>
     </li></ul></dd>
     
 
@@ -201,8 +201,10 @@ console.log(xpub);
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
+
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
         <a href="module-trezor.TrezorExportHDNode.html#connectParams">module:trezor.TrezorExportHDNode#connectParams</a>
     </li></ul></dd>
     
@@ -224,11 +226,9 @@ console.log(xpub);
     
 
     
-
-    
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line482">line 482</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line505">line 505</a>
     </li></ul></dd>
     
 
@@ -317,8 +317,10 @@ on the BIP32 path passed.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
+
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
         <a href="module-trezor.TrezorExportHDNode.html#messages">module:trezor.TrezorExportHDNode#messages</a>
     </li></ul></dd>
     
@@ -340,11 +342,9 @@ on the BIP32 path passed.</p>
     
 
     
-
-    
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line454">line 454</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line457">line 457</a>
     </li></ul></dd>
     
 
@@ -402,7 +402,7 @@ on the BIP32 path passed.</p>
     
 
     
-    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(payload)</span><span class="type-signature"> &rarr; {string}</span></h4>
+    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(payload)</span><span class="type-signature"> &rarr; {string|Object}</span></h4>
     
 
     
@@ -411,6 +411,7 @@ on the BIP32 path passed.</p>
 
 <div class="description">
     <p>Parses the extended public key from the HD node response.</p>
+<p>If asking for XFP, return object with xpub and the root fingerprint.</p>
 </div>
 
 
@@ -508,7 +509,7 @@ on the BIP32 path passed.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line541">line 541</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line607">line 607</a>
     </li></ul></dd>
     
 
@@ -537,7 +538,7 @@ on the BIP32 path passed.</p>
 
         
 <div class="param-desc">
-    <p>the extended public key</p>
+    <p>the extended public key (returns object if asked to include root fingerprint)</p>
 </div>
 
 
@@ -549,6 +550,9 @@ on the BIP32 path passed.</p>
     <dd>
         
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -596,12 +600,12 @@ on the BIP32 path passed.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.DirectKeystoreInteraction.html#request">module:interaction.DirectKeystoreInteraction#request</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-trezor.TrezorExportHDNode.html#request">module:trezor.TrezorExportHDNode#request</a>
+    </li></ul></dd>
     
 
     
@@ -725,12 +729,12 @@ error is thrown, it will not be caught.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#run">module:trezor.TrezorInteraction#run</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-trezor.TrezorExportHDNode.html#run">module:trezor.TrezorExportHDNode#run</a>
+    </li></ul></dd>
     
 
     
@@ -752,7 +756,7 @@ error is thrown, it will not be caught.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line252">line 252</a>
+        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line253">line 253</a>
     </li></ul></dd>
     
 
@@ -826,7 +830,7 @@ error is thrown, it will not be caught.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Jul 23 2020 00:07:57 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Aug 03 2020 15:32:35 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>

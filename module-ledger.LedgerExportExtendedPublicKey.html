@@ -29,7 +29,7 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerExportExtendedPublicKey<span class="signature">()</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerExportExtendedPublicKey<span class="signature">(bip32Path, network, includeXFP)</span><span class="type-signature"></span></h2>
         
             <div class="class-description"><p>Class for wallet extended public key (xpub) interaction at a given BIP32 path.</p></div>
         
@@ -46,7 +46,7 @@
     
 
     
-    <h4 class="name" id="LedgerExportExtendedPublicKey"><span class="type-signature"></span>new LedgerExportExtendedPublicKey<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="LedgerExportExtendedPublicKey"><span class="type-signature"></span>new LedgerExportExtendedPublicKey<span class="signature">(bip32Path, network, includeXFP)</span><span class="type-signature"></span></h4>
     
 
     
@@ -59,6 +59,101 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>bip32Path</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>path</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>network</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>bitcoin network</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>includeXFP</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>return xpub with root fingerprint concatenated</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -94,7 +189,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line625">line 625</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line678">line 678</a>
     </li></ul></dd>
     
 
@@ -161,118 +256,7 @@
     
 
     
-    <h4 class="name" id="getFingerprint"><span class="type-signature">(async) </span>getFingerprint<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Get fingerprint from parent pubkey. This is useful for generating xpubs
-which need the fingerprint of the parent pubkey</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line639">line 639</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>fingerprint</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
+    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {string|Object}</span></h4>
     
 
     
@@ -324,7 +308,7 @@ which need the fingerprint of the parent pubkey</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line660">line 660</a>
+        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line698">line 698</a>
     </li></ul></dd>
     
 
@@ -353,7 +337,7 @@ which need the fingerprint of the parent pubkey</p>
 
         
 <div class="param-desc">
-    <p>extended public key(xpub) for the BIP32 path of a given instance</p>
+    <p>the extended public key (returns object if asked to include root fingerprint)</p>
 </div>
 
 
@@ -365,6 +349,9 @@ which need the fingerprint of the parent pubkey</p>
     <dd>
         
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -406,7 +393,7 @@ console.log(xpub);</code></pre>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Jul 23 2020 00:07:57 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Aug 03 2020 15:32:35 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>
