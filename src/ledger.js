@@ -30,6 +30,7 @@ import {
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
+  signatureNoSighashType,
 } from "unchained-bitcoin";
 
 import {
@@ -560,6 +561,34 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   }
 
   /**
+   * Get fingerprint from parent pubkey. This is useful for generating xpubs
+   * which need the fingerprint of the parent pubkey
+   *
+   * Optionally get root fingerprint for device. This is useful for keychecks and necessary
+   * for PSBTs
+   *
+   * @param {boolean} root fingerprint or not
+   * @returns {string} fingerprint
+   */
+  async getFingerprint(root = false) {
+    const pubkey = root ? await this.getMultisigRootPublicKey() : await this.getParentPublicKey();
+    return getFingerprintFromPublicKey(pubkey);
+  }
+
+  getParentPublicKey() {
+    return this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path);
+      return (await app.getWalletPublicKey(parentPath)).publicKey;
+    });
+  }
+
+  getMultisigRootPublicKey() {
+    return this.withApp(async (app) => {
+      return (await app.getWalletPublicKey()).publicKey; // Call getWalletPublicKey w no path to get BIP32_ROOT (m)
+    });
+  }
+
+  /**
    * See {@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc#getwalletpublickey}.
    *
    * @returns {object} the HD node object.
@@ -585,14 +614,33 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 export class LedgerExportPublicKey extends LedgerExportHDNode {
 
   /**
+   * @param {string} bip32Path - the BIP32 path for the HD node
+   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
+   */
+  constructor({bip32Path, includeXFP = false}) {
+    super({bip32Path});
+    this.includeXFP = includeXFP;
+  }
+
+  /**
    * Parses out and compresses the public key from the response of
    * `LedgerExportHDNode`.
    *
-   * @returns {string} -- (compressed) public key in hex
+   * @returns {string|Object} (compressed) public key in hex (returns object if asked to include root fingerprint)
    */
   async run() {
     const result = await super.run();
-    return this.parsePublicKey((result || {}).publicKey);
+    const publicKey = this.parsePublicKey((result || {}).publicKey);
+    if (this.includeXFP) {
+      let rootFingerprint = await this.getFingerprint(true);
+      rootFingerprint = rootFingerprint.toString(16);
+      return {
+        rootFingerprint,
+        publicKey,
+      };
+    }
+
+    return publicKey;
   }
 
   /**
@@ -621,30 +669,20 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
  * @extends {module:ledger.LedgerExportHDNode}
  */
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
-  constructor({bip32Path, network}) {
+
+  /**
+   * @param {string} bip32Path path
+   * @param {string} network bitcoin network
+   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
+   */
+  constructor({bip32Path, network, includeXFP}) {
     super({bip32Path});
     this.network = network;
+    this.includeXFP = includeXFP;
   }
 
   messages() {
     return super.messages();
-  }
-
-  /**
-   * Get fingerprint from parent pubkey. This is useful for generating xpubs
-   * which need the fingerprint of the parent pubkey
-   * @returns {string} fingerprint
-   */
-  async getFingerprint() {
-    const pubkey = await this.getParentPublicKey();
-    return getFingerprintFromPublicKey(pubkey);
-  }
-
-  getParentPublicKey() {
-    return this.withApp(async (app) => {
-      const parentPath = getParentPath(this.bip32Path);
-      return (await app.getWalletPublicKey(parentPath)).publicKey;
-    });
   }
 
   /**
@@ -654,18 +692,30 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
    * const xpub = await interaction.run();
    * console.log(xpub);
-   * @returns {string} extended public key(xpub) for the BIP32 path of a given instance
+   *
+   * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
   async run() {
     const walletPublicKey = await super.run();
     const fingerprint = await this.getFingerprint();
-    return deriveExtendedPublicKey(
+
+    const xpub = deriveExtendedPublicKey(
       this.bip32Path,
       walletPublicKey.publicKey,
       walletPublicKey.chainCode,
       fingerprint,
       this.network,
     );
+
+    if (this.includeXFP) {
+      let rootFingerprint = await this.getFingerprint(true);
+      rootFingerprint = rootFingerprint.toString(16);
+      return {
+        rootFingerprint,
+        xpub,
+      };
+    }
+    return xpub;
   }
 }
 
@@ -882,8 +932,14 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
           transactionVersion: 1, // tx version
         },
       );
-      return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
+      return this.parse(transactionSignature);
     });
+  }
+
+  parse(transactionSignature) {
+    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
+    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
+    return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
   }
 
   ledgerInputs() {

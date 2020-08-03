@@ -36,6 +36,7 @@ import {
   P2SH,
   P2SH_P2WSH,
   P2WSH,
+  signatureNoSighashType,
 } from "unchained-bitcoin";
 
 import {
@@ -45,6 +46,7 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
+import {MULTISIG_ROOT} from './index';
 
 /**
  * Constant defining Trezor interactions.
@@ -438,10 +440,12 @@ export class TrezorExportHDNode extends TrezorInteraction {
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    * @param {string} bip32Path - the BIP32 path for the HD node
+   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
    */
-  constructor({network, bip32Path}) {
+  constructor({network, bip32Path, includeXFP}) {
     super({network});
     this.bip32Path = bip32Path;
+    this.includeXFP = includeXFP;
   }
 
   /**
@@ -473,12 +477,45 @@ export class TrezorExportHDNode extends TrezorInteraction {
     return messages;
   }
 
+  extractDetailsFromPayload({payload, pubkey}) {
+    if (payload.length !== 2) {
+      throw new Error("Payload does not have two responses.");
+    }
+    let keyMaterial = '';
+    let rootFingerprint = null;
+    for (let i = 0; i < payload.length; i++) {
+      // Find the payload with bip32 = MULTISIG_ROOT to get xfp
+      if (payload[i].serializedPath === MULTISIG_ROOT) {
+        rootFingerprint = payload[i].fingerprint.toString(16);
+      } else {
+        keyMaterial = pubkey ? payload[i].publicKey : payload[i].xpub;
+      }
+    }
+    return {
+      rootFingerprint,
+      keyMaterial,
+    };
+  }
+
   /**
    * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/getPublicKey.md}.
    *
    * @returns {Array<function,Object>} TrezorConnect parameters
    */
   connectParams() {
+    if (this.includeXFP) {
+      return [
+        TrezorConnect.getPublicKey,
+        {
+          bundle: [
+            {path: this.bip32Path},
+            {path: MULTISIG_ROOT},
+          ],
+          coin: this.trezorCoin,
+          crossChain: true,
+        },
+      ];
+    }
     return [
       TrezorConnect.getPublicKey,
       {
@@ -505,13 +542,32 @@ export class TrezorExportHDNode extends TrezorInteraction {
  */
 export class TrezorExportPublicKey extends TrezorExportHDNode {
 
+  constructor({network, bip32Path, includeXFP}) {
+    super({
+      network,
+      bip32Path,
+      includeXFP,
+    });
+    this.includeXFP = includeXFP;
+  }
+
   /**
    * Parses the public key from the HD node response.
    *
    * @param {object} payload - the original payload from the device response
-   * @returns {string} the (compressed) public key in hex
+   * @returns {string|Object} the (compressed) public key in hex or Object if root fingerprint requested
    */
   parse(payload) {
+    if (this.includeXFP) {
+      const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
+        payload,
+        pubkey: true,
+      });
+      return {
+        rootFingerprint,
+        publicKey: keyMaterial,
+      };
+    }
     return payload.publicKey;
   }
 
@@ -531,15 +587,37 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
  */
 export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
 
+  constructor({network, bip32Path, includeXFP}) {
+    super({
+      network,
+      bip32Path,
+      includeXFP,
+    });
+    this.includeXFP = includeXFP;
+  }
+
   /**
    * Parses the extended public key from the HD node response.
    *
+   * If asking for XFP, return object with xpub and the root fingerprint.
+   *
    * @param {object} payload the original payload from the device response
-   * @returns {string} the extended public key
+   * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
   parse(payload) {
+    if (this.includeXFP) {
+      const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
+        payload,
+        pubkey: false,
+      });
+      return {
+        rootFingerprint,
+        xpub: keyMaterial,
+      };
+    }
     return payload.xpub;
   }
+
 
 }
 
@@ -683,7 +761,10 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
    * @returns {string[]} array of input signatures, one per input
    */
   parse(payload) {
-    return (payload.signatures || []).map((inputSignature) => (`${inputSignature}01`));
+    // While we don't anticipate Trezor making firmware changes to include SIGHASH bytes with signatures,
+    // let's go ahead and make sure that we're not double adding the SIGHASH byte in case they do in the future.
+
+    return (payload.signatures || []).map((inputSignature) => (`${signatureNoSighashType(inputSignature)}01`));
   }
 
 }
@@ -814,14 +895,15 @@ export function trezorCoin(network) {
 
 function trezorInput(input, bip32Path) {
   const requiredSigners = multisigRequiredSigners(input.multisig);
+  const publicKeys = multisigPublicKeys(input.multisig);
   const addressType = multisigAddressType(input.multisig);
   const spendType = ADDRESS_SCRIPT_TYPES[addressType];
   return {
     script_type: spendType,
     multisig: {
       m: requiredSigners,
-      pubkeys: multisigPublicKeys(input.multisig).map((publicKey) => trezorPublicKey(publicKey)),
-      signatures: Array(requiredSigners).fill(''),
+      pubkeys: publicKeys.map((publicKey) => trezorPublicKey(publicKey)),
+      signatures: Array(publicKeys.length).fill(''),
     },
     prev_hash: input.txid,
     prev_index: input.index,
