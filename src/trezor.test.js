@@ -267,17 +267,17 @@ describe('trezor', () => {
   });
 
   describe("TrezorConfirmMultisigAddress", () => {
+    let TMP_FIXTURES = JSON.parse(JSON.stringify(TEST_FIXTURES));
 
-    TEST_FIXTURES.multisigs.forEach((fixture) => {
-
+    TMP_FIXTURES.multisigs.forEach((fixture) => {
+      Reflect.deleteProperty(fixture, 'publicKey');
       describe(`displaying a ${fixture.description}`, () => {
-
         function interactionBuilder() { return new TrezorConfirmMultisigAddress(fixture); }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-        it("uses TrezorConnect.getAddress", () => {
+        it("uses TrezorConnect.getAddress without a public key", () => {
           const interaction = interactionBuilder();
           const [method, params] = interaction.connectParams();
           expect(method).toEqual(TrezorConnect.getAddress);
@@ -294,6 +294,35 @@ describe('trezor', () => {
     });
   });
 
+  describe("TrezorConfirmMultisigAddress", () => {
+
+    TEST_FIXTURES.multisigs.forEach((fixture) => {
+
+      describe(`displaying a ${fixture.description}`, () => {
+
+        function interactionBuilder() { return new TrezorConfirmMultisigAddress(fixture); }
+
+        itHasStandardMessages(interactionBuilder);
+        itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+        it("uses TrezorConnect.getAddress with a public key", () => {
+          const interaction = interactionBuilder();
+          const [method, params] = interaction.connectParams();
+          expect(method).toEqual(TrezorConnect.getAddress);
+          expect(params.bundle[0].path).toEqual(fixture.bip32Path);
+          expect(params.bundle[0].showOnTrezor).toBe(false);
+          expect(params.bundle[0].coin).toEqual(trezorCoin(fixture.network));
+          expect(params.bundle[0].crossChain).toBe(true);          
+          expect(params.bundle[1].path).toEqual(fixture.bip32Path);
+          expect(params.bundle[1].address).toEqual(fixture.address);
+          expect(params.bundle[1].showOnTrezor).toBe(true);
+          expect(params.bundle[1].coin).toEqual(trezorCoin(fixture.network));
+          expect(params.bundle[1].crossChain).toBe(true);
+          // FIXME check multisig details
+        });
+      });
+    });
+  });
 });
 
 

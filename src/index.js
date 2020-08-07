@@ -302,13 +302,14 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  * await interaction.run();
  *
  */
-export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig}) {
+export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, publicKey}) {
   switch (keystore) {
     case TREZOR:
       return new TrezorConfirmMultisigAddress({
         network,
         bip32Path,
         multisig,
+        publicKey,
       });
     default:
       return new UnsupportedInteraction({
