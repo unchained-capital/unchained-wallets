@@ -774,6 +774,12 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
 /**
  * Shows a multisig address on the device and prompts the user to
  * confirm it.
+ * If the optional publicKey parameter is used, the public key at 
+ * the given BIP32 path is checked, returning an error if they don't match.
+ *
+ * Without the publicKey parameter, this function simply checks that the 
+ * public key at the given BIP32 path is in the redeemscript (with
+ * validation on-device.
  *
  * @extends {module:trezor.TrezorInteraction}
  * @example
@@ -918,7 +924,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
           },
           scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
         },
-      ]
+      ];
     }
   }
 
@@ -927,11 +933,11 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
       return payload;
     }
     const keyPair = bitcoin.ECPair.fromPublicKey(
-      Buffer.from(this.publicKey, 'hex'))
+      Buffer.from(this.publicKey, 'hex'));
     const { address } = bitcoin.payments.p2pkh({
       pubkey: keyPair.publicKey,
       network: networkData(this.network),
-    })
+    });
     if (address !== payload[0].address && address != payload[1].address) {
       throw new Error("Wrong public key specified");
     }
