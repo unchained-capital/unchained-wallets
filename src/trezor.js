@@ -37,7 +37,9 @@ import {
   P2SH_P2WSH,
   P2WSH,
   signatureNoSighashType,
+  networkData,
 } from "unchained-bitcoin";
+import bitcoin from "bitcoinjs-lib";
 
 import {
   DirectKeystoreInteraction,
@@ -772,6 +774,12 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
 /**
  * Shows a multisig address on the device and prompts the user to
  * confirm it.
+ * If the optional publicKey parameter is used, the public key at 
+ * the given BIP32 path is checked, returning an error if they don't match.
+ *
+ * Without the publicKey parameter, this function simply checks that the 
+ * public key at the given BIP32 path is in the redeemscript (with
+ * validation on-device.
  *
  * @extends {module:trezor.TrezorInteraction}
  * @example
@@ -793,11 +801,13 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
    * @param {string} options.network - bitcoin network
    * @param {string} options.bip32Path - BIP32 path to the public key on this device used in the multisig address
    * @param {Multisig} options.multisig - multisig object
+   * @param {string} options.publicKey - optional public key to confirm
    */
-  constructor({network, bip32Path, multisig}) {
+  constructor({network, bip32Path, multisig, publicKey}) {
     super({network});
     this.bip32Path = bip32Path;
     this.multisig = multisig;
+    this.publicKey = publicKey;
   }
 
   /**
@@ -809,18 +819,27 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
   messages() {
     const messages = super.messages();
 
-    messages.push({
-      state: ACTIVE,
-      level: INFO,
-      text: `Confirm in the Trezor Connect window that you want to 'Export ${this.trezorCoin} address'.  You may be prompted to enter your PIN.`,
-      code: "trezor.connect.confirm_address",
-    });
+    if (this.publicKey) {
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        text:`Confirm in the Trezor Connect window that you want to ‘Export multiple ${this.trezorCoin} addresses’. You may be prompted to enter your PIN. You may also receive a warning about your selected BIP32 path.`,
+        code: "trezor.connect.confirm_address",
+      });
+    } else {
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        text: `Confirm in the Trezor Connect window that you want to 'Export ${this.trezorCoin} address'.  You may be prompted to enter your PIN.`,
+        code: "trezor.connect.confirm_address",
+      });
+    }
 
     messages.push({
       state: ACTIVE,
       level: INFO,
       version: "One",
-      text: "Confirm the addresss on your Trezor device.",
+      text: "It is safe to continue and confirm the address on your Trezor device.",
       messages: [
         // FIXME this only shows up on P2SH?
         {
@@ -864,23 +883,67 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
    * @returns {Array<function, Object>} TrezorConnect parameters
    */
   connectParams() {
-    return [
-      TrezorConnect.getAddress,
-      {
-        path: this.bip32Path,
-        address: multisigAddress(this.multisig),
-        showOnTrezor: true,
-        coin: this.trezorCoin,
-        crossChain: true,
-        multisig: {
-          m: multisigRequiredSigners(this.multisig),
-          pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)),
+    if (this.publicKey) {
+      return [
+        TrezorConnect.getAddress,
+        {
+          bundle: [
+            {
+              path: this.bip32Path,
+              showOnTrezor: false,
+              coin: this.trezorCoin,
+              crossChain: true,
+            },
+            {
+              path: this.bip32Path,
+              address: multisigAddress(this.multisig),
+              showOnTrezor: true,
+              coin: this.trezorCoin,
+              crossChain: true,
+              multisig: {
+                m: multisigRequiredSigners(this.multisig),
+                pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)),
+              },
+              scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
+            },
+          ],
+        }
+      ];
+    } else {
+      return [
+        TrezorConnect.getAddress,
+        {
+          path: this.bip32Path,
+          address: multisigAddress(this.multisig),
+          showOnTrezor: true,
+          coin: this.trezorCoin,
+          crossChain: true,
+          multisig: {
+            m: multisigRequiredSigners(this.multisig),
+            pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)),
+          },
+          scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
         },
-        scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
-      },
-    ];
+      ];
+    }
   }
 
+  parse(payload) {
+    if (!this.publicKey) {
+      return payload;
+    }
+    const keyPair = bitcoin.ECPair.fromPublicKey(
+      Buffer.from(this.publicKey, 'hex'));
+    const { address } = bitcoin.payments.p2pkh({
+      pubkey: keyPair.publicKey,
+      network: networkData(this.network),
+    });
+    if (address !== payload[0].address && address != payload[1].address) {
+      throw new Error("Wrong public key specified");
+    }
+    return payload;
+  }
+  
 }
 
 /**

@@ -278,6 +278,8 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  * `bip32Path` is the BIP32 path for the publiic key in the address on
  * this device.
  *
+ * `publicKey` optional, is the public key expected to be at `bip32Path`.
+ *
  * **Supported keystores:** Trezor
  *
  * @param {Object} options - options argument
@@ -285,12 +287,17 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  * @param {string} options.network - bitcoin network
  * @param {object} options.multisig - `Multisig` object representing the address
  * @param {string} options.bip32Path - the BIP32 path on this device containing a public key from the address
+ * @param {string} options.publicKey - optional, the public key expected to be at the given BIP32 path
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {
  *   generateMultisigFromHex, TESTNET, P2SH,
  * } from "unchained-bitcoin";
- * import {ConfirmMultisigAddress, TREZOR} from "unchained-wallets";
+ * import {
+ *   ConfirmMultisigAddress,
+ *   multisigPublicKeys,
+ *   trezorPublicKey,
+ *   TREZOR} from "unchained-wallets";
  * const redeemScript = "5...ae";
  * const multisig = generateMultisigFromHex(TESTNET, P2SH, redeemScript);
  * const interaction = ConfirmMultisigAddress({
@@ -301,14 +308,29 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
  * });
  * await interaction.run();
  *
+ * With publicKey:
+ * const redeemScript = "5...ae";
+ * const multisig = generateMultisigFromHex(TESTNET, P2SH, redeemScript);
+ * const publicKey = trezorPublicKey(multisigPublicKeys(this.multisig)[2])
+ * const interaction = ConfirmMultisigAddress({
+ *   keystore: TREZOR,
+ *   publicKey,
+ *   network: TESTNET,
+ *   multisig,
+ *   bip32Path: "m/45'/1'/0'/0/0",
+ * });
+ * await interaction.run();
+ *
+ *
  */
-export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig}) {
+export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, publicKey}) {
   switch (keystore) {
     case TREZOR:
       return new TrezorConfirmMultisigAddress({
         network,
         bip32Path,
         multisig,
+        publicKey,
       });
     default:
       return new UnsupportedInteraction({
