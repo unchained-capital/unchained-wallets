@@ -15,7 +15,16 @@ import {
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
 } from "./ledger";
-import {HERMIT, HermitExportPublicKey, HermitExportExtendedPublicKey, HermitSignTransaction} from "./hermit";
+import {
+  HERMIT,
+  HermitExportPublicKey,
+  HermitExportExtendedPublicKey,
+  HermitSignTransaction
+} from "./hermit";
+import {
+  COLDCARD,
+  ColdcardConfig
+} from './coldcard';
 
 /**
  * Current unchained-wallets version.
@@ -45,14 +54,20 @@ export const DIRECT_KEYSTORES = {
  * @enum {string}
  * @default
  */
-export const INDIRECT_KEYSTORES = {HERMIT};
+export const INDIRECT_KEYSTORES = {
+  HERMIT,
+  COLDCARD,
+};
 
 /**
  * Enumeration of supported keystores.
  *
  * @type {string[]}
  */
-export const KEYSTORES = {...DIRECT_KEYSTORES, ...INDIRECT_KEYSTORES};
+export const KEYSTORES = {
+  ...DIRECT_KEYSTORES,
+  ...INDIRECT_KEYSTORES,
+};
 
 
 /**
@@ -340,7 +355,28 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
   }
 }
 
+/**
+ * Return an interaction class for confirming a multisig addreess with
+ * the given `keystore`.
+ *
+ * @param {KEYSTORE} options.keystore - keystore to use
+ * @param {string} jsonConfig - asdf
+ * @returns {ColdcardConfig|UnsupportedInteraction} - text in shape of coldcard multisig wallet import
+ */
+export function translateConfig({keystore, jsonConfig}) {
+  switch (keystore) {
+    case COLDCARD:
+      return new ColdcardConfig({jsonConfig});
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when translating external spend configuration files.",
+      });
+  }
+}
+
 export * from "./interaction";
 export * from "./trezor";
 export * from "./ledger";
 export * from "./hermit";
+export * from "./coldcard";
