@@ -1,5 +1,5 @@
 /**
- * Provides classes for interacting with a Coldcard via JSON/PSBT files
+ * Provides classes for interacting with a Coldcard via TXT/JSON/PSBT files
  *
  * @module coldcard
  */
@@ -70,6 +70,7 @@ export class ColdcardSignTransaction extends ColdcardFileReader {}
 export class ColdcardConfig {
   constructor({jsonConfig}) {
     this.jsonConfig = jsonConfig;
+    //this.jsonConfig.derivation = "m/45'";
   }
 
   /**
@@ -84,20 +85,24 @@ export class ColdcardConfig {
    * @returns {string} configText - output to be written to a textfile and uploaded to Coldcard.
    */
   translate() {
-    // Coldcard configs can't have spaces in the names, it just splits on space and takes the first word.
-    let output =
+    if (this.isSupported()) {
+      // Coldcard configs can't have spaces in the names, it just splits on space and takes the first word.
+      // Currently operating without Derivation, but leaving it while we test.
+      // Derivation: ${this.jsonConfig.derivation}
+      let output =
 `# Coldcard Multisig setup file (exported from unchained-wallets)
 # https://github.com/unchained-capital/unchained-wallets
 # 
 Name: ${this.jsonConfig.name.replace(/ /g, '_')}
 Policy: ${this.jsonConfig.quorum.requiredSigners} of ${this.jsonConfig.quorum.totalSigners}
-Derivation: m/45'
 Format: ${this.jsonConfig.addressType}
 
 `;
-    // We need to loop over xpubs and output `xfp: xpub` for each
-    let xpubs = this.jsonConfig.extendedPublicKeys.map((xpub) => `${xpub.xfp}: ${xpub.xpub}`)
-    output += xpubs.join("\r\n");
-    return output;
+      // We need to loop over xpubs and output `xfp: xpub` for each
+      let xpubs = this.jsonConfig.extendedPublicKeys.map((xpub) => `${xpub.xfp}: ${xpub.xpub}`)
+      output += xpubs.join("\r\n");
+      return output;
+    }
+    throw new Error("Missing fingerprints in the JSON config file.");
   }
 }

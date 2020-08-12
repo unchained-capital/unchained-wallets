@@ -284,7 +284,7 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
 }
 
 /**
- * Return an interaction class for confirming a multisig addreess with
+ * Return an interaction class for confirming a multisig address with
  * the given `keystore`.
  *
  * The `multisig` parameter is a `Multisig` object from
@@ -356,12 +356,13 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
 }
 
 /**
- * Return an interaction class for confirming a multisig addreess with
- * the given `keystore`.
+ * Return a class for creating a multisig config file for a
+ * given keystore or coordinator.
  *
  * @param {KEYSTORE} options.keystore - keystore to use
- * @param {string} jsonConfig - asdf
- * @returns {ColdcardConfig|UnsupportedInteraction} - text in shape of coldcard multisig wallet import
+ * @param {string} jsonConfig - JSON configuration file from e.g. Caravan
+ * @returns {ColdcardConfig|UnsupportedInteraction} - A class that can translate to shape of
+ * config to match keystore/coordinator requirements
  */
 export function translateConfig({keystore, jsonConfig}) {
   switch (keystore) {
