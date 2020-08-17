@@ -488,7 +488,9 @@ export class TrezorExportHDNode extends TrezorInteraction {
     for (let i = 0; i < payload.length; i++) {
       // Find the payload with bip32 = MULTISIG_ROOT to get xfp
       if (payload[i].serializedPath === MULTISIG_ROOT) {
-        rootFingerprint = payload[i].fingerprint.toString(16);
+        let fp = payload[i].fingerprint;
+        // zero pad the hex string
+        rootFingerprint = (fp + 0x100000000).toString(16).substr(-8);
       } else {
         keyMaterial = pubkey ? payload[i].publicKey : payload[i].xpub;
       }

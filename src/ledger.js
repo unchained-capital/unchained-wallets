@@ -633,7 +633,8 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     const publicKey = this.parsePublicKey((result || {}).publicKey);
     if (this.includeXFP) {
       let rootFingerprint = await this.getFingerprint(true);
-      rootFingerprint = rootFingerprint.toString(16);
+      // zero pad the xfp.
+      rootFingerprint = (rootFingerprint + 0x100000000).toString(16).substr(-8);
       return {
         rootFingerprint,
         publicKey,
