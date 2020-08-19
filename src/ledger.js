@@ -572,7 +572,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    */
   async getFingerprint(root = false) {
     const pubkey = root ? await this.getMultisigRootPublicKey() : await this.getParentPublicKey();
-    return getFingerprintFromPublicKey(pubkey);
+    let fp = getFingerprintFromPublicKey(pubkey);
+    // If asked for a root XFP, zero pad it to length of 8.
+    return root ? (fp + 0x100000000).toString(16).substr(-8) : fp;
   }
 
   getParentPublicKey() {
@@ -633,8 +635,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     const publicKey = this.parsePublicKey((result || {}).publicKey);
     if (this.includeXFP) {
       let rootFingerprint = await this.getFingerprint(true);
-      // zero pad the xfp.
-      rootFingerprint = (rootFingerprint + 0x100000000).toString(16).substr(-8);
       return {
         rootFingerprint,
         publicKey,
@@ -710,7 +710,6 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
     if (this.includeXFP) {
       let rootFingerprint = await this.getFingerprint(true);
-      rootFingerprint = rootFingerprint.toString(16);
       return {
         rootFingerprint,
         xpub,
