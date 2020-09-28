@@ -382,7 +382,7 @@ describe("ColdcardSignMultisigTransaction", () => {
       state: PENDING,
       level: INFO,
       code: "coldcard.prepare",
-      text: "imported the multisig wallet",
+      text: "has the multisig wallet installed",
     })).toBe(true);
   });
   it("has a message about downloading psbt", () => {

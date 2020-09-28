@@ -264,7 +264,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
       state: PENDING,
       level: INFO,
       code: "coldcard.prepare",
-      text: `Ensure you have imported the multisig wallet file.`,
+      text: `Ensure your Coldcard has the multisig wallet installed.`,
     });
     messages.push({
       state: PENDING,
