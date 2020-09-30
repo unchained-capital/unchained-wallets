@@ -74,7 +74,7 @@ export class ColdcardMultisigWalletConfig {
   constructor({jsonConfig}) {
     if (typeof jsonConfig === "object") {
       this.jsonConfig = jsonConfig;
-    }else if (typeof jsonConfig === "string") {
+    } else if (typeof jsonConfig === "string") {
       try {
         this.jsonConfig = JSON.parse(jsonConfig);
       } catch (error) {
