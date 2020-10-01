@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: coldcard.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: coldcard.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Provides classes for interacting with a Coldcard via TXT/JSON/PSBT files
+ *
+ * The following API classes are implemented:
+ *
+ * * ColdcardExportExtendedPublicKey
+ * * ColdcardSignMultisigTransaction
+ * * ColdcardMultisigWalletConfig
+ *
+ * @module coldcard
+ */
+import {
+  IndirectKeystoreInteraction,
+} from "./interaction";
+
+export const COLDCARD = 'coldcard';
+export const WALLET_CONFIG_VERSION = "0.0.1";
+
+
+/**
+ * Base class for indirect interactions with Coldcard.
+ *
+ * @extends {module:interaction.IndirectKeystoreInteraction}
+ */
+export class ColdcardInteraction extends IndirectKeystoreInteraction {
+
+}
+
+/**
+ * Base class for coldcard interactions (reading/writing files)
+ *
+ * @extends {module:hermit.HermitInteraction}
+ */
+export class ColdcardFileReader extends ColdcardInteraction {
+
+}
+
+export class ColdcardExportExtendedPublicKey extends ColdcardFileReader {
+
+}
+
+/**
+ * Returns signature request data to display via PSBT for Coldcard and returns the PSBT
+ * data back to the calling application
+ */
+export class ColdcardSignTransaction extends ColdcardFileReader {
+
+}
+
+/**
+ * Returns a valid multisig wallet config text file to send over to a Coldcard
+ *
+ * NOTE: only the root xfp of the signing device is required to be correct, but we
+ * recommend only setting up the multisig wallet on the Coldcard with complete xfp
+ * information. We define isSupported() to check exactly this condition.
+ *
+ * This is an example Coldcard config file from
+ * https://coldcardwallet.com/docs/multisig
+ *
+ * # Coldcard Multisig setup file (exported from 4369050F)
+ * #
+ * Name: MeMyself
+ * Policy: 2 of 4
+ * Derivation: m/45'
+ * Format: P2WSH
+ *
+ * D0CFA66B: tpubD9429UXFGCTKJ9NdiNK4rC5...DdP9
+ * 8E697B74: tpubD97nVL37v5tWyMf9ofh5rzn...XgSc
+ * BE26B07B: tpubD9ArfXowvGHnuECKdGXVKDM...FxPa
+ * 4369050F: tpubD8NXmKsmWp3a3DXhbihAYbY...9C8n
+ *
+ */
+export class ColdcardMultisigWalletConfig {
+  constructor({jsonConfig}) {
+    if (typeof jsonConfig === "object") {
+      this.jsonConfig = jsonConfig;
+    } else if (typeof jsonConfig === "string") {
+      try {
+        this.jsonConfig = JSON.parse(jsonConfig);
+      } catch (error) {
+        throw new Error("Unable to parse JSON.");
+      }
+    } else {
+      throw new Error("Not valid JSON.")
+    }
+
+    if ((this.jsonConfig.uuid || this.jsonConfig.name)) {
+      this.name = this.jsonConfig.uuid || this.jsonConfig.name;
+    } else {
+      throw new Error("Configuration file needs a UUID or a name.");
+    }
+
+    if (this.jsonConfig.quorum.requiredSigners &amp;&amp; this.jsonConfig.quorum.totalSigners) {
+      this.requiredSigners = this.jsonConfig.quorum.requiredSigners;
+      this.totalSigners = this.jsonConfig.quorum.totalSigners;
+    } else {
+      throw new Error("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
+    }
+
+    if (this.jsonConfig.addressType) {
+      this.addressType = jsonConfig.addressType;
+    } else {
+      throw new Error("Configuration file needs addressType.")
+    }
+
+    if (this.jsonConfig.extendedPublicKeys &amp;&amp;
+      this.jsonConfig.extendedPublicKeys.every((xpub) => {
+        // For each xpub, check that xfp exists, the length is 8, type is string, and valid hex
+        if (!xpub.xfp) {
+          throw new Error("ExtendedPublicKeys missing at least one xfp.");
+        }
+        if (typeof xpub.xfp !== 'string') {
+          throw new Error("XFP not a string");
+        }
+        if (xpub.xfp.length !== 8) {
+          throw new Error("XFP not length 8");
+        }
+        if (isNaN(Number(`0x${xpub.xfp}`))) {
+          throw new Error("XFP is invalid hex");
+        }
+        return true;
+      })) {
+      this.extendedPublicKeys = this.jsonConfig.extendedPublicKeys;
+    } else {
+      throw new Error("Configuration file needs extendedPublicKeys.")
+    }
+  }
+
+  /**
+   * @returns {string} output to be written to a text file and uploaded to Coldcard.
+   */
+  adapt() {
+    // Coldcard configs can't have spaces in the names, it just splits on space and takes the first word.
+    // Currently operating without derivation paths per xpub until feature is added.
+    let output = `# Coldcard Multisig setup file (exported from unchained-wallets)
+# https://github.com/unchained-capital/unchained-wallets
+# v${WALLET_CONFIG_VERSION}
+# 
+Name: ${this.name}
+Policy: ${this.requiredSigners} of ${this.totalSigners}
+Format: ${this.addressType}
+
+`;
+    // We need to loop over xpubs and output `xfp: xpub` for each
+    let xpubs = this.extendedPublicKeys.map((xpub) => `${xpub.xfp}: ${xpub.xpub}`);
+    output += xpubs.join("\r\n");
+    output += "\r\n";
+    return output;
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardFileReader.html">ColdcardFileReader</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignTransaction.html">ColdcardSignTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#configAdapter">configAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Oct 01 2020 12:54:09 GMT+0000 (UTC)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

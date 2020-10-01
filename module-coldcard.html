@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: DirectKeystoreInteraction</title>
+    <title>JSDoc: Module: coldcard</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: DirectKeystoreInteraction</h1>
+    <h1 class="page-title">Module: coldcard</h1>
 
     
 
@@ -28,14 +28,8 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-interaction.html">interaction</a>.</span>DirectKeystoreInteraction<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Base class for direct keystore interactions.</p>
-<p>Subclasses <em>must</em> implement a <code>run</code> method which communicates
-directly with the keystore.  This method must be asynchronous
-(return a <code>Promise</code>) to accommodate delays with network, devices,
-&amp;c.</p></div>
+            
         
     
 </header>
@@ -44,23 +38,19 @@ directly with the keystore.  This method must be asynchronous
     <div class="container-overview">
     
         
+            <div class="description"><p>Provides classes for interacting with a Coldcard via TXT/JSON/PSBT files</p>
+<p>The following API classes are implemented:</p>
+<ul>
+<li>ColdcardExportExtendedPublicKey</li>
+<li>ColdcardSignMultisigTransaction</li>
+<li>ColdcardMultisigWalletConfig</li>
+</ul></div>
+        
 
-    
-    <h2>Constructor</h2>
-    
-
-    
-    <h4 class="name" id="DirectKeystoreInteraction"><span class="type-signature"></span>new DirectKeystoreInteraction<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
+        
+            
 
 
-
-<div class="description">
-    <p>Sets the <code>this.direct</code> property to <code>true</code>.  This property can be
-utilized when introspecting on interaction classes..</p>
-</div>
 
 
 
@@ -103,7 +93,7 @@ utilized when introspecting on interaction classes..</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line486">line 486</a>
+        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line1">line 1</a>
     </li></ul></dd>
     
 
@@ -132,30 +122,8 @@ utilized when introspecting on interaction classes..</p>
 
 
 
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>import {DirectKeystoreInteraction} from "unchained-wallets";
-class SimpleDirectInteraction extends DirectKeystoreInteraction {   *
 
-  constructor({param}) {
-    super();
-    this.param = param;
-  }
-
-  async run() {
-    // Or do something complicated...
-    return this.param;
-  }
-}
-
-const interaction = new SimpleDirectInteraction({param: "foo"});
-
-const result = await interaction.run();
-console.log(result);
-// "foo"</code></pre>
-
-
-
+        
     
     </div>
 
@@ -164,167 +132,21 @@ console.log(result);
     
 
     
+        <h3 class="subsection-title">Classes</h3>
 
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
+        <dl>
+            <dt><a href="module-coldcard.ColdcardFileReader.html">ColdcardFileReader</a></dt>
+            <dd></dd>
         
-            
-
-    
-
-    
-    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Throws an error.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line523">line 523</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
+            <dt><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></dt>
+            <dd></dd>
         
-
-    <div class="param-desc">
-    
-        <p>An error since this is a direct interaction.</p>
-    
-    </div>
-
-
-    
-
-
-<h5>Returns:</h5>
-
+            <dt><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></dt>
+            <dd></dd>
         
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">void</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="request"><span class="type-signature"></span>request<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Throws an error.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
+            <dt><a href="module-coldcard.ColdcardSignTransaction.html">ColdcardSignTransaction</a></dt>
+            <dd></dd>
+        </dl>
     
 
     
@@ -335,197 +157,6 @@ console.log(result);
 
     
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line512">line 512</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-    <div class="param-desc">
-    
-        <p>An error since this is a direct interaction.</p>
-    
-    </div>
-
-
-    
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">void</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Initiate the intended interaction and return a result.</p>
-<p>Subclasses <em>must</em> override this function.  This function must
-always return a promise as it is designed to be called within an
-<code>await</code> block.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line501">line 501</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Does the work of interacting with the keystore.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
     
 
     
