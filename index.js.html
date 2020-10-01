@@ -51,8 +51,9 @@ import {
 } from "./hermit";
 import {
   COLDCARD,
+  ColdcardExportPublicKey,
   ColdcardExportExtendedPublicKey,
-  ColdcardSignTransaction,
+  ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
 } from './coldcard';
 
@@ -166,8 +167,16 @@ export function ExportPublicKey({
         bip32Path,
         includeXFP,
       });
+    case COLDCARD:
+      return new ColdcardExportPublicKey({
+        network,
+        bip32Path,
+        includeXFP,
+      });
     case HERMIT:
-      return new HermitExportPublicKey({bip32Path});
+      return new HermitExportPublicKey({
+        bip32Path
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -205,19 +214,25 @@ export function ExportExtendedPublicKey({
   switch (keystore) {
     case TREZOR:
       return new TrezorExportExtendedPublicKey({
-        network,
         bip32Path,
-        includeXFP,
+        network,
+        includeXFP
       });
     case HERMIT:
-      return new HermitExportExtendedPublicKey({bip32Path});
+      return new HermitExportExtendedPublicKey({
+        bip32Path
+      });
     case COLDCARD:
-      return new ColdcardExportExtendedPublicKey({bip32Path});
+      return new ColdcardExportExtendedPublicKey({
+        bip32Path,
+        network,
+        includeXFP
+      });
     case LEDGER:
       return new LedgerExportExtendedPublicKey({
-        network,
         bip32Path,
-        includeXFP,
+        network,
+        includeXFP
       });
     default:
       return new UnsupportedInteraction({
@@ -308,7 +323,7 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
         bip32Paths,
       });
     case COLDCARD:
-      return new ColdcardSignTransaction({
+      return new ColdcardSignMultisigTransaction({
         network,
         inputs,
         outputs,
@@ -399,15 +414,17 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
  * Return a class for creating a multisig config file for a
  * given keystore or coordinator.
  *
- * @param {KEYSTORE} options.keystore - keystore to use
+ * @param {string} KEYSTORE - keystore to use
  * @param {string} jsonConfig - JSON wallet configuration file e.g. from Caravan
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
-export function configAdapter({keystore, jsonConfig}) {
-  switch (keystore) {
+export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
+  switch (KEYSTORE) {
     case COLDCARD:
-      return new ColdcardMultisigWalletConfig({jsonConfig});
+      return new ColdcardMultisigWalletConfig({
+        jsonConfig
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -431,13 +448,13 @@ export * from "./coldcard";
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardFileReader.html">ColdcardFileReader</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignTransaction.html">ColdcardSignTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#configAdapter">configAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardFileParser.html">ColdcardFileParser</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Oct 01 2020 12:54:09 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Oct 01 2020 17:16:24 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>
