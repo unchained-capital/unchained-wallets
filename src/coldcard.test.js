@@ -430,62 +430,62 @@ describe("ColdcardMultisigWalletConfig", () => {
   });
 
   it("jsonConfig without extendedPublicKeys", () => {
-    const jsonMissingKeys = {...jsonConfigCopy};
+    const jsonMissingKeys = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingKeys, "extendedPublicKeys");
     expect(() => interactionBuilder({jsonConfig: jsonMissingKeys})).toThrow("Configuration file needs extendedPublicKeys.");
   });
 
   it("jsonConfig with missing xfp", () => {
-    const jsonMissingXFP = {...jsonConfigCopy};
+    const jsonMissingXFP = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingXFP.extendedPublicKeys[0], "xfp");
     expect(() => interactionBuilder({jsonConfig: jsonMissingXFP})).toThrow("ExtendedPublicKeys missing at least one xfp.");
   });
 
   it("jsonConfig with xfp as Unknown", () => {
-    const jsonUnknownXFP = {...jsonConfigCopy};
+    const jsonUnknownXFP = { ...jsonConfigCopy };
     jsonUnknownXFP.extendedPublicKeys[0].xfp = "Unknown";
     expect(() => interactionBuilder({jsonConfig: jsonUnknownXFP})).toThrow("ExtendedPublicKeys missing at least one xfp.");
   });
 
   it("jsonConfig with xfp not length 8", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
+    const jsonMissingMultipleXFP = { ...jsonConfigCopy };
     jsonMissingMultipleXFP.extendedPublicKeys[1].xfp = "1234";
     expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP not length 8");
   });
 
   it("jsonConfig with xfp not string", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
+    const jsonMissingMultipleXFP = { ...jsonConfigCopy };
     jsonMissingMultipleXFP.extendedPublicKeys[0].xfp = 1234;
     expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP not a string");
   });
 
   it("jsonConfig with xfp invalid hex", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
+    const jsonMissingMultipleXFP = { ...jsonConfigCopy };
     jsonMissingMultipleXFP.extendedPublicKeys[0].xfp = "1234567z";
     expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP is invalid hex");
   });
 
   it("jsonConfig with missing uuid && name", () => {
-    const jsonMissingUUIDandName = {...jsonConfigCopy};
+    const jsonMissingUUIDandName = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingUUIDandName, "uuid");
     Reflect.deleteProperty(jsonMissingUUIDandName, "name");
     expect(() => interactionBuilder({jsonConfig: jsonMissingUUIDandName})).toThrow("Configuration file needs a UUID or a name.");
   });
 
   it("jsonConfig with missing quorum.requiredSigners", () => {
-    const jsonMissingQuorumRequired = {...jsonConfigCopy};
+    const jsonMissingQuorumRequired = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingQuorumRequired.quorum, "requiredSigners");
     expect(() => interactionBuilder({jsonConfig: jsonMissingQuorumRequired})).toThrow("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
   });
 
   it("jsonConfig with missing quorum.totalSigners", () => {
-    const jsonMissingQuorumTotal = {...jsonConfigCopy};
+    const jsonMissingQuorumTotal = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingQuorumTotal.quorum, "totalSigners");
     expect(() => interactionBuilder({jsonConfig: jsonMissingQuorumTotal})).toThrow("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
   });
 
   it("jsonConfig with missing addressType", () => {
-    const jsonMissingAddressType = {...jsonConfigCopy};
+    const jsonMissingAddressType = { ...jsonConfigCopy };
     Reflect.deleteProperty(jsonMissingAddressType, "addressType");
     expect(() => interactionBuilder({jsonConfig: jsonMissingAddressType})).toThrow("Configuration file needs addressType.");
   });
