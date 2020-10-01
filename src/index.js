@@ -146,7 +146,9 @@ export function ExportPublicKey({
         includeXFP,
       });
     case HERMIT:
-      return new HermitExportPublicKey({bip32Path});
+      return new HermitExportPublicKey({
+        bip32Path
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -183,19 +185,27 @@ export function ExportExtendedPublicKey({
                                         }) {
   switch (keystore) {
     case TREZOR:
-      return new TrezorExportExtendedPublicKey({bip32Path,
+      return new TrezorExportExtendedPublicKey({
+        bip32Path,
         network,
-        includeXFP});
+        includeXFP
+      });
     case HERMIT:
-      return new HermitExportExtendedPublicKey({bip32Path});
+      return new HermitExportExtendedPublicKey({
+        bip32Path
+      });
     case COLDCARD:
-      return new ColdcardExportExtendedPublicKey({bip32Path,
+      return new ColdcardExportExtendedPublicKey({
+        bip32Path,
         network,
-        includeXFP});
+        includeXFP
+      });
     case LEDGER:
-      return new LedgerExportExtendedPublicKey({bip32Path,
+      return new LedgerExportExtendedPublicKey({
+        bip32Path,
         network,
-        includeXFP});
+        includeXFP
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -376,7 +386,7 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
  * Return a class for creating a multisig config file for a
  * given keystore or coordinator.
  *
- * @param {KEYSTORE} KEYSTORE - keystore to use
+ * @param {string} KEYSTORE - keystore to use
  * @param {string} jsonConfig - JSON wallet configuration file e.g. from Caravan
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
@@ -384,7 +394,9 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
 export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
   switch (KEYSTORE) {
     case COLDCARD:
-      return new ColdcardMultisigWalletConfig({ jsonConfig });
+      return new ColdcardMultisigWalletConfig({
+        jsonConfig
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
