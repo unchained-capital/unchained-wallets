@@ -15,7 +15,18 @@ import {
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
 } from "./ledger";
-import {HERMIT, HermitExportPublicKey, HermitExportExtendedPublicKey, HermitSignTransaction} from "./hermit";
+import {
+  HERMIT,
+  HermitExportPublicKey,
+  HermitExportExtendedPublicKey,
+  HermitSignTransaction
+} from "./hermit";
+import {
+  COLDCARD,
+  ColdcardExportExtendedPublicKey,
+  ColdcardSignTransaction,
+  ColdcardMultisigWalletConfig,
+} from './coldcard';
 
 /**
  * Current unchained-wallets version.
@@ -45,14 +56,20 @@ export const DIRECT_KEYSTORES = {
  * @enum {string}
  * @default
  */
-export const INDIRECT_KEYSTORES = {HERMIT};
+export const INDIRECT_KEYSTORES = {
+  HERMIT,
+  COLDCARD,
+};
 
 /**
  * Enumeration of supported keystores.
  *
  * @type {string[]}
  */
-export const KEYSTORES = {...DIRECT_KEYSTORES, ...INDIRECT_KEYSTORES};
+export const KEYSTORES = {
+  ...DIRECT_KEYSTORES,
+  ...INDIRECT_KEYSTORES,
+};
 
 
 /**
@@ -166,6 +183,8 @@ export function ExportExtendedPublicKey({
       });
     case HERMIT:
       return new HermitExportExtendedPublicKey({bip32Path});
+    case COLDCARD:
+      return new ColdcardExportExtendedPublicKey({bip32Path});
     case LEDGER:
       return new LedgerExportExtendedPublicKey({
         network,
@@ -238,7 +257,7 @@ export function ExportExtendedPublicKey({
  * // ["ababab...", // 1 per input]
  *
  */
-export function SignMultisigTransaction({keystore, network, inputs, outputs, bip32Paths}) {
+export function SignMultisigTransaction({keystore, network, inputs, outputs, bip32Paths, psbt}) {
   switch (keystore) {
     case TREZOR:
       return new TrezorSignMultisigTransaction({
@@ -260,6 +279,14 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
         outputs,
         bip32Paths,
       });
+    case COLDCARD:
+      return new ColdcardSignTransaction({
+        network,
+        inputs,
+        outputs,
+        bip32Paths,
+        psbt,
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -269,7 +296,7 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
 }
 
 /**
- * Return an interaction class for confirming a multisig addreess with
+ * Return an interaction class for confirming a multisig address with
  * the given `keystore`.
  *
  * The `multisig` parameter is a `Multisig` object from
@@ -340,7 +367,29 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
   }
 }
 
+/**
+ * Return a class for creating a multisig config file for a
+ * given keystore or coordinator.
+ *
+ * @param {KEYSTORE} options.keystore - keystore to use
+ * @param {string} jsonConfig - JSON wallet configuration file e.g. from Caravan
+ * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
+ * config to match the specified keystore/coordinator requirements
+ */
+export function configAdapter({keystore, jsonConfig}) {
+  switch (keystore) {
+    case COLDCARD:
+      return new ColdcardMultisigWalletConfig({jsonConfig});
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when translating external spend configuration files.",
+      });
+  }
+}
+
 export * from "./interaction";
 export * from "./trezor";
 export * from "./ledger";
 export * from "./hermit";
+export * from "./coldcard";
