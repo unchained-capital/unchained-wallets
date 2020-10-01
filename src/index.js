@@ -23,8 +23,9 @@ import {
 } from "./hermit";
 import {
   COLDCARD,
+  ColdcardExportPublicKey,
   ColdcardExportExtendedPublicKey,
-  ColdcardSignTransaction,
+  ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
 } from './coldcard';
 
@@ -138,8 +139,16 @@ export function ExportPublicKey({
         bip32Path,
         includeXFP,
       });
+    case COLDCARD:
+      return new ColdcardExportPublicKey({
+        network,
+        bip32Path,
+        includeXFP,
+      });
     case HERMIT:
-      return new HermitExportPublicKey({bip32Path});
+      return new HermitExportPublicKey({
+        bip32Path
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -177,19 +186,25 @@ export function ExportExtendedPublicKey({
   switch (keystore) {
     case TREZOR:
       return new TrezorExportExtendedPublicKey({
-        network,
         bip32Path,
-        includeXFP,
+        network,
+        includeXFP
       });
     case HERMIT:
-      return new HermitExportExtendedPublicKey({bip32Path});
+      return new HermitExportExtendedPublicKey({
+        bip32Path
+      });
     case COLDCARD:
-      return new ColdcardExportExtendedPublicKey({bip32Path});
+      return new ColdcardExportExtendedPublicKey({
+        bip32Path,
+        network,
+        includeXFP
+      });
     case LEDGER:
       return new LedgerExportExtendedPublicKey({
-        network,
         bip32Path,
-        includeXFP,
+        network,
+        includeXFP
       });
     default:
       return new UnsupportedInteraction({
@@ -280,7 +295,7 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
         bip32Paths,
       });
     case COLDCARD:
-      return new ColdcardSignTransaction({
+      return new ColdcardSignMultisigTransaction({
         network,
         inputs,
         outputs,
@@ -371,15 +386,17 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
  * Return a class for creating a multisig config file for a
  * given keystore or coordinator.
  *
- * @param {KEYSTORE} options.keystore - keystore to use
+ * @param {string} KEYSTORE - keystore to use
  * @param {string} jsonConfig - JSON wallet configuration file e.g. from Caravan
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
-export function configAdapter({keystore, jsonConfig}) {
-  switch (keystore) {
+export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
+  switch (KEYSTORE) {
     case COLDCARD:
-      return new ColdcardMultisigWalletConfig({jsonConfig});
+      return new ColdcardMultisigWalletConfig({
+        jsonConfig
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
