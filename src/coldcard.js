@@ -38,39 +38,53 @@ export class ColdcardInteraction extends IndirectKeystoreInteraction {
 }
 
 /**
- * Base class for file-based interactions with Coldcard
+ * Base class for JSON Multisig file-based interactions with Coldcard
+ * This class handles the file that comes from the `Export XPUB` menu item.
  *
  * @extends {module:coldcard.ColdcardInteraction}
  */
-export class ColdcardFileParser extends ColdcardInteraction {
+class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
 
   /**
    *
    * @param {object} options - options argument
+   * @param {string} bip32Path - the requested BIP32 path
    * @param {string} options.network - bitcoin network (needed for derivations)
    */
-  constructor({network}) {
+  constructor({network, bip32Path}) {
     super();
     if ([MAINNET, TESTNET].find(net => net === network)) {
       this.network = network;
     } else {
       throw new Error("Unknown network.");
     }
+    this.bip32Path = bip32Path;
+    this.data = null;
   }
 
+  // TODO make these messages more robust
+  //   (e.g use `menuchoices` as an array of `menuchoicemessages`)
   messages() {
     const messages = super.messages();
     messages.push({
       state: PENDING,
       level: INFO,
-      code: "coldcard.upload",
-      text: "Upload the file from your Coldcard.",
+      code: "coldcard.export_xpub",
+      text: "Go to Settings > Multisig Wallets > Export XPUB",
+    });
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "coldcard.upload_key",
+      text: "Upload the JSON file from your Coldcard.",
     });
     return messages;
   }
 
   /**
-   * Parse the Coldcard JSON file and reshape it into a more useful Object
+   * Parse the Coldcard JSON file and do some basic error checking
+   * add a field for rootFingerprint (it can sometimes be calculated
+   * if not explicitly included)
    *
    * @param {Object} file JSON file exported from Coldcard
    * @returns {Object} the parsed response
@@ -91,36 +105,32 @@ export class ColdcardFileParser extends ColdcardInteraction {
     //
     // For now, we will derive unhardened from `p2sh_deriv`
     // FIXME: assume we will gain the ability to ask Coldcard for an arbitrary path
-    //   (or at least a hardened path deeper than m/45')
+    //   (or at least a p2sh hardened path deeper than m/45')
 
     if (typeof file === "object") {
-      this.xpubJSONFile = file;
+      this.data = file;
     } else if (typeof file === "string") {
       try {
-        this.xpubJSONFile = JSON.parse(file);
+        this.data = JSON.parse(file);
       } catch (error) {
         throw new Error("Unable to parse JSON.");
       }
     } else {
       throw new Error("Not valid JSON.");
     }
-    if (Object.keys(this.xpubJSONFile).length === 0) {
+
+    if (Object.keys(this.data).length === 0) {
       throw new Error("Empty JSON file.");
     }
 
-    const xpub = this.xpubJSONFile.p2sh;
-    const bip32Path = this.xpubJSONFile.p2sh_deriv;
-    const rootFingerprint = this.xpubJSONFile.xfp ? this.xpubJSONFile.xfp.toLowerCase() : null;
-
-    if (!xpub) {
-      throw new Error("No extended public key in JSON file.");
+    if (!this.data.p2sh_deriv || !this.data.p2sh ||
+        !this.data.p2wsh_p2sh_deriv || !this.data.p2wsh ||
+        !this.data.p2wsh_deriv || !this.data.p2wsh) {
+      throw new Error("Missing required params. Was this file exported from a Coldcard?");
     }
-    const xpubClass = ExtendedPublicKey.fromBase58(xpub);
 
-    if (!bip32Path) {
-      throw new Error("No BIP32 path in JSON file.");
-    }
-    if (!rootFingerprint && xpubClass.depth !== 1) {
+    const xpubClass = ExtendedPublicKey.fromBase58(this.data.p2sh);
+    if (!this.data.xfp && xpubClass.depth !== 1) {
       throw new Error("No xfp in JSON file.");
     }
 
@@ -129,20 +139,20 @@ export class ColdcardFileParser extends ColdcardInteraction {
     let xfpFromWithinXpub;
     /* istanbul ignore else */
     if (xpubClass.depth === 1) {
-      xfpFromWithinXpub = fingerprintToFixedLengthHex(xpubClass.parentFingerprint).toLowerCase();
+      xfpFromWithinXpub = fingerprintToFixedLengthHex(xpubClass.parentFingerprint);
     }
 
     // Sanity check if you send in a depth one xpub, we should get the same fingerprint
-    if ((xfpFromWithinXpub && rootFingerprint) &&
-      xfpFromWithinXpub !== rootFingerprint) {
+    if ((xfpFromWithinXpub && this.data.xfp) &&
+      xfpFromWithinXpub !== this.data.xfp.toLowerCase()) {
       throw new Error("Computed fingerprint does not match the one in the file.");
     }
 
-    return {
-      xpub,
-      rootFingerprint: rootFingerprint || xfpFromWithinXpub
-    };
-    }
+    const rootFingerprint = this.data.xfp ? this.data.xfp : xfpFromWithinXpub;
+    this.data.rootFingerprint = rootFingerprint.toLowerCase();
+
+    return this.data;
+  }
 
   /**
    * This method will take the xpub that's been sent in
@@ -174,7 +184,7 @@ export class ColdcardFileParser extends ColdcardInteraction {
  * Reads a public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {module:coldcard.ColdcardFileParser}
+ * @extends {module:coldcard.ColdcardMultisigSettingsFileParser}
  * @example
  * const interaction = new ColdcardExportPublicKey();
  * const reader = new FileReader(); // application dependent
@@ -187,8 +197,7 @@ export class ColdcardFileParser extends ColdcardInteraction {
  * console.log(bip32Path);
  * // "m/45'/0/0"
  */
-export class ColdcardExportPublicKey extends ColdcardFileParser {
-
+export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser {
 
   /**
    *
@@ -197,7 +206,7 @@ export class ColdcardExportPublicKey extends ColdcardFileParser {
    * @param {string} options.network - bitcoin network (needed for derivations)
    */
   constructor({bip32Path, network}) {
-    super({network});
+    super({network, bip32Path});
     this.network = network;
     if (bip32Path) {
       if (typeof bip32Path === 'string') {
@@ -211,26 +220,17 @@ export class ColdcardExportPublicKey extends ColdcardFileParser {
   }
 
   messages() {
-    const messages = super.messages();
-    messages.unshift({
-      state: PENDING,
-      level: INFO,
-      code: "coldcard.export",
-      text: "Go to Settings > Multisig Wallets > Export XPUB",
-    });
-    return messages;
+    return super.messages();
   }
 
   parse(xpubJSONFile) {
     const result = super.parse(xpubJSONFile);
-    let xpub = super.deriveXpubIfNecessary(result.xpub);
-
+    let xpub = super.deriveXpubIfNecessary(result.p2sh);
     const publicKey = ExtendedPublicKey.fromBase58(xpub).pubkey;
-    const rootFingerprint = result.rootFingerprint;
 
     return {
       publicKey,
-      rootFingerprint,
+      rootFingerprint: result.rootFingerprint,
       bip32Path: this.bip32Path,
     };
   }
@@ -241,7 +241,7 @@ export class ColdcardExportPublicKey extends ColdcardFileParser {
  * Reads an extended public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {module:coldcard.ColdcardFileParser}
+ * @extends {module:coldcard.ColdcardMultisigSettingsFileParser}
  * @example
  * const interaction = new ColdcardExportExtendedPublicKey();
  * const reader = new FileReader(); // application dependent
@@ -254,7 +254,7 @@ export class ColdcardExportPublicKey extends ColdcardFileParser {
  * console.log(bip32Path);
  * // "m/45'/0/0"
  */
-export class ColdcardExportExtendedPublicKey extends ColdcardFileParser {
+export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFileParser {
 
   /**
    *
@@ -263,7 +263,7 @@ export class ColdcardExportExtendedPublicKey extends ColdcardFileParser {
    * @param {string} options.network - bitcoin network (needed for derivations)
    */
   constructor({bip32Path, network}) {
-    super({network});
+    super({network, bip32Path});
     if (bip32Path) {
       if (typeof bip32Path === 'string') {
         this.bip32Path = bip32Path;
@@ -276,25 +276,16 @@ export class ColdcardExportExtendedPublicKey extends ColdcardFileParser {
   }
 
   messages() {
-    const messages = super.messages();
-    messages.unshift({
-      state: PENDING,
-      level: INFO,
-      code: "coldcard.export",
-      text: "Go to Settings > Multisig Wallets > Export XPUB",
-    });
-    return messages;
+    return super.messages();
   }
 
   parse(xpubJSONFile) {
     const result = super.parse(xpubJSONFile);
-    let xpub = super.deriveXpubIfNecessary(result.xpub);
-
-    const rootFingerprint = result.rootFingerprint;
+    let xpub = super.deriveXpubIfNecessary(result.p2sh);
 
     return {
       xpub,
-      rootFingerprint,
+      rootFingerprint: result.rootFingerprint,
       bip32Path: this.bip32Path,
     };
   }
@@ -325,15 +316,19 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    * @param {array<object>} options.inputs - inputs for the transaction
    * @param {array<object>} options.outputs - outputs for the transaction
    * @param {array<string>} options.bip32Paths - BIP32 paths
-   * @param {object} options.psbt - optional PSBT
+   * @param {object} options.psbt - PSBT of the transaction to sign
    */
   constructor({network, inputs, outputs, bip32Paths, psbt}) {
     super();
-    this.network = network;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.bip32Paths = bip32Paths;
-    this.psbt = psbt;
+    if (psbt) {
+      this.network = network;
+      this.inputs = inputs;
+      this.outputs = outputs;
+      this.bip32Paths = bip32Paths;
+      this.psbt = psbt;
+    } else {
+      throw new Error("The PSBT must be included at this time.");
+    }
   }
 
   messages() {
@@ -341,44 +336,43 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
     messages.push({
       state: PENDING,
       level: INFO,
-      code: "coldcard.prepare",
+      code: "coldcard.install_multisig_config",
       text: `Ensure your Coldcard has the multisig wallet installed.`,
     });
     messages.push({
       state: PENDING,
       level: INFO,
-      code: "coldcard.prepare",
+      code: "coldcard.download_psbt",
       text: `Download and save this PSBT file to your SD card.`,
     });
     messages.push({
       state: PENDING,
       level: INFO,
-      code: "coldcard.prepare",
-      text: `Transfer the PSBT file to your Coldcard.`,
-    });
-
-    messages.push({
-      state: ACTIVE,
-      level: INFO,
-      code: "coldcard.sign",
+      code: "coldcard.transfer_psbt",
       text: `Transfer the PSBT file to your Coldcard.`,
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
-      code: "coldcard.sign",
+      code: "coldcard.transfer_psbt",
+      text: `Transfer the PSBT file to your Coldcard.`,
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      code: "coldcard.select_psbt",
       text: `Choose 'Ready To Sign' and select the PSBT.`,
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
-      code: "coldcard.sign",
+      code: "coldcard.sign_psbt",
       text: `Verify the transaction details and sign.`,
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
-      code: "coldcard.sign",
+      code: "coldcard.upload_signed_psbt",
       text: `Upload the signed PSBT below.`,
     });
     return messages;
@@ -389,14 +383,21 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    * @returns {Object} Returns the local unsigned PSBT from transaction details
    */
   request() {
-    if (this.psbt) {
-      return this.psbt;
-    } else {
-      // TODO:  use unchained-bitcoin to build the PSBT from the other parameters we need to return
-      return null;
-    }
+    // TODO:  use unchained-bitcoin to build the PSBT from the other parameters we need to return
+    return this.psbt;
   }
 
+  /**
+   *
+   * @param {Object} psbtObject - the PSBT
+   * @returns {Object} signatures - This calls a function in unchained-bitcoin which parses
+   * PSBT files for sigantures and then returns an object with the format
+   * {
+   *   pubkey1 : [sig1, sig2, ...],
+   *   pubkey2 : [sig1, sig2, ...]
+   * }
+   * This format may change in the future or there may be additional options for return type.
+   */
   parse(psbtObject) {
     const signatures = parseSignaturesFromPSBT(psbtObject);
     if ((!signatures) || signatures.length === 0) {
@@ -409,9 +410,13 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
 /**
  * Returns a valid multisig wallet config text file to send over to a Coldcard
  *
- * NOTE: only the root xfp of the signing device is required to be correct, but we
- * recommend only setting up the multisig wallet on the Coldcard with complete xfp
- * information. We define isSupported() to check exactly this condition.
+ * NOTE: technically only the root xfp of the signing device is required to be
+ * correct, but we recommend only setting up the multisig wallet on the Coldcard
+ * with complete xfp information. Here we actuall turn this recommendation into a
+ * requirement so as to minimize the number of wallet-config installations.
+ *
+ * This will likely move to its own generic class soon, and we'll only leave
+ * the specifics of `adapt()` behind.
  *
  * This is an example Coldcard config file from
  * https://coldcardwallet.com/docs/multisig
