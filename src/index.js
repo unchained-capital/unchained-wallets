@@ -26,7 +26,7 @@ import {
   ColdcardExportPublicKey,
   ColdcardExportExtendedPublicKey,
   ColdcardSignMultisigTransaction,
-  ColdcardMultisigWalletConfig,
+  generateColdcardConfig,
 } from './coldcard';
 
 /**
@@ -394,9 +394,7 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
 export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
   switch (KEYSTORE) {
     case COLDCARD:
-      return new ColdcardMultisigWalletConfig({
-        jsonConfig
-      });
+      return generateColdcardConfig(jsonConfig);
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -410,3 +408,4 @@ export * from "./trezor";
 export * from "./ledger";
 export * from "./hermit";
 export * from "./coldcard";
+export * from "./config";

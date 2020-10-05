@@ -2,7 +2,8 @@ import {
   ColdcardExportPublicKey,
   ColdcardExportExtendedPublicKey,
   ColdcardSignMultisigTransaction,
-  ColdcardMultisigWalletConfig,
+  parseColdcardConfig,
+  generateColdcardConfig,
 } from './coldcard';
 import {
   MAINNET,
@@ -17,6 +18,7 @@ import {
   ERROR,
 } from './interaction';
 import {coldcardFixtures} from './coldcard.fixtures';
+import { MultisigWalletConfig } from './config';
 
 const {multisigs, transactions} = TEST_FIXTURES;
 
@@ -556,100 +558,43 @@ describe("ColdcardSignMultisigTransaction", () => {
 
 });
 
-describe("ColdcardMultisigWalletConfig", () => {
-
-  let jsonConfigCopy = '';
-
+describe("config", () => {
+  let options;
   beforeEach(() => {
-    // runs before each test in this block
-    jsonConfigCopy = JSON.parse(JSON.stringify(coldcardFixtures.jsonConfigUUID));
-  });
+    options = JSON.parse(JSON.stringify(coldcardFixtures.jsonConfigUUID));
+  })
 
-  function interactionBuilder(incomingConfig) { return new ColdcardMultisigWalletConfig(incomingConfig); }
+  describe("parseColdcardConfig", () => {
+    it("should be able to instantiate MultisigWalletConfig from a coldcard config", () => {
+      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigDerivation);
+      expect(config.network).toEqual(options.network);
+      expect(config.derivation).toBeTruthy();
+      config.extendedPublicKeys.forEach((key) => {
+        const expectedKeys = options.extendedPublicKeys;
+        // config's xpub array should have the right xfp and xpub 
+        expect(
+          expectedKeys.findIndex(({ xfp, xpub }) => key.xfp === xfp && key.xpub === xpub)
+        ).toBeGreaterThan(-1)
+      })
+    })
+  })
+  
+  describe("generateColdcardConfig", () => {
+    it("should be able to export valid Coldcard config", () => {
+      let output = generateColdcardConfig(options)
+      // test with uuid as name
+      expect(output).toEqual(coldcardFixtures.coldcardConfigUUID);
+      
+      // test with name as fallback for missing uuid
+      Reflect.deleteProperty(options, "uuid");
+      output = generateColdcardConfig(options);
+      expect(output).toEqual(coldcardFixtures.coldcardConfigName);
+    })
 
-  it("can adapt unchained config to coldcard config with uuid", () => {
-    const interaction = interactionBuilder({jsonConfig: coldcardFixtures.jsonConfigUUID});
-    const output = interaction.adapt();
-    expect(output).toEqual(coldcardFixtures.coldcardConfigUUID);
-  });
-
-  it("can adapt caravan config to coldcard config with name", () => {
-    const jsonConfigName = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonConfigName, "uuid");
-    const interaction = interactionBuilder({jsonConfig: jsonConfigName});
-    const output = interaction.adapt();
-    expect(output).toEqual(coldcardFixtures.coldcardConfigName);
-  });
-
-  it("fails when send in nothing or non json", () => {
-    const notJSON = "test";
-    const definitelyNotJSON = 77;
-    const jsonConfigBad = {'test': 0};
-    expect(() => interactionBuilder({jsonConfig: notJSON})).toThrow(/Unable to parse JSON/i);
-    expect(() => interactionBuilder({jsonConfig: definitelyNotJSON})).toThrow(/Not valid JSON/i);
-    expect(() => interactionBuilder({jsonConfig: {}})).toThrow(/Configuration file needs/i);
-    expect(() => interactionBuilder({jsonConfig: jsonConfigBad})).toThrow(/Configuration file needs/i);
-  });
-
-  it("jsonConfig without extendedPublicKeys", () => {
-    const jsonMissingKeys = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingKeys, "extendedPublicKeys");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingKeys})).toThrow("Configuration file needs extendedPublicKeys.");
-  });
-
-  it("jsonConfig with missing xfp", () => {
-    const jsonMissingXFP = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingXFP.extendedPublicKeys[0], "xfp");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingXFP})).toThrow("ExtendedPublicKeys missing at least one xfp.");
-  });
-
-  it("jsonConfig with xfp as Unknown", () => {
-    const jsonUnknownXFP = {...jsonConfigCopy};
-    jsonUnknownXFP.extendedPublicKeys[0].xfp = "Unknown";
-    expect(() => interactionBuilder({jsonConfig: jsonUnknownXFP})).toThrow("ExtendedPublicKeys missing at least one xfp.");
-  });
-
-  it("jsonConfig with xfp not length 8", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
-    jsonMissingMultipleXFP.extendedPublicKeys[1].xfp = "1234";
-    expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP not length 8");
-  });
-
-  it("jsonConfig with xfp not string", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
-    jsonMissingMultipleXFP.extendedPublicKeys[0].xfp = 1234;
-    expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP not a string");
-  });
-
-  it("jsonConfig with xfp invalid hex", () => {
-    const jsonMissingMultipleXFP = {...jsonConfigCopy};
-    jsonMissingMultipleXFP.extendedPublicKeys[0].xfp = "1234567z";
-    expect(() => interactionBuilder({jsonConfig: jsonMissingMultipleXFP})).toThrow("XFP is invalid hex");
-  });
-
-  it("jsonConfig with missing uuid && name", () => {
-    const jsonMissingUUIDandName = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingUUIDandName, "uuid");
-    Reflect.deleteProperty(jsonMissingUUIDandName, "name");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingUUIDandName})).toThrow("Configuration file needs a UUID or a name.");
-  });
-
-  it("jsonConfig with missing quorum.requiredSigners", () => {
-    const jsonMissingQuorumRequired = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingQuorumRequired.quorum, "requiredSigners");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingQuorumRequired})).toThrow("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
-  });
-
-  it("jsonConfig with missing quorum.totalSigners", () => {
-    const jsonMissingQuorumTotal = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingQuorumTotal.quorum, "totalSigners");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingQuorumTotal})).toThrow("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
-  });
-
-  it("jsonConfig with missing addressType", () => {
-    const jsonMissingAddressType = {...jsonConfigCopy};
-    Reflect.deleteProperty(jsonMissingAddressType, "addressType");
-    expect(() => interactionBuilder({jsonConfig: jsonMissingAddressType})).toThrow("Configuration file needs addressType.");
-  });
-
-});
+    it("should be able to generate the same from a MultisigWalletConfig or object", () => {
+      const fromOptions = generateColdcardConfig(options)
+      const config = generateColdcardConfig(new MultisigWalletConfig(options))
+      expect(fromOptions).toEqual(config)
+    })
+  })
+})
