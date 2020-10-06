@@ -184,7 +184,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
  * Reads a public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {module:coldcard.ColdcardMultisigSettingsFileParser}
+ * @extends {ColdcardMultisigSettingsFileParser}
  * @example
  * const interaction = new ColdcardExportPublicKey();
  * const reader = new FileReader(); // application dependent
@@ -224,13 +224,13 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
   }
 
   parse(xpubJSONFile) {
-    const result = super.parse(xpubJSONFile);
-    let xpub = super.deriveXpubIfNecessary(result.p2sh);
+    const {p2sh, rootFingerprint} = super.parse(xpubJSONFile);
+    let xpub = this.deriveXpubIfNecessary(p2sh);
     const publicKey = ExtendedPublicKey.fromBase58(xpub).pubkey;
 
     return {
       publicKey,
-      rootFingerprint: result.rootFingerprint,
+      rootFingerprint,
       bip32Path: this.bip32Path,
     };
   }
@@ -241,7 +241,7 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
  * Reads an extended public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {module:coldcard.ColdcardMultisigSettingsFileParser}
+ * @extends {ColdcardMultisigSettingsFileParser}
  * @example
  * const interaction = new ColdcardExportExtendedPublicKey();
  * const reader = new FileReader(); // application dependent
@@ -280,12 +280,12 @@ export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFil
   }
 
   parse(xpubJSONFile) {
-    const result = super.parse(xpubJSONFile);
-    let xpub = super.deriveXpubIfNecessary(result.p2sh);
+    const {p2sh, rootFingerprint} = super.parse(xpubJSONFile);
+    let xpub = this.deriveXpubIfNecessary(p2sh);
 
     return {
       xpub,
-      rootFingerprint: result.rootFingerprint,
+      rootFingerprint,
       bip32Path: this.bip32Path,
     };
   }
@@ -320,15 +320,14 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    */
   constructor({network, inputs, outputs, bip32Paths, psbt}) {
     super();
-    if (psbt) {
-      this.network = network;
-      this.inputs = inputs;
-      this.outputs = outputs;
-      this.bip32Paths = bip32Paths;
-      this.psbt = psbt;
-    } else {
+    if (!psbt) {
       throw new Error("The PSBT must be included at this time.");
     }
+    this.network = network;
+    this.inputs = inputs;
+    this.outputs = outputs;
+    this.bip32Paths = bip32Paths;
+    this.psbt = psbt;
   }
 
   messages() {
@@ -412,7 +411,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
  *
  * NOTE: technically only the root xfp of the signing device is required to be
  * correct, but we recommend only setting up the multisig wallet on the Coldcard
- * with complete xfp information. Here we actuall turn this recommendation into a
+ * with complete xfp information. Here we actually turn this recommendation into a
  * requirement so as to minimize the number of wallet-config installations.
  *
  * This will likely move to its own generic class soon, and we'll only leave

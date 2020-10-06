@@ -35,7 +35,6 @@ describe("ColdcardExportPublicKey", () => {
   });
 
   describe("parse", () => {
-
     it("fails when sending in nothing or non json", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
@@ -300,7 +299,6 @@ describe("ColdcardSignMultisigTransaction", () => {
     it("fails when sending in no psbt", () => {
       expect(() => interactionBuilder({})).toThrow(/PSBT must be included/i);
    });
-
   });
 
   describe("request", () => {
