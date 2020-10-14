@@ -3,16 +3,58 @@ import {
   ColdcardExportExtendedPublicKey,
   ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
-  COLDCARD_BASE_BIP32,
 } from './coldcard';
 import {MAINNET, TESTNET} from "unchained-bitcoin";
 import {
   INFO,
   PENDING,
   ACTIVE,
+  ERROR,
 } from './interaction';
 import {fixtures} from './fixtures';
 
+describe("ColdcardMultisigSettingsFileParser via ColdcardExportPublicKey", () => {
+  function interactionBuilder({network, bip32Path}) {
+    return new ColdcardExportPublicKey({
+      network,
+      bip32Path,
+    });
+  }
+
+  describe("bip32 validation error messages", () => {
+    it("non-matching bip32 prefix", () => {
+      expect(interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/44'/0",
+      }).hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        text: "Unknown base bip32 path. ",
+        code: 'coldcard.bip32_path.unknown_base',
+      })).toBe(true);
+    });
+    it("invalid bip32Path has error message", () => {
+      expect(interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/01",
+      }).hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.path_error',
+      })).toBe(true);
+    });
+    it("hardened after unhardened error", () => {
+      expect(interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/1'",
+      }).hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.no_hardened_after_base',
+      })).toBe(true);
+    });
+  })
+})
 
 describe("ColdcardExportPublicKey", () => {
   function interactionBuilder({bip32Path, network}) {
@@ -26,11 +68,16 @@ describe("ColdcardExportPublicKey", () => {
     it("fails with invalid network", () => {
       expect(() => interactionBuilder({network: 'foo'})).toThrow(/Unknown network/i);
     });
+    it("missing bip32Path fails", () => {
+      expect(() => interactionBuilder({
+        network: TESTNET,
+      })).toThrow(/Bip32path must exist and be a string./i);
+    });
     it("invalid bip32Path fails", () => {
       expect(() => interactionBuilder({
-        bip32Path: 4,
         network: TESTNET,
-      })).toThrow(/Bip32 path should be a string/i);
+        bip32Path: 4,
+      })).toThrow(/Bip32path must exist and be a string./i);
     });
   });
 
@@ -38,7 +85,10 @@ describe("ColdcardExportPublicKey", () => {
     it("fails when sending in nothing or non json", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       expect(() => interaction.parse(notJSON)).toThrow(/Unable to parse JSON/i);
       expect(() => interaction.parse(definitelyNotJSON)).toThrow(/Not valid JSON/i);
       expect(() => interaction.parse({})).toThrow(/Empty JSON file/i);
@@ -46,33 +96,48 @@ describe("ColdcardExportPublicKey", () => {
     });
 
     it("missing xpub", () => {
-      const interaction = interactionBuilder({network: MAINNET});
+      const interaction = interactionBuilder({
+        network: MAINNET,
+        bip32Path: "m/45'/0/0",
+      });
       const missingXpub = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingXpub, 'p2sh');
       expect(() => interaction.parse(missingXpub)).toThrow(/Missing required params/i);
     });
     it("missing bip32path", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const missingb32 = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingb32, 'p2sh_deriv');
       expect(() => interaction.parse(missingb32)).toThrow(/Missing required params/i);
     });
     it("xfp in file and computed xfp don't match", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const reallyMissingXFP = {...fixtures.validKeyJSON};
       //set to a valid depth>1 xpub
       reallyMissingXFP.xfp = '12341234';
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/Computed fingerprint does not match/i);
     });
-    it("missing xfp but passes", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+    it("missing xfp but passes bc depth is 1", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'",
+      });
       const missingXFP = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingXFP, 'xfp');
       const result = interaction.parse(missingXFP);
       expect(result).toEqual(fixtures.testPubkeyOutput);
     });
     it("no xfp and depth>1 xpub", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const reallyMissingXFP = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(reallyMissingXFP, 'xfp');
       //set to a valid depth>1 xpub
@@ -80,33 +145,38 @@ describe("ColdcardExportPublicKey", () => {
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/No xfp/i);
     });
     it("no xfp and depth>1 xpub", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const reallyMissingXFP = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(reallyMissingXFP, 'xfp');
       //set to a valid depth>1 xpub
-      reallyMissingXFP.p2sh = 'tpubDD7afgqjwFtnyu3YuReivwoGuJNyXNjFw5y9m4QDchpGzjgGuWhQUbBXafi73zqoUos7rCgLS24ebaj3d94UhuJQJfBUCN6FHB7bmp79J2J';
+      reallyMissingXFP.p2sh = fixtures.deeperXPUB;
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/No xfp/i);
     });
-    it("non-matching bip32 prefix", () => {
-      const interaction = interactionBuilder({network: TESTNET, bip32Path: "m/44'/0"});
-      expect(() => interaction.parse(fixtures.validKeyJSON)).toThrow(/Problem with bip32/i);
+    it("xfp and depth>1 xpub", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/48'/1'/0'/1'",
+      });
+      const deeperXPUB = {...fixtures.validKeyJSON};
+      deeperXPUB.p2sh = fixtures.validKeyJSON.p2wsh_p2sh;
+      const result = interaction.parse(deeperXPUB);
+      expect(result).toEqual(fixtures.testP2wshP2shPubkeyOutput);
     });
-
     it("success for valid JSON via TESTNET", () => {
-      const interaction = interactionBuilder({network: TESTNET});
-      const result = interaction.parse(fixtures.validKeyJSON);
-      expect(result).toEqual(fixtures.testPubkeyOutput);
-    });
-
-    it("no bip32path returns same xpub", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'",
+      });
       const result = interaction.parse(fixtures.validKeyJSON);
       expect(result).toEqual(fixtures.testPubkeyOutput);
     });
     it("default bip32path", () => {
       const interaction = interactionBuilder({
         network: TESTNET,
-        bip32Path: COLDCARD_BASE_BIP32,
+        bip32Path: "m/45'",
       });
       const result = interaction.parse(fixtures.validKeyJSON);
       expect(result).toEqual(fixtures.testPubkeyOutput);
@@ -136,7 +206,7 @@ describe("ColdcardExportPublicKey", () => {
   it("has a message about uploading file", () => {
     expect(interactionBuilder({
       network: TESTNET,
-      bip32Path: COLDCARD_BASE_BIP32,
+      bip32Path: "m/45'",
     }).hasMessagesFor({
       state: PENDING,
       level: INFO,
@@ -147,7 +217,7 @@ describe("ColdcardExportPublicKey", () => {
   it("has a message about exporting xpub", () => {
     expect(interactionBuilder({
       network: TESTNET,
-      bip32Path: COLDCARD_BASE_BIP32,
+      bip32Path: "m/45'",
     }).hasMessagesFor({
       state: PENDING,
       level: INFO,
@@ -167,13 +237,18 @@ describe("ColdcardExportExtendedPublicKey", () => {
 
   describe('constructor', () => {
     it("fails with invalid network", () => {
-      expect(() => interactionBuilder({network: 'foo'})).toThrow(/Unknown network/i);
+      expect(() => interactionBuilder({network: 'foob'})).toThrow(/Unknown network/i);
+    });
+    it("missing bip32Path fails", () => {
+      expect(() => interactionBuilder({
+        network: TESTNET,
+      })).toThrow(/Bip32path must exist and be a string./i);
     });
     it("invalid bip32Path fails", () => {
       expect(() => interactionBuilder({
-        bip32Path: 4,
         network: TESTNET,
-      })).toThrow(/Bip32 path should be a string/i);
+        bip32Path: 14,
+      })).toThrow(/Bip32path must exist and be a string./i);
     });
   });
 
@@ -181,60 +256,80 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("fails when sending in nothing or non json", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       expect(() => interaction.parse(notJSON)).toThrow(/Unable to parse JSON/i);
       expect(() => interaction.parse(definitelyNotJSON)).toThrow(/Not valid JSON/i);
       expect(() => interaction.parse({})).toThrow(/Empty JSON file/i);
     });
 
     it("missing xpub", () => {
-      const interaction = interactionBuilder({network: MAINNET});
+      const interaction = interactionBuilder({
+        network: MAINNET,
+        bip32Path: "m/45'/0/0",
+      });
       const missingXpub = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingXpub, 'p2sh');
       expect(() => interaction.parse(missingXpub)).toThrow(/Missing required params/i);
     });
     it("missing bip32path", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const missingb32 = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingb32, 'p2sh_deriv');
       expect(() => interaction.parse(missingb32)).toThrow(/Missing required params/i);
     });
     it("xfp in file and computed xfp don't match", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const reallyMissingXFP = {...fixtures.validKeyJSON};
       //set to a valid depth>1 xpub
       reallyMissingXFP.xfp = '12341234';
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/Computed fingerprint does not match/i);
     });
     it("missing xfp but passes", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'",
+      });
       const missingXFP = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(missingXFP, 'xfp');
       const result = interaction.parse(missingXFP);
       expect(result).toEqual(fixtures.testXpubOutput);
     });
     it("no xfp and depth>1 xpub", () => {
-      const interaction = interactionBuilder({network: TESTNET});
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/0",
+      });
       const reallyMissingXFP = {...fixtures.validKeyJSON};
       Reflect.deleteProperty(reallyMissingXFP, 'xfp');
       //set to a valid depth>1 xpub
       reallyMissingXFP.p2sh = 'tpubDD7afgqjwFtnyu3YuReivwoGuJNyXNjFw5y9m4QDchpGzjgGuWhQUbBXafi73zqoUos7rCgLS24ebaj3d94UhuJQJfBUCN6FHB7bmp79J2J';
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/No xfp/i);
     });
-    it("non-matching bip32 prefix", () => {
-      const interaction = interactionBuilder({network: TESTNET, bip32Path: "m/44'/0"});
-      expect(() => interaction.parse(fixtures.validKeyJSON)).toThrow(/Problem with bip32/i);
-    });
 
-    it("no bip32path returns same xpub", () => {
-      const interaction = interactionBuilder({network: TESTNET});
-      const result = interaction.parse(fixtures.validKeyJSON);
-      expect(result).toEqual(fixtures.testXpubOutput);
+    it("xfp and depth>1 xpub", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/48'/1'/0'/1'",
+      });
+      const deeperXPUB = {...fixtures.validKeyJSON};
+      //set to a valid depth>1 xpub
+      deeperXPUB.p2sh = fixtures.validKeyJSON.p2wsh_p2sh;
+      const result = interaction.parse(deeperXPUB);
+      expect(result).toEqual(fixtures.testP2wshP2shOutput);
     });
     it("default bip32path", () => {
       const interaction = interactionBuilder({
         network: TESTNET,
-        bip32Path: COLDCARD_BASE_BIP32,
+        bip32Path: "m/45'",
       });
       const result = interaction.parse(fixtures.validKeyJSON);
       expect(result).toEqual(fixtures.testXpubOutput);
@@ -264,7 +359,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
   it("has a message about uploading file", () => {
     expect(interactionBuilder({
       network: TESTNET,
-      bip32Path: COLDCARD_BASE_BIP32,
+      bip32Path: "m/45'",
     }).hasMessagesFor({
       state: PENDING,
       level: INFO,
@@ -275,7 +370,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
   it("has a message about exporting xpub", () => {
     expect(interactionBuilder({
       network: TESTNET,
-      bip32Path: COLDCARD_BASE_BIP32,
+      bip32Path: "m/45'",
     }).hasMessagesFor({
       state: PENDING,
       level: INFO,

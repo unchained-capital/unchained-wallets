@@ -1,4 +1,4 @@
-import {COLDCARD_BASE_BIP32, WALLET_CONFIG_VERSION} from './coldcard';
+import {WALLET_CONFIG_VERSION} from './coldcard';
 
 export const fixtures = {
   validKeyJSON : {
@@ -19,6 +19,8 @@ export const fixtures = {
     xfp: "0F056943",
   },
 
+  deeperXPUB : 'tpubDD7afgqjwFtnyu3YuReivwoGuJNyXNjFw5y9m4QDchpGzjgGuWhQUbBXafi73zqoUos7rCgLS24ebaj3d94UhuJQJfBUCN6FHB7bmp79J2J',
+
   testJSONOutput : {
     xpub: 'tpubD8NXmKsmWp3a3DXhbihAYbYLGaRNVdTnr6JoSxxfXYQcmwVtW2hv8QoDwng6JtEonmJoL3cNEwfd2cLXMpGezwZ2vL2dQ7259bueNKj9C8n',
     rootFingerprint: '0f056943',
@@ -26,13 +28,24 @@ export const fixtures = {
   testPubkeyOutput : {
     publicKey: '026942d670b9a5afc8b9b6118374aa7245a1a95b30cadb60069f5d0076aaff2bf5',
     rootFingerprint: '0f056943',
-    bip32Path: COLDCARD_BASE_BIP32,
+    bip32Path: 'm/45\'',
+  },
+  testP2wshP2shPubkeyOutput : {
+    publicKey: '0200688aa1961c57819edc321771ef5326c32d752080479bb3e3ed0517302a1cef',
+    rootFingerprint: '0f056943',
+    bip32Path: "m/48'/1'/0'/1'",
   },
   testXpubOutput : {
     xpub: 'tpubD8NXmKsmWp3a3DXhbihAYbYLGaRNVdTnr6JoSxxfXYQcmwVtW2hv8QoDwng6JtEonmJoL3cNEwfd2cLXMpGezwZ2vL2dQ7259bueNKj9C8n',
     rootFingerprint: '0f056943',
-    bip32Path: COLDCARD_BASE_BIP32,
+    bip32Path: 'm/45\'',
   },
+  testP2wshP2shOutput : {
+    xpub: 'Upub5T4XUooQzDXL58NCHk8ZCw9BsRSLCtnyHeZEExAq1XdnBFXiXVrHFuvvmh3TnCR7XmKHxkwqdACv68z7QKT1vwru9L1SZSsw8B2fuBvtSa6',
+    rootFingerprint: '0f056943',
+    bip32Path: "m/48'/1'/0'/1'",
+  },
+
 
   "m/45'/1/0" : {
     xpub : "tpubDDnpDVdDnpEnBgGkS2kRw2Fzqy1nB3TUGsT7whsuFDcqq4Xp9gsP6byEFqk9hGERapvSe8YRag3Jq4TjsbuZkY5TKkg14tW4jKdgUvy3jFr",
