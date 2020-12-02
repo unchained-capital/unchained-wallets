@@ -26,7 +26,7 @@ import {
   P2SH_P2WSH,
   P2WSH,
   multisigAddressType,
-  getParentPath,
+  getParentBIP32Path,
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
@@ -579,7 +579,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   getParentPublicKey() {
     return this.withApp(async (app) => {
-      const parentPath = getParentPath(this.bip32Path);
+      const parentPath = getParentBIP32Path(this.bip32Path);
       return (await app.getWalletPublicKey(parentPath)).publicKey;
     });
   }

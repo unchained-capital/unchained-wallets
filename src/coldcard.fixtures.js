@@ -1,6 +1,6 @@
 import {COLDCARD_WALLET_CONFIG_VERSION} from './coldcard';
 
-import {OSW_ROOT_FINGERPRINT} from "unchained-bitcoin";
+import {ROOT_FINGERPRINT} from "unchained-bitcoin";
 
 export const coldcardFixtures = {
   // These use the Open Source Wallet words from the Caravan Test Suite
@@ -42,26 +42,26 @@ export const coldcardFixtures = {
 
   testJSONOutput: {
     xpub: 'tpubD8NXmKsmWp3a3DXhbihAYbYLGaRNVdTnr6JoSxxfXYQcmwVtW2hv8QoDwng6JtEonmJoL3cNEwfd2cLXMpGezwZ2vL2dQ7259bueNKj9C8n',
-    rootFingerprint: OSW_ROOT_FINGERPRINT,
+    rootFingerprint: ROOT_FINGERPRINT,
   },
   testPubkeyOutput: {
     publicKey: '026942d670b9a5afc8b9b6118374aa7245a1a95b30cadb60069f5d0076aaff2bf5',
-    rootFingerprint: OSW_ROOT_FINGERPRINT,
+    rootFingerprint: ROOT_FINGERPRINT,
     bip32Path: "m/45'",
   },
   testP2wshP2shPubkeyOutput: {
     publicKey: '0200688aa1961c57819edc321771ef5326c32d752080479bb3e3ed0517302a1cef',
-    rootFingerprint: OSW_ROOT_FINGERPRINT,
+    rootFingerprint: ROOT_FINGERPRINT,
     bip32Path: "m/48'/1'/0'/1'",
   },
   testXpubOutput: {
     xpub: 'tpubD8NXmKsmWp3a3DXhbihAYbYLGaRNVdTnr6JoSxxfXYQcmwVtW2hv8QoDwng6JtEonmJoL3cNEwfd2cLXMpGezwZ2vL2dQ7259bueNKj9C8n',
-    rootFingerprint: OSW_ROOT_FINGERPRINT,
+    rootFingerprint: ROOT_FINGERPRINT,
     bip32Path: "m/45'",
   },
   testP2wshP2shOutput: {
     xpub: 'Upub5T4XUooQzDXL58NCHk8ZCw9BsRSLCtnyHeZEExAq1XdnBFXiXVrHFuvvmh3TnCR7XmKHxkwqdACv68z7QKT1vwru9L1SZSsw8B2fuBvtSa6',
-    rootFingerprint: OSW_ROOT_FINGERPRINT,
+    rootFingerprint: ROOT_FINGERPRINT,
     bip32Path: "m/48'/1'/0'/1'",
   },
 

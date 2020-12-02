@@ -8,7 +8,7 @@ import {
   MAINNET,
   TESTNET,
   TEST_FIXTURES,
-  OSW_ROOT_FINGERPRINT
+  ROOT_FINGERPRINT
 } from "unchained-bitcoin";
 import {
   INFO,
@@ -18,50 +18,9 @@ import {
 } from './interaction';
 import {coldcardFixtures} from './coldcard.fixtures';
 
-const {nodes, multisigs, transactions} = TEST_FIXTURES;
+const {multisigs, transactions} = TEST_FIXTURES;
 
-describe("ColdcardMultisigSettingsFileParser via ColdcardExportPublicKey", () => {
-  function interactionBuilder({network, bip32Path}) {
-    return new ColdcardExportPublicKey({
-      network,
-      bip32Path,
-    });
-  }
-
-  describe("bip32 validation error messages", () => {
-    it("non-matching bip32 prefix", () => {
-      expect(interactionBuilder({
-        network: TESTNET,
-        bip32Path: "m/44'/0",
-      }).isSupported()).toBe(false);
-    });
-    it("invalid bip32Path has error message", () => {
-      expect(interactionBuilder({
-        network: TESTNET,
-        bip32Path: "m/45'/1/01",
-      }).isSupported()).toBe(false);
-    });
-    it("hardened after unhardened error", () => {
-      expect(interactionBuilder({
-        network: TESTNET,
-        bip32Path: "m/45'/1/1'",
-      }).isSupported()).toBe(false);
-    });
-
-
-    it("non-matching bip32 prefix", () => {
-      expect(interactionBuilder({
-        network: TESTNET,
-        bip32Path: "m/44'/0",
-      }).hasMessagesFor({
-        state: PENDING,
-        level: ERROR,
-        text: `Unable to validate the bip32 path`,
-        code: 'coldcard.bip32_path.path_error',
-      })).toBe(true);
-    });
-  })
-})
+const {nodes} = TEST_FIXTURES.keys.open_source;
 
 describe("ColdcardExportPublicKey", () => {
   function interactionBuilder({bip32Path, network}) {
@@ -75,16 +34,41 @@ describe("ColdcardExportPublicKey", () => {
     it("fails with invalid network", () => {
       expect(() => interactionBuilder({network: 'foo'})).toThrow(/Unknown network/i);
     });
-    it("missing bip32Path fails", () => {
-      expect(() => interactionBuilder({
+    it("unknown chroot unsupported", () => {
+      const interaction = interactionBuilder({
         network: TESTNET,
-      })).toThrow(/bip32Path must exist and also be of type.+string/i);
+        bip32Path: "m/44'/0",
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.unknown_chroot_error',
+      })).toBe(true);
     });
-    it("invalid bip32Path fails", () => {
-      expect(() => interactionBuilder({
+    it("invalid bip32Path unsupported", () => {
+      const interaction = interactionBuilder({
         network: TESTNET,
-        bip32Path: 4,
-      })).toThrow(/bip32Path must exist and also be of type.+string/i);
+        bip32Path: "m/45'/1/01",
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.path_error',
+      })).toBe(true);
+    });
+    it("hardened after unhardened unsupported", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/1'",
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.no_hardened_relative_path_error',
+      })).toBe(true);
     });
   });
 
@@ -141,7 +125,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(missingXFP);
       expect(result).toEqual({
-        rootFingerprint: OSW_ROOT_FINGERPRINT,
+        rootFingerprint: ROOT_FINGERPRINT,
         publicKey: nodes[bip32Path].pub,
         bip32Path,
       });
@@ -182,7 +166,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(coldcardFixtures.validColdcardXpubNewFirmwareJSON);
       expect(result).toEqual({
-        rootFingerprint: OSW_ROOT_FINGERPRINT,
+        rootFingerprint: ROOT_FINGERPRINT,
         publicKey: nodes[bip32Path].pub,
         bip32Path,
       });
@@ -196,7 +180,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(coldcardFixtures.validColdcardXpubMainnetJSON);
       expect(result).toEqual({
-        rootFingerprint: OSW_ROOT_FINGERPRINT,
+        rootFingerprint: ROOT_FINGERPRINT,
         publicKey: nodes[bip32Path].pub,
         bip32Path,
       });
@@ -209,7 +193,7 @@ describe("ColdcardExportPublicKey", () => {
       });
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
-      expect(result.rootFingerprint).toEqual(OSW_ROOT_FINGERPRINT);
+      expect(result.rootFingerprint).toEqual(ROOT_FINGERPRINT);
       expect(result.publicKey).toEqual(nodes["m/45'/0"].pub);
     });
     it("derive down to depth 3 unhardened", () => {
@@ -220,7 +204,7 @@ describe("ColdcardExportPublicKey", () => {
       });
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
-      expect(result.rootFingerprint).toEqual(OSW_ROOT_FINGERPRINT);
+      expect(result.rootFingerprint).toEqual(ROOT_FINGERPRINT);
       expect(result.publicKey).toEqual(nodes["m/45'/1/0"].pub);
     });
   });
@@ -261,28 +245,41 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("fails with invalid network", () => {
       expect(() => interactionBuilder({network: 'foob'})).toThrow(/Unknown network/i);
     });
-    it("missing bip32Path fails", () => {
-      expect(() => interactionBuilder({
-        network: TESTNET,
-      })).toThrow(/bip32Path must exist and also be of type.+string/i);
-    });
-    it("invalid bip32Path fails", () => {
-      expect(() => interactionBuilder({
-        network: TESTNET,
-        bip32Path: 14,
-      })).toThrow(/bip32Path must exist and also be of type.+string/i);
-    });
 
-
-    it("non-matching bip32 prefix", () => {
-      expect(interactionBuilder({
+    it("unknown chroot unsupported", () => {
+      const interaction = interactionBuilder({
         network: TESTNET,
         bip32Path: "m/44'/0",
-      }).hasMessagesFor({
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        text: `Unable to validate the bip32 path`,
+        code: 'coldcard.bip32_path.unknown_chroot_error',
+      })).toBe(true);
+    });
+    it("invalid bip32Path unsupported", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/01",
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
         code: 'coldcard.bip32_path.path_error',
+      })).toBe(true);
+    });
+    it("hardened after unhardened unsupported", () => {
+      const interaction = interactionBuilder({
+        network: TESTNET,
+        bip32Path: "m/45'/1/1'",
+      });
+      expect(interaction.isSupported()).toBe(false);
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: 'coldcard.bip32_path.no_hardened_relative_path_error',
       })).toBe(true);
     });
   });
@@ -339,7 +336,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(missingXFP);
       expect(result).toEqual({
-        rootFingerprint: OSW_ROOT_FINGERPRINT,
+        rootFingerprint: ROOT_FINGERPRINT,
         xpub: nodes[bip32Path].tpub,
         bip32Path,
       });
@@ -381,7 +378,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path,
       });
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
-      expect(result.rootFingerprint).toEqual(OSW_ROOT_FINGERPRINT);
+      expect(result.rootFingerprint).toEqual(ROOT_FINGERPRINT);
       expect(result.xpub).toEqual(nodes[bip32Path].tpub);
     });
     it("derive down to depth 3 unhardened", () => {
@@ -391,7 +388,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path,
       });
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
-      expect(result.rootFingerprint).toEqual(OSW_ROOT_FINGERPRINT);
+      expect(result.rootFingerprint).toEqual(ROOT_FINGERPRINT);
       expect(result.xpub).toEqual(nodes[bip32Path].tpub);
     });
   });
