@@ -77,11 +77,9 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     } else {
       throw new Error("Unknown network.");
     }
+    this.bip32Path = bip32Path;
     this.bip32ValidationErrorMessage = {};
     this.bip32ValidationError = this.validateColdcardBip32Path(bip32Path);
-    if (!this.bip32ValidationError) {
-      this.bip32Path = bip32Path;
-    }
   }
 
   isSupported() {

@@ -6,6 +6,7 @@ import {
   PENDING,
   ACTIVE,
   INFO,
+  ERROR,
 } from "./interaction";
 
 import {
@@ -155,6 +156,30 @@ describe('trezor', () => {
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+    it('constructor adds error message on invalid bip32path', () => {
+      const interaction = new TrezorExportHDNode({
+        bip32Path: 'm/foo',
+        network: MAINNET,
+      });
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: "trezor.bip32_path.path_error",
+      })).toBe(true);
+    })
+
+    it('adds error message on bip32path <depth3', () => {
+      const interaction = new TrezorExportHDNode({
+        bip32Path: 'm/45',
+        network: MAINNET,
+      });
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: "trezor.bip32_path.minimum",
+      })).toBe(true);
+    })
 
     it("uses TrezorConnect.getPublicKey", () => {
       const interaction = interactionBuilder();
