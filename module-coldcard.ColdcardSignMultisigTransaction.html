@@ -117,6 +117,8 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -142,6 +144,14 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -164,6 +174,14 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -188,6 +206,14 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -210,6 +236,14 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -234,10 +268,20 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>optional PSBT</p></td>
+            <td class="description last"><p>PSBT of the transaction to sign, include it or we will generate it</p></td>
         </tr>
 
     
@@ -285,7 +329,7 @@ accepts a PSBT for parsing signatures from a Coldcard device</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line330">line 330</a>
+        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line410">line 410</a>
     </li></ul></dd>
     
 
@@ -364,19 +408,12 @@ console.log(signatures);
     
 
     
-    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(response)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(psbtObject)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
 
 
-
-<div class="description">
-    <p>Parse the response into a result.</p>
-<p>Subclasses <em>must</em> override this function.  It must accept an
-appropriate kind of <code>response</code> object and return the final result
-of this interaction.</p>
-</div>
 
 
 
@@ -411,7 +448,7 @@ of this interaction.</p>
 
         <tr>
             
-                <td class="name"><code>response</code></td>
+                <td class="name"><code>psbtObject</code></td>
             
 
             <td class="type">
@@ -427,7 +464,7 @@ of this interaction.</p>
 
             
 
-            <td class="description last"><p>the raw response</p></td>
+            <td class="description last"><p>the PSBT</p></td>
         </tr>
 
     
@@ -473,7 +510,7 @@ of this interaction.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line607">line 607</a>
+        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line500">line 500</a>
     </li></ul></dd>
     
 
@@ -502,7 +539,13 @@ of this interaction.</p>
 
         
 <div class="param-desc">
-    <p>the parsed response</p>
+    <p>signatures - This calls a function in unchained-bitcoin which parses
+PSBT files for sigantures and then returns an object with the format
+{
+pubkey1 : [sig1, sig2, ...],
+pubkey2 : [sig1, sig2, ...]
+}
+This format may change in the future or there may be additional options for return type.</p>
 </div>
 
 
@@ -540,6 +583,9 @@ of this interaction.</p>
 
 <div class="description">
     <p>Request for the PSBT data that needs to be signed.</p>
+<p>NOTE: the application may be expecting the PSBT in some format
+other than the direct Object.</p>
+<p>E.g. PSBT in Base64 is interaction().request().toBase64()</p>
 </div>
 
 
@@ -588,7 +634,7 @@ of this interaction.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line391">line 391</a>
+        <a href="coldcard.js.html">coldcard.js</a>, <a href="coldcard.js.html#line485">line 485</a>
     </li></ul></dd>
     
 
@@ -779,13 +825,13 @@ of this interaction.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardFileParser.html">ColdcardFileParser</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-coldcard-ColdcardMultisigSettingsFileParser.html">ColdcardMultisigSettingsFileParser</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Dec 08 2020 14:09:44 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Dec 08 2020 15:44:52 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>
