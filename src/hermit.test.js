@@ -11,7 +11,11 @@ import {
 } from "./hermit";
 
 function itHasACommandMessage(interaction, command) {
-  const message = interaction.messageFor({state: PENDING, level: INFO, code: "hermit.command"});
+  const message = interaction.messageFor({
+    state: PENDING,
+    level: INFO,
+    code: "hermit.command",
+  });
   it("has a command message with the correct command", () => {
     expect(message).not.toBeNull();
     expect(message.command).toEqual(command);
@@ -66,7 +70,7 @@ describe("encodeHermitQRCodeData", () => {
 describe("HermitExportPublicKey", () => {
 
   const bip32Path = "m/45'/0'/0'/0/0";
-  const interaction  = new HermitExportPublicKey({bip32Path});
+  const interaction = new HermitExportPublicKey({bip32Path});
 
   itHasACommandMessage(interaction, `export-pub ${bip32Path}`);
 
@@ -76,7 +80,7 @@ describe("HermitExportPublicKey", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({})); }).toThrow(/no public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({foo: "bar"})); }).toThrow(/no public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: ""})); }).toThrow(/no public key/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32Path: "m/45'/0'/0'/0/0"})); }).toThrow(/no public key/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32_path: "m/45'/0'/0'/0/0"})); }).toThrow(/no public key/i);
     });
 
     it("throws an error when an extended public key is returned instead", () => {
@@ -85,12 +89,24 @@ describe("HermitExportPublicKey", () => {
 
     it("throws an error when no BIP32 path is returned", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: "03..."})); }).toThrow(/no bip32 path/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({pubkey: "03...", bip32Path: ""})); }).toThrow(/no bip32 path/i);
+      expect(() => {
+        interaction.parse(encodeHermitQRCodeData({
+          pubkey: "03...",
+          bip32_path: "",
+        }));
+      }).toThrow(/no bip32 path/i);
     });
 
     it("returns the result when public key and BIP32 path are present", () => {
-      const result = {pubkey: "03...", bip32Path: "m/45'/0'/0'/0/0"};
-      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(result);
+      const data = {
+        pubkey: "03...",
+        bip32_path: "m/45'/0'/0'/0/0",
+      };
+      const result = {
+        pubkey: "03...",
+        bip32Path: "m/45'/0'/0'/0/0",
+      };
+      expect(interaction.parse(encodeHermitQRCodeData(data))).toEqual(result);
     });
 
   });
@@ -100,7 +116,7 @@ describe("HermitExportPublicKey", () => {
 describe("HermitExportExtendedPublicKey", () => {
 
   const bip32Path = "m/45'/0'/0'";
-  const interaction  = new HermitExportExtendedPublicKey({bip32Path});
+  const interaction = new HermitExportExtendedPublicKey({bip32Path});
 
   itHasACommandMessage(interaction, `export-xpub ${bip32Path}`);
 
@@ -110,7 +126,7 @@ describe("HermitExportExtendedPublicKey", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({})); }).toThrow(/no extended public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({foo: "bar"})); }).toThrow(/no extended public key/i);
       expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: ""})); }).toThrow(/no extended public key/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32Path: "m/45'/0'/0'"})); }).toThrow(/no extended public key/i);
+      expect(() => { interaction.parse(encodeHermitQRCodeData({bip32_path: "m/45'/0'/0'"})); }).toThrow(/no extended public key/i);
     });
 
     it("throws an error when a public key is returned instead", () => {
@@ -119,12 +135,24 @@ describe("HermitExportExtendedPublicKey", () => {
 
     it("throws an error when no BIP32 path is returned", () => {
       expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: "xpub..."})); }).toThrow(/no bip32 path/i);
-      expect(() => { interaction.parse(encodeHermitQRCodeData({xpub: "xpub...", bip32Path: ""})); }).toThrow(/no bip32 path/i);
+      expect(() => {
+        interaction.parse(encodeHermitQRCodeData({
+          xpub: "xpub...",
+          bip32_path: "",
+        }));
+      }).toThrow(/no bip32 path/i);
     });
 
     it("returns the result when extended public key and BIP32 path are present", () => {
-      const result = {xpub: "xpub...", bip32Path: "bar"};
-      expect(interaction.parse(encodeHermitQRCodeData(result))).toEqual(result);
+      const data = {
+        xpub: "xpub...",
+        bip32_path: "bar",
+      };
+      const result = {
+        xpub: "xpub...",
+        bip32Path: "bar",
+      };
+      expect(interaction.parse(encodeHermitQRCodeData(data))).toEqual(result);
     });
 
   });
@@ -136,8 +164,8 @@ describe("HermitExportExtendedPublicKey", () => {
 describe("HermitSignTransaction", () => {
 
   const interaction = new HermitSignTransaction({
-    inputs: [], 
-    outputs: [], 
+    inputs: [],
+    outputs: [],
     bip32Paths: [],
   });
 

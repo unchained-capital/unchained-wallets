@@ -1,5 +1,3 @@
-/* eslint-disable max-lines */
-
 /**
  * This module provides classes for Ledger hardware wallets.
  *
@@ -13,10 +11,10 @@
  * * LedgerExportPublicKey
  * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
- * 
+ *
  * @module ledger
  */
-import BigNumber from "bignumber.js";
+
 import {
   bip32PathToSequence,
   hardenedBIP32Index,
@@ -24,7 +22,6 @@ import {
   scriptToHex,
   multisigRedeemScript,
   multisigWitnessScript,
-  TESTNET,
   P2SH,
   P2SH_P2WSH,
   P2WSH,
@@ -32,6 +29,8 @@ import {
   getParentPath,
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
+  unsignedMultisigTransaction,
+  signatureNoSighashType,
 } from "unchained-bitcoin";
 
 import {
@@ -42,7 +41,8 @@ import {
   DirectKeystoreInteraction,
 } from "./interaction";
 
-import IMAGES from "./images";
+import {splitTransaction} from "@ledgerhq/hw-app-btc/lib/splitTransaction";
+import {serializeTransactionOutputs} from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 
 /**
  * Constant defining Ledger interactions.
@@ -52,11 +52,9 @@ import IMAGES from "./images";
  */
 export const LEDGER = 'ledger';
 
-const bitcoin = require('bitcoinjs-lib');
-const bip32 = require('bip32');
-
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
-const LedgerBtc    = require("@ledgerhq/hw-app-btc").default;
+const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
+const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
  * Constant representing the action of pushing the left button on a
@@ -95,7 +93,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  *
  * Errors are not caught, so users of this class (and its subclasses)
  * should use `try...catch` as always.
- * 
+ *
  * @extends {module:interaction.DirectKeystoreInteraction}
  * @example
  * import {LedgerInteraction} from "unchained-wallets";
@@ -120,7 +118,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  * const interaction = new SimpleLedgerInteraction({param: "foo"});
  * const result = await interaction.run();
  * console.log(result); // whatever value `app.doSomething(...)` returns
- * 
+ *
  */
 export class LedgerInteraction extends DirectKeystoreInteraction {
 
@@ -134,9 +132,18 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure your Ledger is plugged in.", code: "device.connect"});
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have unlocked your Ledger.", code: "device.unlock"});
-    messages.push({state: ACTIVE, level: INFO, text: "Communicating with Ledger...", code: "device.active"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Please plug in and unlock your Ledger.",
+      code: "device.setup",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Communicating with Ledger...",
+      code: "device.active",
+    });
     return messages;
   }
 
@@ -159,8 +166,33 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * }
    */
   async withTransport(callback) {
-    const transport = await TransportU2F.create();
-    return await callback(transport);
+    const useU2F = this.environment.satisfies({
+      firefox: ">70",
+    });
+
+    if (useU2F) {
+      try {
+        const transport = await TransportU2F.create();
+        return callback(transport);
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    }
+
+    try {
+      const transport = await TransportWebUsb.create();
+      return callback(transport);
+    } catch (e) {
+      if (e.message) {
+        if (e.message === 'No device selected.') {
+          e.message = `Select your device in the WebUSB dialog box. Make sure it's plugged in, unlocked, and has the Bitcoin app open.`;
+        }
+        if (e.message === 'undefined is not an object (evaluating \'navigator.usb.getDevices\')') {
+          e.message = `Safari is not a supported browser.`;
+        }
+      }
+      throw new Error(e.message);
+    }
   }
 
   /**
@@ -171,10 +203,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * app API as the first argument to the function and the transport
    * API as the second.
    *
-   * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for genereal information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
+   * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for general information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
    *
    * @param {function} callback -- accepts two parameters, `app` and `transport`, which are the Ledger APIs for the bitcoin app and the transport layer, respectively.
-   * @returns {Promise} does the work of setting up an app instance (and transport connection)g181
+   * @returns {Promise} does the work of setting up an app instance (and transport connection)
    * @example
    * async run() {
    *   return await this.withApp(async (app, transport) => {
@@ -182,10 +214,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *   });
    * }
    */
-  async withApp(callback) {
-    return await this.withTransport(async (transport) => {
+  withApp(callback) {
+    return this.withTransport(async (transport) => {
       const app = new LedgerBtc(transport);
-      return await callback(app, transport);
+      return callback(app, transport);
     });
   }
 
@@ -196,7 +228,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
  * is not in any app but in the dashboard.
  *
  * @extends {module:ledger.LedgerInteraction}
- * 
+ *
  */
 export class LedgerDashboardInteraction extends LedgerInteraction {
 
@@ -209,8 +241,18 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.", code: "ledger.app.dashboard"});
-    messages.push({state: ACTIVE, level: INFO, text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.", code: "ledger.app.dashboard"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.",
+      code: "ledger.app.dashboard",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Make sure you have the main Ledger dashboard open, NOT the Bitcoin app.",
+      code: "ledger.app.dashboard",
+    });
     return messages;
   }
 }
@@ -218,7 +260,7 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
 /**
  * Base class for interactions which must occur when the Ledger device
  * is open to the bitcoin app.
- * 
+ *
  * @extends {module:ledger.LedgerInteraction}
  */
 export class LedgerBitcoinInteraction extends LedgerInteraction {
@@ -231,8 +273,18 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    */
   messages() {
     const messages = super.messages();
-    messages.push({state: PENDING, level: INFO, text: "Make sure you have the Bitcoin app open.", code: "ledger.app.bitcoin"});
-    messages.push({state: ACTIVE, level: INFO, text: "Make sure you have the Bitcoin app open.", code: "ledger.app.bitcoin"});
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      text: "Then open the Bitcoin app.",
+      code: "ledger.app.bitcoin",
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Make sure you have opened the Bitcoin app.",
+      code: "ledger.app.bitcoin",
+    });
     return messages;
   }
 
@@ -264,14 +316,14 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
  *     string: "1.7",
  *   }
  * }
- * 
+ *
  */
 export class LedgerGetMetadata extends LedgerDashboardInteraction {
   // FIXME entire implementation here is rickety AF.
 
   async run() {
-    
-    return await this.withTransport(async (transport) => {
+
+    return this.withTransport(async (transport) => {
       transport.setScrambleKey('B0L0S');
       const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
       return this.parseMetadata(rawResult);
@@ -298,7 +350,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
         das: 2,
         club: 3,
         shitcoins: 4,
-        ee: 5
+        ee: 5,
       };
       const ManagerAllowedFlag = 0x08;
       const PinValidatedFlag = 0x80;
@@ -311,15 +363,15 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       let seVersion = Buffer.from(data.slice(5, 5 + seVersionLength)).toString();
       const flagsLength = data[5 + seVersionLength];
       let flags = Buffer.from(
-        data.slice(5 + seVersionLength + 1, 5 + seVersionLength + 1 + flagsLength)
+        data.slice(5 + seVersionLength + 1, 5 + seVersionLength + 1 + flagsLength),
       );
 
       const mcuVersionLength = data[5 + seVersionLength + 1 + flagsLength];
       let mcuVersion = Buffer.from(
         data.slice(
           7 + seVersionLength + flagsLength,
-          7 + seVersionLength + flagsLength + mcuVersionLength
-        )
+          7 + seVersionLength + flagsLength + mcuVersionLength,
+        ),
       );
       if (mcuVersion[mcuVersion.length - 1] === 0) {
         mcuVersion = mcuVersion.slice(0, mcuVersion.length - 1);
@@ -367,14 +419,26 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       //
       //  Order matters -- high to low minTargetId
       const MODEL_RANGES = [
-        {minTargetId: 0x33000004,  model: "Nano X"},
-        {minTargetId: 0x31100002,  model: "Nano S"},
-        {minTargetId: 0x31100002, model: "Blue"},
-        {minTargetId: 0x01000001, model: "MCU"},
+        {
+          minTargetId: 0x33000004,
+          model: "Nano X",
+        },
+        {
+          minTargetId: 0x31100002,
+          model: "Nano S",
+        },
+        {
+          minTargetId: 0x31100002,
+          model: "Blue",
+        },
+        {
+          minTargetId: 0x01000001,
+          model: "MCU",
+        },
       ];
       let model = 'Unknown';
       if (targetId) {
-        for (let i=0; i<MODEL_RANGES.length; i++) {
+        for (let i = 0; i < MODEL_RANGES.length; i++) {
           const range = MODEL_RANGES[i];
           if (targetId >= range.minTargetId) {
             model = range.model;
@@ -419,7 +483,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
  *
  * You may want to use `LedgerExportPublicKey` or
  * `LedgerExportExtendedPublicKey` directly.
- * 
+ *
  * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
  * import {MAINNET} from "unchained-bitcoin";
@@ -432,7 +496,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
    * Requires a valid BIP32 path to the node to export.
-   * 
+   *
    * @param {object} options - options argument
    * @param {string} bip32Path - the BIP32 path for the HD node
    */
@@ -447,104 +511,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
-    const messages = super.messages();
-
-    if (this.hasBIP32PathWarning()) { 
-
-      messages.push({
-        state: ACTIVE, 
-        level: WARNING, 
-        version: "<1.6.0",
-        text: `Your Ledger will display a "WARNING!" message.  It is safe to continue through the prompts till you see a bitcoin address.`,
-        code: "ledger.path.warning",
-        messages: [
-          {
-            image: IMAGES[LEDGER].warning,
-            text: `Your Ledger will display a "WARNING!" message.`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].derivationPathIsUnusualV1,
-            text: `Your Ledger will display a message saying the "derivation path is unusual".`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].derivationPathV1,
-            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-          {
-            image: IMAGES[LEDGER].rejectIfNotSureV1,
-            text: `Your Ledger will ask if you to "Reject if you're not sure".`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-        ],
-      });
-
-      messages.push({
-        state: ACTIVE, 
-        level: WARNING, 
-        version: ">=1.6.0",
-        text: `Your Ledger will display a message saying "derivation path is unusual".  It is safe to continue through the prompts till you see a bitcoin address.`,
-        code: "ledger.path.warning",
-        messages: [
-          {
-            image: IMAGES[LEDGER].unusualDerivationBeta,
-            text: "Your Ledger will display a message about an unusual derivation path.",
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].fullDerivationPathBeta,
-            text: `Your Ledger will display the derivation path ${this.bip32Path}.`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].rejectIfNotSureBeta,
-            text: `Your Ledger will ask if you want to "Reject if you're not sure".`,
-            action: LEDGER_RIGHT_BUTTON,
-          },
-          {
-            image: IMAGES[LEDGER].approveDerivationBeta,
-            text: `Your Ledger will ask if you want to "Approve derivation path".`,
-            action: LEDGER_BOTH_BUTTONS,
-          },
-        ],
-      });
-
-    }
-  
-    messages.push({
-      state: ACTIVE, 
-      level: INFO, 
-      version: "<1.6.0",
-      text: `Your Ledger will scroll a bitcoin address across its screen.`,
-      code: "ledger.export.hdnode",
-      image: IMAGES[LEDGER].addressScrollV1,
-      action: LEDGER_RIGHT_BUTTON,
-    });
-
-    messages.push({
-      state: ACTIVE, 
-      level: INFO, 
-      version: ">=1.6.0",
-      text: `Your Ledger will display a bitcoin address in several parts.  Approve exporting the corresponding public key.`,
-      code: "ledger.export.hdnode",
-      messages: [
-        {
-          image: IMAGES[LEDGER].addressClickThroughBeta,
-          text: `Your Ledger will display a bitcoin address in several parts.`,
-          action: LEDGER_RIGHT_BUTTON,
-        },
-        {
-          image: IMAGES[LEDGER].approveAddressBeta,
-          text: `Your Ledger will ask you if want to "Approve" this request.`,
-          action: LEDGER_BOTH_BUTTONS,
-        },
-      ],
-
-    });
-    
-    return messages;
+    return super.messages();
   }
 
   /**
@@ -572,15 +539,55 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     // 3 -> 0
     // 4 -> 0 - 50000
     const indices = bip32PathToSequence(this.bip32Path);
-    const hardened0   = hardenedBIP32Index(0);
-    const hardened44  = hardenedBIP32Index(44);
+    const hardened0 = hardenedBIP32Index(0);
+    const hardened44 = hardenedBIP32Index(44);
     const hardened100 = hardenedBIP32Index(100);
-    if (indices.length !== 5) { return true; }
-    if (indices[0] !== hardened44) { return true; }
-    if (indices[2] < hardened0 || indices[2] > hardened100) { return true; }
-    if (indices[3] !== 0) { return true; }
-    if (indices[4] < 0 || indices[4] > 50000) { return true; }
+    if (indices.length !== 5) {
+      return true;
+    }
+    if (indices[0] !== hardened44) {
+      return true;
+    }
+    if (indices[2] < hardened0 || indices[2] > hardened100) {
+      return true;
+    }
+    if (indices[3] !== 0) {
+      return true;
+    }
+    if (indices[4] < 0 || indices[4] > 50000) {
+      return true;
+    }
     return false;
+  }
+
+  /**
+   * Get fingerprint from parent pubkey. This is useful for generating xpubs
+   * which need the fingerprint of the parent pubkey
+   *
+   * Optionally get root fingerprint for device. This is useful for keychecks and necessary
+   * for PSBTs
+   *
+   * @param {boolean} root fingerprint or not
+   * @returns {string} fingerprint
+   */
+  async getFingerprint(root = false) {
+    const pubkey = root ? await this.getMultisigRootPublicKey() : await this.getParentPublicKey();
+    let fp = getFingerprintFromPublicKey(pubkey);
+    // If asked for a root XFP, zero pad it to length of 8.
+    return root ? (fp + 0x100000000).toString(16).substr(-8) : fp;
+  }
+
+  getParentPublicKey() {
+    return this.withApp(async (app) => {
+      const parentPath = getParentPath(this.bip32Path);
+      return (await app.getWalletPublicKey(parentPath)).publicKey;
+    });
+  }
+
+  getMultisigRootPublicKey() {
+    return this.withApp(async (app) => {
+      return (await app.getWalletPublicKey()).publicKey; // Call getWalletPublicKey w no path to get BIP32_ROOT (m)
+    });
   }
 
   /**
@@ -588,16 +595,16 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    *
    * @returns {object} the HD node object.
    */
-  async run() {
-    return await this.withApp(async (app) => {
-      return await app.getWalletPublicKey(this.bip32Path, {verify: true});
+  run() {
+    return this.withApp(async (app) => {
+      return app.getWalletPublicKey(this.bip32Path);
     });
   }
 }
 
 /**
  * Returns the public key at a given BIP32 path.
- * 
+ *
  * @extends {module:ledger.LedgerExportHDNode}
  * @example
  * import {LedgerExportPublicKey} from "unchained-wallets";
@@ -609,27 +616,46 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 export class LedgerExportPublicKey extends LedgerExportHDNode {
 
   /**
+   * @param {string} bip32Path - the BIP32 path for the HD node
+   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
+   */
+  constructor({bip32Path, includeXFP = false}) {
+    super({bip32Path});
+    this.includeXFP = includeXFP;
+  }
+
+  /**
    * Parses out and compresses the public key from the response of
    * `LedgerExportHDNode`.
-   * 
-   * @returns {string} -- (compressed) public key in hex 
+   *
+   * @returns {string|Object} (compressed) public key in hex (returns object if asked to include root fingerprint)
    */
   async run() {
     const result = await super.run();
-    return this.parsePublicKey((result || {}).publicKey);
+    const publicKey = this.parsePublicKey((result || {}).publicKey);
+    if (this.includeXFP) {
+      let rootFingerprint = await this.getFingerprint(true);
+      return {
+        rootFingerprint,
+        publicKey,
+      };
+    }
+
+    return publicKey;
   }
+
   /**
    * Compress the given public key.
    *
    * @param {string} publicKey - the uncompressed public key in hex
    * @returns {string} - the compressed public key in hex
-   * 
+   *
    */
   parsePublicKey(publicKey) {
     if (publicKey) {
       try {
         return compressPublicKey(publicKey);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
         throw new Error("Unable to compress public key from Ledger device.");
       }
@@ -644,56 +670,22 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
  * @extends {module:ledger.LedgerExportHDNode}
  */
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
-  constructor({bip32Path, network}) {
-    super({bip32Path});
-    this.network = network;
-  }
-  
-  messages() {
-    const messages = super.messages();
-
-    if (this.hasBIP32PathWarning()) { 
-      messages.push({
-        image: IMAGES[LEDGER].exportPublicKeyBeta,
-        state: ACTIVE, 
-        level: INFO, 
-        version: ">=1.6.0",
-        text: `Your Ledger will ask to confirm "Export public key?"`,
-        code: "ledger.export.xpub",
-        action: LEDGER_RIGHT_BUTTON,
-      });
-
-      messages.push({
-        image: IMAGES[LEDGER].exportPublicKeyV1,
-        state: ACTIVE, 
-        level: INFO, 
-        version: "<1.6.0",
-        text: `Your Ledger will ask to confirm "Export public key?"`,
-        code: "ledger.export.xpub",
-        action: LEDGER_RIGHT_BUTTON,
-      });
-    }
-
-    return messages;
-  }
 
   /**
-   * Get fingerprint from parent pubkey. This is useful for generating xpubs
-   * which need the fingerprint of the parent pubkey
-   * @returns {string} fingerprint
+   * @param {string} bip32Path path
+   * @param {string} network bitcoin network
+   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
    */
-   async getFingerprint() {
-    const pubkey = await this.getParentPublicKey()
-    return getFingerprintFromPublicKey(pubkey)
-   }
-  
-  async getParentPublicKey() {
-    return await this.withApp(async (app) => {
-      const parentPath = getParentPath(this.bip32Path)
-      return (await app.getWalletPublicKey(parentPath)).publicKey
-    })
+  constructor({bip32Path, network, includeXFP}) {
+    super({bip32Path});
+    this.network = network;
+    this.includeXFP = includeXFP;
   }
-  
+
+  messages() {
+    return super.messages();
+  }
+
   /**
    * Retrieve extended public key (xpub) from Ledger device for a given BIP32 path
    * @example
@@ -701,18 +693,29 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
    * const xpub = await interaction.run();
    * console.log(xpub);
-   * @returns {string} extended public key(xpub) for the BIP32 path of a given instance
+   *
+   * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
   async run() {
     const walletPublicKey = await super.run();
-    const fingerprint = await this.getFingerprint()
-    return deriveExtendedPublicKey(
-      this.bip32Path, 
-      walletPublicKey.publicKey, 
-      walletPublicKey.chainCode, 
-      fingerprint, 
-      this.network
-    )
+    const fingerprint = await this.getFingerprint();
+
+    const xpub = deriveExtendedPublicKey(
+      this.bip32Path,
+      walletPublicKey.publicKey,
+      walletPublicKey.chainCode,
+      fingerprint,
+      this.network,
+    );
+
+    if (this.includeXFP) {
+      let rootFingerprint = await this.getFingerprint(true);
+      return {
+        rootFingerprint,
+        xpub,
+      };
+    }
+    return xpub;
   }
 }
 
@@ -911,30 +914,38 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * Input signatures produced will always have a trailing `...01`
    * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
    * byte.
-   * 
+   *
    * @returns {string[]} array of input signatures, one per input
    */
-  async run() {
-    return await this.withApp(async (app, transport) => {
+  run() {
+    return this.withApp(async (app, transport) => {
       // FIXME: Explain the rationale behind this choice.
       transport.setExchangeTimeout(20000 * this.outputs.length);
       const transactionSignature = await app.signP2SHTransaction(
-        this.ledgerInputs(app),
-        this.ledgerKeysets(),
-        this.ledgerOutputScriptHex(app),
-        0, // locktime, 0 is no locktime
-        1, // sighash type, 1 is SIGHASH_ALL
-        this.anySegwitInputs(),
-        1 // tx version
+        {
+          inputs: this.ledgerInputs(),
+          associatedKeysets: this.ledgerKeysets(),
+          outputScriptHex: this.ledgerOutputScriptHex(),
+          lockTime: 0, // locktime, 0 is no locktime
+          sigHashType: 1, // sighash type, 1 is SIGHASH_ALL
+          segwit: this.anySegwitInputs(),
+          transactionVersion: 1, // tx version
+        },
       );
-      return (transactionSignature || []).map((inputSignature) => (inputSignature.endsWith('01') ? inputSignature : `${inputSignature}01`));
+      return this.parse(transactionSignature);
     });
   }
 
-  ledgerInputs(app) {
+  parse(transactionSignature) {
+    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
+    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
+    return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
+  }
+
+  ledgerInputs() {
     return this.inputs.map(input => {
       const addressType = multisigAddressType(input.multisig);
-      const inputTransaction = app.splitTransaction(input.transactionHex, true); // FIXME: should the 2nd parameter here always be true?
+      const inputTransaction = splitTransaction(input.transactionHex, true); // FIXME: should the 2nd parameter here always be true?
       const scriptFn = (addressType === P2SH ? multisigRedeemScript : multisigWitnessScript);
       const scriptHex = scriptToHex(scriptFn(input.multisig));
       return [inputTransaction, input.index, scriptHex]; // can add sequence number for RBF as an additional element
@@ -945,25 +956,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return this.bip32Paths.map((bip32Path) => this.ledgerBIP32Path(bip32Path));
   }
 
-  ledgerOutputScriptHex(app) {
-    // This seems like an inefficient way to achieve the final
-    // result...
-    let txTmp = new bitcoin.TransactionBuilder();
-    txTmp.setVersion(1);
-    if (this.network === TESTNET) {
-      txTmp.network = bitcoin.networks.testnet;
-    }
-    for (var i = 0; i < this.outputs.length; i++) {
-      txTmp.addOutput(this.outputs[i].address, new BigNumber(this.outputs[i].amountSats).toNumber());
-    }
-    for (var j = 0; j < this.inputs.length; j++) {
-      txTmp.addInput(this.inputs[j].txid, this.inputs[j].index);
-    }
-
-    const txToSign = txTmp.buildIncomplete();
-    const txHex = txToSign.toHex();
-    const splitTx = app.splitTransaction(txHex, this.anySegwitInputs());
-    return app.serializeTransactionOutputs(splitTx).toString('hex');
+  ledgerOutputScriptHex() {
+    const txHex = unsignedMultisigTransaction(this.network, this.inputs, this.outputs).toHex();
+    const splitTx = splitTransaction(txHex, this.anySegwitInputs());
+    return serializeTransactionOutputs(splitTx).toString('hex');
   }
 
   ledgerBIP32Path(bip32Path) {
@@ -971,7 +967,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   }
 
   anySegwitInputs() {
-    for (let i=0; i<this.inputs.length; i++) {
+    for (let i = 0; i < this.inputs.length; i++) {
       const input = this.inputs[i];
       const addressType = multisigAddressType(input.multisig);
       if (addressType === P2SH_P2WSH || addressType === P2WSH) {
