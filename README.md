@@ -267,6 +267,16 @@ inter-compatibility between keystores.  Implementing features which
 increase complexity and reduce inter-compatibility should be
 discouraged.
 
+### Developing against local Trezor connect
+If for some reason you need to use a [local instance of Trezor Connect](https://wiki.trezor.io/Developers_guide:Running_Trezor_Connect_on_localhost)
+The module that unchained-wallets uses to connect will need to be initialized
+with a custom `connectSrc` option. To enable this automatically, make sure
+to start the process that unchained-wallets is running in with the `TREZOR_DEV` 
+environment variable set to `true` (e.g. `TREZOR_DEV=true npm run start`).
+
+Currently this will tell the Trezor interaction to access connect at `https://localhost:8088`
+which is the default. Custom ports not currently supported.
+
 ### DirectInteraction classes
 
 Some devices (such as a Trezor) support "direct" interactions --
