@@ -6,6 +6,7 @@ import {
   ACTIVE,
   INFO,
   WARNING,
+  ERROR,
 } from "./interaction";
 import {
   LedgerGetMetadata,
@@ -114,6 +115,14 @@ describe('ledger', () => {
     function interactionBuilder(bip32Path) { return new LedgerExportPublicKey({bip32Path: (bip32Path || "m/45'/0'/0'/0/0")}); }
 
     itHasAppMessages(interactionBuilder);
+
+    it('constructor adds error message on invalid bip32path', () => {
+      expect(interactionBuilder('m/foo').hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: "ledger.bip32_path.path_error",
+      })).toBe(true);
+    })
 
     describe("parsePublicKey", () => {
 

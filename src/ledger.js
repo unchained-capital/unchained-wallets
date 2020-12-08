@@ -26,11 +26,12 @@ import {
   P2SH_P2WSH,
   P2WSH,
   multisigAddressType,
-  getParentPath,
+  getParentBIP32Path,
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
   signatureNoSighashType,
+  validateBIP32Path,
 } from "unchained-bitcoin";
 
 import {
@@ -38,6 +39,7 @@ import {
   PENDING,
   INFO,
   WARNING,
+  ERROR,
   DirectKeystoreInteraction,
 } from "./interaction";
 
@@ -503,6 +505,14 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   constructor({bip32Path}) {
     super();
     this.bip32Path = bip32Path;
+    this.bip32ValidationErrorMessage = {};
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.bip32ValidationErrorMessage = {
+        text: bip32PathError,
+        code: 'ledger.bip32_path.path_error',
+      };
+    }
   }
 
   /**
@@ -511,7 +521,17 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
-    return super.messages();
+    const messages = super.messages();
+
+    if (Object.entries(this.bip32ValidationErrorMessage).length) {
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        code: this.bip32ValidationErrorMessage.code,
+        text: this.bip32ValidationErrorMessage.text,
+      });
+    }
+    return messages;
   }
 
   /**
@@ -554,10 +574,8 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     if (indices[3] !== 0) {
       return true;
     }
-    if (indices[4] < 0 || indices[4] > 50000) {
-      return true;
-    }
-    return false;
+    return indices[4] < 0 || indices[4] > 50000;
+
   }
 
   /**
@@ -579,7 +597,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   getParentPublicKey() {
     return this.withApp(async (app) => {
-      const parentPath = getParentPath(this.bip32Path);
+      const parentPath = getParentBIP32Path(this.bip32Path);
       return (await app.getWalletPublicKey(parentPath)).publicKey;
     });
   }

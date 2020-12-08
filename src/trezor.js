@@ -38,6 +38,7 @@ import {
   P2WSH,
   signatureNoSighashType,
   networkData,
+  validateBIP32Path,
 } from "unchained-bitcoin";
 import bitcoin from "bitcoinjs-lib";
 
@@ -457,6 +458,14 @@ export class TrezorExportHDNode extends TrezorInteraction {
     super({network});
     this.bip32Path = bip32Path;
     this.includeXFP = includeXFP;
+    this.bip32ValidationErrorMessage = {};
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.bip32ValidationErrorMessage = {
+        text: bip32PathError,
+        code: 'trezor.bip32_path.path_error',
+      };
+    }
   }
 
   /**
@@ -475,6 +484,15 @@ export class TrezorExportHDNode extends TrezorInteraction {
         level: ERROR,
         text: "BIP32 path must be at least depth 3.",
         code: "trezor.bip32_path.minimum",
+      });
+    }
+
+    if (Object.entries(this.bip32ValidationErrorMessage).length) {
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        code: this.bip32ValidationErrorMessage.code,
+        text: this.bip32ValidationErrorMessage.text,
       });
     }
 
@@ -949,7 +967,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
       pubkey: keyPair.publicKey,
       network: networkData(this.network),
     });
-    if (address !== payload[0].address && address != payload[1].address) {
+    if (address !== payload[0].address && address !== payload[1].address) {
       throw new Error("Wrong public key specified");
     }
     return payload;
