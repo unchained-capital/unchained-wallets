@@ -39,6 +39,7 @@ import {
   signatureNoSighashType,
   networkData,
   validateBIP32Path,
+  fingerprintToFixedLengthHex,
 } from "unchained-bitcoin";
 import bitcoin from "bitcoinjs-lib";
 
@@ -110,12 +111,12 @@ try {
       connectSrc: 'https://localhost:8088/',
       lazyLoad: true,
       manifest: {
-        email: "help@unchained-capital.com", 
-        appUrl: "https://github.com/unchained-capital/unchained-wallets" 
+        email: "help@unchained-capital.com",
+        appUrl: "https://github.com/unchained-capital/unchained-wallets"
       }
     })
   else TrezorConnect.manifest({
-      email: "help@unchained-capital.com", 
+      email: "help@unchained-capital.com",
       appUrl: "https://github.com/unchained-capital/unchained-wallets"
     });
 } catch(e) {
@@ -187,7 +188,7 @@ try {
  *   parse(payload) {
  *     return payload.someValue;
  *   }
- * 
+ *
  * }
  * // usage
  * import {MAINNET} from "unchained-bitcoin";
@@ -367,7 +368,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
    */
   parse(payload) {
     // Example result:
-    // 
+    //
     // {
     //   bootloader_hash: "5112...846e9"
     //   bootloader_mode: null
@@ -516,8 +517,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
       // Find the payload with bip32 = MULTISIG_ROOT to get xfp
       if (payload[i].serializedPath === MULTISIG_ROOT) {
         let fp = payload[i].fingerprint;
-        // zero pad the hex string
-        rootFingerprint = (fp + 0x100000000).toString(16).substr(-8);
+        rootFingerprint = fingerprintToFixedLengthHex(fp);
       } else {
         keyMaterial = pubkey ? payload[i].publicKey : payload[i].xpub;
       }
@@ -803,10 +803,10 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
 /**
  * Shows a multisig address on the device and prompts the user to
  * confirm it.
- * If the optional publicKey parameter is used, the public key at 
+ * If the optional publicKey parameter is used, the public key at
  * the given BIP32 path is checked, returning an error if they don't match.
  *
- * Without the publicKey parameter, this function simply checks that the 
+ * Without the publicKey parameter, this function simply checks that the
  * public key at the given BIP32 path is in the redeemscript (with
  * validation on-device.
  *
@@ -972,7 +972,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
     }
     return payload;
   }
-  
+
 }
 
 /**

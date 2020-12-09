@@ -273,7 +273,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     const prefix = this.network === TESTNET ? 'tpub' : 'xpub';
     // If the addressType is segwit, the imported key will not be in the xpub/tpub format,
     // so convert it.
-    const baseXpub = addressType.includes('w')
+    const baseXpub = addressType.toLowerCase().includes('w')
       ? convertExtendedPublicKey(result[addressType.toLowerCase()], prefix)
       : result[addressType.toLowerCase()];
 

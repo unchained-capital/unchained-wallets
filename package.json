@@ -41,10 +41,10 @@
   "bin": {},
   "dependencies": {
     "@babel/polyfill": "^7.7.0",
-    "@ledgerhq/hw-app-btc": "^5.17.0",
-    "@ledgerhq/hw-transport-node-hid": "^5.17.0",
-    "@ledgerhq/hw-transport-u2f": "^5.17.0",
-    "@ledgerhq/hw-transport-webusb": "^5.17.0",
+    "@ledgerhq/hw-app-btc": "^5.34.1",
+    "@ledgerhq/hw-transport-node-hid": "^5.34.0",
+    "@ledgerhq/hw-transport-u2f": "^5.34.0",
+    "@ledgerhq/hw-transport-webusb": "^5.34.1",
     "bignumber.js": "^8.1.1",
     "bitcoinjs-lib": "^4.0.5",
     "bowser": "^2.6.1",
@@ -52,7 +52,7 @@
     "hi-base32": "^0.5.0",
     "pako": "^1.0.10",
     "punycode": "^2.1.1",
-    "trezor-connect": "^8.0.13",
+    "trezor-connect": "^8.1.19",
     "unchained-bitcoin": "^0.1.0"
   },
   "directories": {
