@@ -32,6 +32,7 @@ import {
   unsignedMultisigTransaction,
   signatureNoSighashType,
   validateBIP32Path,
+  fingerprintToFixedLengthHex,
 } from "unchained-bitcoin";
 
 import {
@@ -592,7 +593,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
     const pubkey = root ? await this.getMultisigRootPublicKey() : await this.getParentPublicKey();
     let fp = getFingerprintFromPublicKey(pubkey);
     // If asked for a root XFP, zero pad it to length of 8.
-    return root ? (fp + 0x100000000).toString(16).substr(-8) : fp;
+    return root ? fingerprintToFixedLengthHex(fp) : fp;
   }
 
   getParentPublicKey() {
