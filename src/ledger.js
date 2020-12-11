@@ -224,6 +224,20 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     });
   }
 
+  /**
+   * Close the Transport to free the interface (E.g. could be used in another tab
+   * now that the interaction is over)
+   *
+   * The way the pubkey/xpub/fingerprints are grabbed makes this a little tricky.
+   * Instead of re-writing how that works, let's just add a way to explicitly
+   * close the transport.
+   * @return {Promise}
+   */
+  closeTransport() {
+    return this.withTransport( (transport) => {
+      transport.close();
+    })
+  }
 }
 
 /**
@@ -327,9 +341,13 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
   async run() {
 
     return this.withTransport(async (transport) => {
-      transport.setScrambleKey('B0L0S');
-      const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
-      return this.parseMetadata(rawResult);
+      try {
+        transport.setScrambleKey('B0L0S');
+        const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
+        return this.parseMetadata(rawResult);
+      } finally {
+        transport.close();
+      }
     });
   }
 
@@ -650,17 +668,21 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
    * @returns {string|Object} (compressed) public key in hex (returns object if asked to include root fingerprint)
    */
   async run() {
-    const result = await super.run();
-    const publicKey = this.parsePublicKey((result || {}).publicKey);
-    if (this.includeXFP) {
-      let rootFingerprint = await this.getFingerprint(true);
-      return {
-        rootFingerprint,
-        publicKey,
-      };
-    }
+    try {
+      const result = await super.run();
+      const publicKey = this.parsePublicKey((result || {}).publicKey);
+      if (this.includeXFP) {
+        let rootFingerprint = await this.getFingerprint(true);
+        return {
+          rootFingerprint,
+          publicKey,
+        };
+      }
 
-    return publicKey;
+      return publicKey;
+    } finally {
+      await super.closeTransport();
+    }
   }
 
   /**
@@ -716,25 +738,29 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
   async run() {
-    const walletPublicKey = await super.run();
-    const fingerprint = await this.getFingerprint();
+    try {
+      const walletPublicKey = await super.run();
+      const fingerprint = await this.getFingerprint();
 
-    const xpub = deriveExtendedPublicKey(
-      this.bip32Path,
-      walletPublicKey.publicKey,
-      walletPublicKey.chainCode,
-      fingerprint,
-      this.network,
-    );
+      const xpub = deriveExtendedPublicKey(
+        this.bip32Path,
+        walletPublicKey.publicKey,
+        walletPublicKey.chainCode,
+        fingerprint,
+        this.network,
+      );
 
-    if (this.includeXFP) {
-      let rootFingerprint = await this.getFingerprint(true);
-      return {
-        rootFingerprint,
-        xpub,
-      };
+      if (this.includeXFP) {
+        let rootFingerprint = await this.getFingerprint(true);
+        return {
+          rootFingerprint,
+          xpub,
+        };
+      }
+      return xpub;
+    } finally {
+      await super.closeTransport();
     }
-    return xpub;
   }
 }
 
@@ -938,20 +964,24 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    */
   run() {
     return this.withApp(async (app, transport) => {
-      // FIXME: Explain the rationale behind this choice.
-      transport.setExchangeTimeout(20000 * this.outputs.length);
-      const transactionSignature = await app.signP2SHTransaction(
-        {
-          inputs: this.ledgerInputs(),
-          associatedKeysets: this.ledgerKeysets(),
-          outputScriptHex: this.ledgerOutputScriptHex(),
-          lockTime: 0, // locktime, 0 is no locktime
-          sigHashType: 1, // sighash type, 1 is SIGHASH_ALL
-          segwit: this.anySegwitInputs(),
-          transactionVersion: 1, // tx version
-        },
-      );
-      return this.parse(transactionSignature);
+      try {
+        // FIXME: Explain the rationale behind this choice.
+        transport.setExchangeTimeout(20000 * this.outputs.length);
+        const transactionSignature = await app.signP2SHTransaction(
+          {
+            inputs: this.ledgerInputs(),
+            associatedKeysets: this.ledgerKeysets(),
+            outputScriptHex: this.ledgerOutputScriptHex(),
+            lockTime: 0, // locktime, 0 is no locktime
+            sigHashType: 1, // sighash type, 1 is SIGHASH_ALL
+            segwit: this.anySegwitInputs(),
+            transactionVersion: 1, // tx version
+          },
+        );
+        return this.parse(transactionSignature);
+      } finally {
+        transport.close();
+      }
     });
   }
 
