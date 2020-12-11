@@ -28,6 +28,7 @@ import {
   ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
 } from './coldcard';
+import {COBOVAULT, CoboVaultSignMultisigTransaction} from "./cobovault";
 
 /**
  * Current unchained-wallets version.
@@ -302,6 +303,14 @@ export function SignMultisigTransaction({keystore, network, inputs, outputs, bip
         bip32Paths,
         psbt,
       });
+    case COBOVAULT:
+      return new CoboVaultSignMultisigTransaction({
+        network,
+        inputs,
+        outputs,
+        bip32Paths,
+        psbt,
+      })
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -410,3 +419,4 @@ export * from "./trezor";
 export * from "./ledger";
 export * from "./hermit";
 export * from "./coldcard";
+export * from "./cobovault";
