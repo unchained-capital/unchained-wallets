@@ -29,33 +29,27 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
-import {
-  P2SH,
-  P2SH_P2WSH,
-  P2WSH,
-} from 'unchained-bitcoin';
+import { P2SH, P2SH_P2WSH, P2WSH } from "unchained-bitcoin";
 
-export const COLDCARD = 'coldcard';
+export const COLDCARD = "coldcard";
 // Our constants use 'P2SH-P2WSH', their file uses 'P2SH_P2WSH' :\
 export const COLDCARD_BASE_BIP32_PATHS = {
   "m/45'": P2SH,
-  "m/48'/0'/0'/1'": P2SH_P2WSH.replace('-', '_'),
+  "m/48'/0'/0'/1'": P2SH_P2WSH.replace("-", "_"),
   "m/48'/0'/0'/2'": P2WSH,
-  "m/48'/1'/0'/1'": P2SH_P2WSH.replace('-', '_'),
+  "m/48'/1'/0'/1'": P2SH_P2WSH.replace("-", "_"),
   "m/48'/1'/0'/2'": P2WSH,
 };
 const COLDCARD_BASE_CHROOTS = Object.keys(COLDCARD_BASE_BIP32_PATHS);
 
-export const COLDCARD_WALLET_CONFIG_VERSION = "0.0.1";
-
+export const COLDCARD_WALLET_CONFIG_VERSION = "0.0.2";
 
 /**
  * Base class for interactions with Coldcard
  *
  * @extends {module:interaction.IndirectKeystoreInteraction}
  */
-export class ColdcardInteraction extends IndirectKeystoreInteraction {
-}
+export class ColdcardInteraction extends IndirectKeystoreInteraction {}
 
 /**
  * Base class for JSON Multisig file-based interactions with Coldcard
@@ -64,15 +58,14 @@ export class ColdcardInteraction extends IndirectKeystoreInteraction {
  * @extends {module:coldcard.ColdcardInteraction}
  */
 class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
-
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
    * @param {string} options.bip32Path - bip32Path to interrogate
    */
-  constructor({network, bip32Path}) {
+  constructor({ network, bip32Path }) {
     super();
-    if ([MAINNET, TESTNET].find(net => net === network)) {
+    if ([MAINNET, TESTNET].find((net) => net === network)) {
       this.network = network;
     } else {
       throw new Error("Unknown network.");
@@ -140,30 +133,33 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     if (bip32PathError.length) {
       this.bip32ValidationErrorMessage = {
         text: bip32PathError,
-        code: 'coldcard.bip32_path.path_error',
+        code: "coldcard.bip32_path.path_error",
       };
       return bip32PathError;
     }
     const coldcardChroot = this.chrootForBIP32Path(bip32Path);
     if (coldcardChroot) {
-      if (coldcardChroot === bip32Path) { // asking for known base path, no deeper derivation
-        return '';
+      if (coldcardChroot === bip32Path) {
+        // asking for known base path, no deeper derivation
+        return "";
       }
       const relativePath = getRelativeBIP32Path(coldcardChroot, bip32Path);
-      const relativePathError = validateBIP32Path(relativePath, {mode: "unhardened"});
+      const relativePathError = validateBIP32Path(relativePath, {
+        mode: "unhardened",
+      });
       if (relativePathError) {
         this.bip32ValidationErrorMessage = {
           text: relativePathError,
-          code: 'coldcard.bip32_path.no_hardened_relative_path_error',
+          code: "coldcard.bip32_path.no_hardened_relative_path_error",
         };
         return relativePathError;
       }
-      return '';
+      return "";
     }
     const unknownColdcardParentBip32PathError = `The bip32Path must begin with one of the known Coldcard paths: ${COLDCARD_BASE_CHROOTS}`;
     this.bip32ValidationErrorMessage = {
       text: unknownColdcardParentBip32PathError,
-      code: 'coldcard.bip32_path.unknown_chroot_error',
+      code: "coldcard.bip32_path.unknown_chroot_error",
     };
     return unknownColdcardParentBip32PathError;
   }
@@ -217,12 +213,17 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     // the convention of p2sh-p2wsh instead of what they had before
     // which was p2wsh-p2sh ... so one of these sets needs to be
     // in the file.
-    if (!data.p2sh_deriv || !data.p2sh ||
-      !data.p2wsh_deriv || !data.p2wsh ||
+    if (
+      !data.p2sh_deriv ||
+      !data.p2sh ||
+      !data.p2wsh_deriv ||
+      !data.p2wsh ||
       ((!data.p2wsh_p2sh_deriv || !data.p2wsh_p2sh) &&
         (!data.p2sh_p2wsh_deriv || !data.p2sh_p2wsh))
     ) {
-      throw new Error("Missing required params. Was this file exported from a Coldcard?");
+      throw new Error(
+        "Missing required params. Was this file exported from a Coldcard?"
+      );
     }
 
     const xpubClass = ExtendedPublicKey.fromBase58(data.p2sh);
@@ -232,14 +233,20 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
 
     // We can only find the fingerprint in the xpub if the depth is one
     // because the xpub includes its parent's fingerprint.
-    let xfpFromWithinXpub = (xpubClass.depth === 1)
-      ? fingerprintToFixedLengthHex(xpubClass.parentFingerprint)
-      : null;
+    let xfpFromWithinXpub =
+      xpubClass.depth === 1
+        ? fingerprintToFixedLengthHex(xpubClass.parentFingerprint)
+        : null;
 
     // Sanity check if you send in a depth one xpub, we should get the same fingerprint
-    if ((xfpFromWithinXpub && data.xfp) &&
-      xfpFromWithinXpub !== data.xfp.toLowerCase()) {
-      throw new Error("Computed fingerprint does not match the one in the file.");
+    if (
+      xfpFromWithinXpub &&
+      data.xfp &&
+      xfpFromWithinXpub !== data.xfp.toLowerCase()
+    ) {
+      throw new Error(
+        "Computed fingerprint does not match the one in the file."
+      );
     }
 
     const rootFingerprint = data.xfp ? data.xfp : xfpFromWithinXpub;
@@ -247,7 +254,6 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
 
     return data;
   }
-
 
   /**
    * This method will take the result from the Coldcard JSON and:
@@ -262,18 +268,21 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    */
   deriveDeeperXpubIfNecessary(result) {
     const knownColdcardChroot = this.chrootForBIP32Path(this.bip32Path);
-    let relativePath = getRelativeBIP32Path(knownColdcardChroot, this.bip32Path);
+    let relativePath = getRelativeBIP32Path(
+      knownColdcardChroot,
+      this.bip32Path
+    );
     let addressType = COLDCARD_BASE_BIP32_PATHS[knownColdcardChroot];
     // result could have p2wsh_p2sh or p2sh_p2wsh based on firmware version. Blah!
-    if (addressType.includes('_') && !result[addressType.toLowerCase()]) {
+    if (addressType.includes("_") && !result[addressType.toLowerCase()]) {
       // Firmware < v3.2.0
-      addressType = 'p2wsh_p2sh';
+      addressType = "p2wsh_p2sh";
     }
 
-    const prefix = this.network === TESTNET ? 'tpub' : 'xpub';
+    const prefix = this.network === TESTNET ? "tpub" : "xpub";
     // If the addressType is segwit, the imported key will not be in the xpub/tpub format,
     // so convert it.
-    const baseXpub = addressType.toLowerCase().includes('w')
+    const baseXpub = addressType.toLowerCase().includes("w")
       ? convertExtendedPublicKey(result[addressType.toLowerCase()], prefix)
       : result[addressType.toLowerCase()];
 
@@ -301,14 +310,13 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
  * // "m/45'/0/0"
  */
 export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser {
-
   /**
    *
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
    * @param {string} options.bip32Path - BIP32 path
    */
-  constructor({network, bip32Path}) {
+  constructor({ network, bip32Path }) {
     super({
       network,
       bip32Path,
@@ -329,7 +337,6 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
       bip32Path: this.bip32Path,
     };
   }
-
 }
 
 /**
@@ -350,14 +357,13 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
  * // "m/45'/0/0"
  */
 export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFileParser {
-
   /**
    *
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
    * @param {string} options.bip32Path - BIP32 paths
    */
-  constructor({network, bip32Path}) {
+  constructor({ network, bip32Path }) {
     super({
       network,
       bip32Path,
@@ -397,7 +403,6 @@ export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFil
  *
  */
 export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
-
   /**
    *
    * @param {object} options - options argument
@@ -407,7 +412,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    * @param {array<string>} options.bip32Paths - BIP32 paths
    * @param {object} [options.psbt] - PSBT of the transaction to sign, include it or we will generate it
    */
-  constructor({network, inputs, outputs, bip32Paths, psbt}) {
+  constructor({ network, inputs, outputs, bip32Paths, psbt }) {
     super();
     this.network = network;
     this.inputs = inputs;
@@ -420,7 +425,9 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
       try {
         this.psbt = unsignedMultisigPSBT(network, inputs, outputs);
       } catch (e) {
-        throw new Error("Unable to build the PSBT from the provided parameters.");
+        throw new Error(
+          "Unable to build the PSBT from the provided parameters."
+        );
       }
     }
   }
@@ -499,8 +506,10 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    */
   parse(psbtObject) {
     const signatures = parseSignaturesFromPSBT(psbtObject);
-    if ((!signatures) || signatures.length === 0) {
-      throw new Error("No signatures found in the PSBT. Did you upload the right one?");
+    if (!signatures || signatures.length === 0) {
+      throw new Error(
+        "No signatures found in the PSBT. Did you upload the right one?"
+      );
     }
     return signatures;
   }
@@ -534,7 +543,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
  *
  */
 export class ColdcardMultisigWalletConfig {
-  constructor({jsonConfig}) {
+  constructor({ jsonConfig }) {
     if (typeof jsonConfig === "object") {
       this.jsonConfig = jsonConfig;
     } else if (typeof jsonConfig === "string") {
@@ -547,17 +556,22 @@ export class ColdcardMultisigWalletConfig {
       throw new Error("Not valid JSON.");
     }
 
-    if ((this.jsonConfig.uuid || this.jsonConfig.name)) {
+    if (this.jsonConfig.uuid || this.jsonConfig.name) {
       this.name = this.jsonConfig.uuid || this.jsonConfig.name;
     } else {
       throw new Error("Configuration file needs a UUID or a name.");
     }
 
-    if (this.jsonConfig.quorum.requiredSigners && this.jsonConfig.quorum.totalSigners) {
+    if (
+      this.jsonConfig.quorum.requiredSigners &&
+      this.jsonConfig.quorum.totalSigners
+    ) {
       this.requiredSigners = this.jsonConfig.quorum.requiredSigners;
       this.totalSigners = this.jsonConfig.quorum.totalSigners;
     } else {
-      throw new Error("Configuration file needs quorum.requiredSigners and quorum.totalSigners.");
+      throw new Error(
+        "Configuration file needs quorum.requiredSigners and quorum.totalSigners."
+      );
     }
 
     if (this.jsonConfig.addressType) {
@@ -566,13 +580,14 @@ export class ColdcardMultisigWalletConfig {
       throw new Error("Configuration file needs addressType.");
     }
 
-    if (this.jsonConfig.extendedPublicKeys &&
+    if (
+      this.jsonConfig.extendedPublicKeys &&
       this.jsonConfig.extendedPublicKeys.every((xpub) => {
         // For each xpub, check that xfp exists, the length is 8, type is string, and valid hex
         if (!xpub.xfp || xpub.xfp === "Unknown") {
           throw new Error("ExtendedPublicKeys missing at least one xfp.");
         }
-        if (typeof xpub.xfp !== 'string') {
+        if (typeof xpub.xfp !== "string") {
           throw new Error("XFP not a string");
         }
         if (xpub.xfp.length !== 8) {
@@ -582,7 +597,8 @@ export class ColdcardMultisigWalletConfig {
           throw new Error("XFP is invalid hex");
         }
         return true;
-      })) {
+      })
+    ) {
       this.extendedPublicKeys = this.jsonConfig.extendedPublicKeys;
     } else {
       throw new Error("Configuration file needs extendedPublicKeys.");
@@ -593,8 +609,6 @@ export class ColdcardMultisigWalletConfig {
    * @returns {string} output to be written to a text file and uploaded to Coldcard.
    */
   adapt() {
-    // Coldcard configs can't have spaces in the names, it just splits on space and takes the first word.
-    // Currently operating without derivation paths per xpub until feature is added.
     let output = `# Coldcard Multisig setup file (exported from unchained-wallets)
 # https://github.com/unchained-capital/unchained-wallets
 # v${COLDCARD_WALLET_CONFIG_VERSION}
@@ -604,10 +618,17 @@ Policy: ${this.requiredSigners} of ${this.totalSigners}
 Format: ${this.addressType}
 
 `;
-    // We need to loop over xpubs and output `xfp: xpub` for each
-    let xpubs = this.extendedPublicKeys.map((xpub) => `${xpub.xfp}: ${xpub.xpub}`);
-    output += xpubs.join("\r\n");
-    output += "\r\n";
+    // We need to loop over xpubs and output `Derivation: bip32path` and `xfp: xpub` for each
+    let xpubs = this.extendedPublicKeys.map((xpub) => {
+      // Mask the derivation to the appropriate depth if it is not known
+      const unknownBip32 = xpub.bip32Path.toLowerCase().includes("unknown");
+      const derivation = unknownBip32
+        ? `m${"/0".repeat(ExtendedPublicKey.fromBase58(xpub.xpub).depth)}`
+        : xpub.bip32Path;
+      return `Derivation: ${derivation}\n${xpub.xfp}: ${xpub.xpub}`;
+    });
+    output += xpubs.join("\n");
+    output += "\n";
     return output;
   }
 }
