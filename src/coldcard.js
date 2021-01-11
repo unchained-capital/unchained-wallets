@@ -42,7 +42,7 @@ export const COLDCARD_BASE_BIP32_PATHS = {
 };
 const COLDCARD_BASE_CHROOTS = Object.keys(COLDCARD_BASE_BIP32_PATHS);
 
-export const COLDCARD_WALLET_CONFIG_VERSION = "0.0.2";
+export const COLDCARD_WALLET_CONFIG_VERSION = "1.0.0";
 
 /**
  * Base class for interactions with Coldcard
