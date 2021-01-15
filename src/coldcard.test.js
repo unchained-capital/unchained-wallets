@@ -19,6 +19,8 @@ import {
 } from './interaction';
 import {coldcardFixtures} from './coldcard.fixtures';
 import { MultisigWalletConfig } from './config';
+import { bip32PathToSequence, validateBIP32Path } from 'unchained-bitcoin/lib/paths';
+import { ExtendedPublicKey } from 'unchained-bitcoin/lib/keys';
 
 const {multisigs, transactions} = TEST_FIXTURES;
 
@@ -466,12 +468,7 @@ describe("ColdcardSignMultisigTransaction", () => {
       expect(result).toEqual(signatureSet);
       expect(Object.keys(result).length).toEqual(1);
     });
-    // it("return multi input, double signature set", () => {
-    //   const interaction = interactionBuilder({psbt:coldcardFixtures.multiInputB64PSBT_fullySigned.unsigned});
-    //   const result = interaction.parse(coldcardFixtures.multiInputB64PSBT_fullySigned.unsigned);
-    //   expect(result).toEqual(coldcardFixtures.multiInputB64PSBT_fullySigned.signatureResponse);
-    //   expect(Object.keys(result).length).toEqual(2);
-    // });
+
     it("psbt has no signatures", () => {
       const interaction = interactionBuilder({psbt: multisigs[0].psbt});
       expect(() => interaction.parse(multisigs[0].psbt)).toThrow(/No signatures found/i);
@@ -562,39 +559,121 @@ describe("config", () => {
   let options;
   beforeEach(() => {
     options = JSON.parse(JSON.stringify(coldcardFixtures.jsonConfigUUID));
-  })
+  });
 
   describe("parseColdcardConfig", () => {
     it("should be able to instantiate MultisigWalletConfig from a coldcard config", () => {
-      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigDerivation);
+      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigName);
+      const expectedKeys = options.extendedPublicKeys;
+
       expect(config.network).toEqual(options.network);
-      expect(config.derivation).toBeTruthy();
       config.extendedPublicKeys.forEach((key) => {
-        const expectedKeys = options.extendedPublicKeys;
+        expect(key).toHaveProperty('xfp');
+        expect(key).toHaveProperty('xpub');
+        expect(key).toHaveProperty('bip32Path');
+
         // config's xpub array should have the right xfp and xpub 
-        expect(
-          expectedKeys.findIndex(({ xfp, xpub }) => key.xfp === xfp && key.xpub === xpub)
-        ).toBeGreaterThan(-1)
-      })
-    })
-  })
+        const keyIndex = expectedKeys.findIndex(
+          ({ xfp, xpub, bip32Path }) => (
+            key.xfp === xfp && 
+            key.xpub === xpub &&
+            // no need to check if unknown b/c that will be masked and not match anyway
+            (bip32Path.match(/unknown/i) || key.bip32Path === bip32Path)
+          ));
+          
+        expect(keyIndex).toBeGreaterThan(-1);
+      });
+    });
+
+    it("should correctly handle coldcard config where all keys have same derivation", () => {
+      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigSameDerivation);
+      let derivation;
+      config.extendedPublicKeys.forEach((key) => {
+        expect(key).toHaveProperty('bip32Path');
+        if (derivation) {
+          expect(key.bip32Path).toMatch(derivation);
+        } else {
+          derivation = key.bip32Path;
+        }
+      });
+    });
+
+    it('should support flexible formatting for policy', () => {
+      const requiredSigners = 2;
+      const totalSigners = 3;
+      const policies = ['2 3', '2,3', '2 and 3', '2/3', '2 of 3'];
+      policies.forEach(policy => {
+        // replace the policy line with one with a different format
+        const coldcardConfig = coldcardFixtures.coldcardConfigName.split('\n').map(line => { 
+          if (line.match(/Policy/i)) return `Policy: ${policy}`; 
+          else return line;
+        }).join('\n');
+        
+        const config = parseColdcardConfig(coldcardConfig);
+        expect(config.requiredSigners).toEqual(requiredSigners);
+        expect(config.extendedPublicKeys).toHaveLength(totalSigners);
+      });
+    });
+
+    it('should throw if policy is in an unrecognized format', () => {
+        const coldcardConfig = coldcardFixtures.coldcardConfigName.split('\n').map(line => { 
+          if (line.match(/Policy/i)) return `Policy: ${'foobar'}`; 
+          else return line;
+        }).join('\n');
+        expect(() => parseColdcardConfig(coldcardConfig)).toThrow(/unrecognized format/i);
+    });
+  });
+
   
   describe("generateColdcardConfig", () => {
     it("should be able to export valid Coldcard config", () => {
-      let output = generateColdcardConfig(options)
+      let output = generateColdcardConfig(options);
+      
       // test with uuid as name
-      expect(output).toEqual(coldcardFixtures.coldcardConfigUUID);
+      expect(output).toMatch(coldcardFixtures.coldcardConfigUUID);
       
       // test with name as fallback for missing uuid
       Reflect.deleteProperty(options, "uuid");
       output = generateColdcardConfig(options);
-      expect(output).toEqual(coldcardFixtures.coldcardConfigName);
-    })
-
+      expect(output).toMatch(coldcardFixtures.coldcardConfigName);
+    });
+    
     it("should be able to generate the same from a MultisigWalletConfig or object", () => {
-      const fromOptions = generateColdcardConfig(options)
-      const config = generateColdcardConfig(new MultisigWalletConfig(options))
-      expect(fromOptions).toEqual(config)
-    })
-  })
-})
+      const fromOptions = generateColdcardConfig(options);
+      const config = generateColdcardConfig(new MultisigWalletConfig(options));
+      expect(fromOptions).toEqual(config);
+    });
+
+    it('should correctly mask derivation when bip32Path is unknown', () => {
+      const xpubWithUnknownPath = options.extendedPublicKeys.find(
+        ({ bip32Path }) => bip32Path && bip32Path.match(/unknown/i)
+      );
+
+      // make sure the fixture has one with undefined bip32path
+      expect(xpubWithUnknownPath).toBeDefined();
+  
+      const config = parseColdcardConfig(generateColdcardConfig(options));
+      const xpubWithMaskedPath = config.extendedPublicKeys.find(({ xpub }) => xpub === xpubWithUnknownPath.xpub);
+      
+      const xpub = config.extendedPublicKeys.find((key) => key.xpub === xpubWithMaskedPath.xpub);
+      expect(xpub).toHaveProperty('bip32Path');
+      
+      // check is valid bip32Path
+      const pathError = validateBIP32Path(xpub.bip32Path);
+      expect(pathError).toHaveLength(0);
+
+      // check path matches depth of xpub
+      expect(bip32PathToSequence(xpub.bip32Path)).toHaveLength(ExtendedPublicKey.fromBase58(xpub.xpub).depth);
+    });
+
+    it("should add placeholder fingerprints if any xpubs are missing one", () => {
+      Reflect.deleteProperty(options.extendedPublicKeys[0], 'xfp');
+      generateColdcardConfig(options);
+    });
+
+    it("should fail if all xpubs are missing fingerprints", () => {
+      options.extendedPublicKeys.forEach(key => Reflect.deleteProperty(key, 'xfp'));
+      expect(() => generateColdcardConfig(options)).toThrow(/at least one xfp is required/i);
+    });
+  });
+});

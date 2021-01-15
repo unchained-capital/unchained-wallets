@@ -255,7 +255,7 @@
         "require-jsdoc": "off",
         "require-unicode-regexp": "off",
         "rest-spread-spacing": "error",
-        "semi": "off",
+        "semi": 2,
         "semi-spacing": [
             "error",
             {

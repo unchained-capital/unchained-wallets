@@ -16,10 +16,7 @@ import {
   validateRootFingerprint
 } from "unchained-bitcoin";
 import assert from "assert";
-
-/**
- * TODO: do we need a special method for `fromUnchained`? 
- */
+import { ExtendedPublicKey } from "unchained-bitcoin/lib/keys";
 
 /**
  * A utility class for managing multisig wallet configs.
@@ -40,7 +37,6 @@ export class MultisigWalletConfig {
    * @param {object} options - options object to create config from
    * @param {string} [options.uuid] - used for name of config, will fallback to name option
    * @param {string} [options.name] - required if no uuid passed
-   * @param {string} [options.derivation] - BIP32 path for xpub derivation
    * @param {number} options.requiredSigners - number of required signers, i.e. `m`
    * @param {string} options.addressType - what kind of address (e.g. p2sh, p2wsh)
    * @param {object[]} options.extendedPublicKeys - array of extended pub key objects
@@ -57,7 +53,6 @@ export class MultisigWalletConfig {
   constructor({ 
     uuid, 
     name, 
-    derivation,
     requiredSigners,
     addressType, 
     extendedPublicKeys,
@@ -82,7 +77,7 @@ export class MultisigWalletConfig {
       assert(
         MultisigWalletConfig.supportedClients.includes(client.type),
         `Client type "${client.type}" not supported`
-      )
+      );
       this.client = client;
     }
     
@@ -102,13 +97,6 @@ export class MultisigWalletConfig {
       "Wallet config needs requiredSigners."
     );
     this.requiredSigners = requiredSigners;
-    this.totalSigners = extendedPublicKeys.length;
-
-    if (derivation) {
-      const pathError = validateBIP32Path(derivation);
-      assert(!pathError.length, pathError);
-      this.derivation = derivation;
-    }
 
     if (startingAddressIndex) {
       if (typeof startingAddressIndex !== 'number') {
@@ -157,33 +145,79 @@ export class MultisigWalletConfig {
    * @returns {boolean|Error} true if valid otherwise throws an error
    */
   validateExtendedPublicKeys(requiresXFP=false) {
+    // keep track of all xpfs to make sure there are not duplicates
+    // this is to ensure that a single seed/root isn't used multiple times in the quorum
+    const rootFingerprints = [];
     return this.extendedPublicKeys.every(({ xpub, bip32Path, xfp }) => {
       assert(xpub, 'xpub value required');
 
       let xpubError = validateExtendedPublicKeyForNetwork(xpub, this.network);
-      assert(!xpubError.length, `Error in Xpub ${xpub}: ${xpubError}`)
+      assert(!xpubError.length, `Error in Xpub ${xpub}: ${xpubError}`);
 
       if (bip32Path && bip32Path !== 'Unknown') {
         const pathError = validateBIP32Path(bip32Path);
-        assert(!pathError.length, `Xpub Path Error: ${bip32Path} - ${pathError}`)
+        assert(!pathError.length, `Xpub Path Error: ${bip32Path} - ${pathError}`);
       }
-
+      
+      if (xfp) {
+        assert(!rootFingerprints.includes(xfp), 'Duplicate root fingerprints not allowed in same config');
+        rootFingerprints.push(xfp);
+      }
+    
       if (requiresXFP) {
         assert(xfp && xfp !== "Unknown", "ExtendedPublicKeys missing at least one xfp.");
-        validateRootFingerprint(xfp)
+        validateRootFingerprint(xfp);
       }
 
-      return true
-    })
+      return true;
+    });
+  }
+
+  /**
+   * @description for some configs root fingerprints are required for each key,
+   * e.g. for Coldcards, however they don't all have to be "real" since it
+   * only matters for the signing device. In those cases we can put a placeholder
+   * xfp property on the extendedPublicKeys that are missing them. It doesn't matter
+   * what this value is, but for consistency we use the parentFingerprint which is
+   * encoded in the xpub anyway, to derive this placeholder. 
+   * This will throw if there is not at least one extendedPublicKey with an xfp. 
+   * @returns {void}
+   */
+  addPlaceholderFingerprints() {
+    const hasAtLeastOne = this.extendedPublicKeys.some(xpub => xpub.xfp);
+    if (!hasAtLeastOne) {
+      throw new Error('At least one XFP is required to add placeholders to other xpubs');
+    }
+
+    this.extendedPublicKeys.forEach(xpub => {
+      if (!xpub.xfp) {
+        const parentFingerprint = ExtendedPublicKey.fromBase58(xpub.xpub).parentFingerprint;
+        // in case it's all numbers, make sure it doesn't get coerced to a number
+        // and restrict to 8 characters which is restriction for root fingerprint
+        xpub.xfp = String(parentFingerprint).slice(0, 8);
+      }
+    });
   }
 
   /**
    * @description A simple wrapper for returning a json config
    * since the params of the class are valid for caravan.
-   * @returns {MultisigWalletConfig} a new MultisigWalletConfig instance
+   * @returns {object} JSON object required for Caravan wallet
    */
   toCaravanConfig() {
-    return this.toJSON();
+    const options = {
+      name: this.name,
+      addressType: this.addressType,
+      network: this.network,
+      quorum: {
+        requiredSigners: this.requiredSigners,
+        totalSigners: this.extendedPublicKeys.length,
+      },
+      extendedPublicKeys: this.extendedPublicKeys,
+    };
+    if (this.client) options.client = this.client;
+    if (this.startingAddressIndex) options.startingAddressIndex = this.startingAddressIndex;
+    return JSON.stringify(options);
   }
 
   /**
@@ -194,10 +228,10 @@ export class MultisigWalletConfig {
       name: this.name,
       addressType: this.addressType,
       network: this.network,
-      quorum: this.quorum,
+      requiredSigners: this.requiredSigners,
       startingAddressIndex: this.startingAddressIndex,
       extendedPublicKeys: this.extendedPublicKeys,
       client: this.client,
-    })
+    });
   }
 }

@@ -155,14 +155,14 @@ Derivation: m/45'/1/0/0
 Derivation: m/45'/1/0/0
 77d36d3b: tpubDF4Ar5bxLQV9qbr2bZ7N7TYYWNv28kPEChWwyvrrxTMKJjqsYhce79mUkLNiKpW121TshHwjZhZbHmT66oPbwLqxJzcXLyf32ubCJyr4pRR
 `,
-  coldcardConfigDerivation: `# Coldcard Multisig setup file (exported from unchained-wallets)
+  coldcardConfigSameDerivation: `# Coldcard Multisig setup file (exported from unchained-wallets)
 # https://github.com/unchained-capital/unchained-wallets
 # v${COLDCARD_WALLET_CONFIG_VERSION}
 # 
 Name: OWPyFOA1
 Policy: 2 of 3
 Format: P2SH
-Derivation: m/45'/1/0
+Derivation: m/45'/1/0/0
 77e80477: tpubDF17mBZYUi35iCPDfFAa3jFd23L5ZF49tpS1AS1cEqNwhNaS8qVVD8ZPj67iKEarhPuMapZHuxr7TBDYA4DLxAoz25FN8ksyakdbc2V4X2Q\r
 39b12f98: tpubDEzYMGvKjbsnqEsjPvnG1TAxBGvk3EUJ9tqpTjnv6XEHktLASz8omNFS9VfSgbmpQWZefiRisKKCtERgsjsK39S6ueTHRXd8w5kNw8LzBoF\r
 77d36d3b: tpubDF4Ar5bxLQV9qbr2bZ7N7TYYWNv28kPEChWwyvrrxTMKJjqsYhce79mUkLNiKpW121TshHwjZhZbHmT66oPbwLqxJzcXLyf32ubCJyr4pRR\r
