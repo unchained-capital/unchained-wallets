@@ -1,5 +1,6 @@
 import { MultisigWalletConfig } from './config';
 import {coldcardFixtures} from './coldcard.fixtures';
+import {CARAVAN_CONFIG} from './config.fixtures';
 
 describe('MultisigWalletConfig', () => {
   let jsonConfig, options;
@@ -112,11 +113,16 @@ describe('MultisigWalletConfig', () => {
     expect(output.client.type).toEqual(options.client.type);
   });
 
-  it("should be able to export valid Caravan config", () => {
-    const config = new MultisigWalletConfig(options);
+  it("should be able to import and export valid Caravan config", () => {
+    const config = MultisigWalletConfig.fromCaravanConfig(CARAVAN_CONFIG);
     const caravanConfig = config.toCaravanConfig();
     expect(caravanConfig).toBeTruthy();
-    // expect(caravanConfig).toEqual(config.toJSON());
+    const expectedConfig = JSON.parse(CARAVAN_CONFIG);
+    const actualConfig = JSON.parse(caravanConfig);
+    Object.keys(expectedConfig).forEach(key => {
+      expect(actualConfig).toHaveProperty(key);
+      expect(actualConfig[key]).toEqual(expectedConfig[key]);
+    });
   });
 
   it("should be able to add placeholder root fingerprints", () => {

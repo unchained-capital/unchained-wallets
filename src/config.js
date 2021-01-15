@@ -40,12 +40,12 @@ export class MultisigWalletConfig {
    * @param {number} options.requiredSigners - number of required signers, i.e. `m`
    * @param {string} options.addressType - what kind of address (e.g. p2sh, p2wsh)
    * @param {object[]} options.extendedPublicKeys - array of extended pub key objects
+   * @param {string} [options.extendedPublicKeys.name] - name of key
    * @param {string} [options.extendedPublicKeys.xfp] - master fingerprint
    * @param {string} options.extendedPublicKeys.xpub - valid xpub
+   * @param {string} [options.extendedPublicKeys.bip32Path] - bip32path corresponding to xpub
    * @param {number} [options.startingAddressIndex] - an optional positive integer indicating 
    * the starting index to generate/scan for addresses from xpubs
-   * @param {string} [options.extendedPublicKeys.bip32Path] - bip32path corresponding to xpub
-   * @param {string} [options.extendedPublicKeys.name] - name of key
    * @param {string} [options.network='mainnet'] - network corresponding to keys
    * @param {Object} [options.client] - private or public, really only valid for caravan
    * @returns {MultisigWalletConfig} new config instance
@@ -108,7 +108,7 @@ export class MultisigWalletConfig {
 
   /**
    * @description instantiate a new wallet config object from a JSON
-   * @param {string} jsonString - json string to convert.
+   * @param {JSON} jsonString - json string to convert.
    * @returns {MultisigWalletConfig} returns a new instance of a MultisigWalletConfig
    */
   static fromJSON(jsonString) {
@@ -120,21 +120,26 @@ export class MultisigWalletConfig {
     } catch (error) {
       throw new Error("Unable to parse JSON.");
     }
-    
-    // TODO: how do we handle caravan configs where the extended public keys
-    // don't include xfp information? We can get a parent fingerprint 
-    // from the xpub and use that. It wouldn't be valid as an xfp but could be used as stand in? 
+
     return new this(options);
   }
 
   /**
    * @description static method wrapper around getting a new
    * config based on a JSON since Caravan is the assumed format of accepted JSON
-   * @param {string} jsonString - valid config json string from Caravan export
+   * @param {JSON|object} jsonString - valid config json string from Caravan export
+   * supports an object if one is passed in.
    * @returns {MultisigWalletConfig} new instance of a MultisigWalletConfig
    */
   static fromCaravanConfig(jsonString) {
-    return MultisigWalletConfig.fromJSON(jsonString);
+    let options = jsonString;
+    if (typeof jsonString !== 'string' && typeof jsonString !== 'object') {
+      throw new Error('Must pass json or options object');
+    } else if (typeof jsonString === 'string') {
+      options = JSON.parse(jsonString);
+    }
+    options.requiredSigners = options.quorum.requiredSigners;
+    return new this(options);
   }
 
   /**
@@ -202,7 +207,7 @@ export class MultisigWalletConfig {
   /**
    * @description A simple wrapper for returning a json config
    * since the params of the class are valid for caravan.
-   * @returns {object} JSON object required for Caravan wallet
+   * @returns {JSON} JSON string required for Caravan wallet
    */
   toCaravanConfig() {
     const options = {
@@ -221,7 +226,7 @@ export class MultisigWalletConfig {
   }
 
   /**
-   * @returns {string} returns a JSON string with config values
+   * @returns {JSON} returns a JSON string with config values
    */
   toJSON() {
     return JSON.stringify({
