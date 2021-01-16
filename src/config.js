@@ -29,8 +29,6 @@ import { ExtendedPublicKey } from "unchained-bitcoin/lib/keys";
  */
 export class MultisigWalletConfig {
   static supportedNetworks = [MAINNET, TESTNET];
-  
-  static supportedClients = ['public', 'private'];
 
   /**
    * 
@@ -60,7 +58,7 @@ export class MultisigWalletConfig {
     network,
     client,
   }) {
-    assert(uuid || name, 'Name or UUID required to create new MultisigWalletConfig');
+    assert(uuid || name, "Name or UUID required to create new MultisigWalletConfig");
     this.name = uuid || name;
 
     if (network) {
@@ -74,14 +72,10 @@ export class MultisigWalletConfig {
     }
     
     if (client) {
-      assert(
-        MultisigWalletConfig.supportedClients.includes(client.type),
-        `Client type "${client.type}" not supported`
-      );
       this.client = client;
     }
     
-    assert(typeof addressType === 'string', "Wallet config needs addressType.");
+    assert(typeof addressType === "string", "Wallet config needs addressType.");
     this.addressType = addressType;
 
     assert(
@@ -99,8 +93,8 @@ export class MultisigWalletConfig {
     this.requiredSigners = requiredSigners;
 
     if (startingAddressIndex) {
-      if (typeof startingAddressIndex !== 'number') {
-        throw new TypeError('Expected int for startingAddressIndex');
+      if (typeof startingAddressIndex !== "number") {
+        throw new TypeError("Expected int for startingAddressIndex");
       }
       this.startingAddressIndex = startingAddressIndex;
     }
@@ -112,7 +106,7 @@ export class MultisigWalletConfig {
    * @returns {MultisigWalletConfig} returns a new instance of a MultisigWalletConfig
    */
   static fromJSON(jsonString) {
-    if (typeof jsonString !== 'string') throw new TypeError('Must pass a valid JSON string');
+    if (typeof jsonString !== "string") throw new TypeError("Must pass a valid JSON string");
     let options;
 
     try {
@@ -121,24 +115,6 @@ export class MultisigWalletConfig {
       throw new Error("Unable to parse JSON.");
     }
 
-    return new this(options);
-  }
-
-  /**
-   * @description static method wrapper around getting a new
-   * config based on a JSON since Caravan is the assumed format of accepted JSON
-   * @param {JSON|object} jsonString - valid config json string from Caravan export
-   * supports an object if one is passed in.
-   * @returns {MultisigWalletConfig} new instance of a MultisigWalletConfig
-   */
-  static fromCaravanConfig(jsonString) {
-    let options = jsonString;
-    if (typeof jsonString !== 'string' && typeof jsonString !== 'object') {
-      throw new Error('Must pass json or options object');
-    } else if (typeof jsonString === 'string') {
-      options = JSON.parse(jsonString);
-    }
-    options.requiredSigners = options.quorum.requiredSigners;
     return new this(options);
   }
 
@@ -154,18 +130,18 @@ export class MultisigWalletConfig {
     // this is to ensure that a single seed/root isn't used multiple times in the quorum
     const rootFingerprints = [];
     return this.extendedPublicKeys.every(({ xpub, bip32Path, xfp }) => {
-      assert(xpub, 'xpub value required');
+      assert(xpub, "xpub value required");
 
       let xpubError = validateExtendedPublicKeyForNetwork(xpub, this.network);
       assert(!xpubError.length, `Error in Xpub ${xpub}: ${xpubError}`);
 
-      if (bip32Path && bip32Path !== 'Unknown') {
+      if (bip32Path && bip32Path !== "Unknown") {
         const pathError = validateBIP32Path(bip32Path);
         assert(!pathError.length, `Xpub Path Error: ${bip32Path} - ${pathError}`);
       }
       
       if (xfp) {
-        assert(!rootFingerprints.includes(xfp), 'Duplicate root fingerprints not allowed in same config');
+        assert(!rootFingerprints.includes(xfp), "Duplicate root fingerprints not allowed in same config");
         rootFingerprints.push(xfp);
       }
     
@@ -191,7 +167,7 @@ export class MultisigWalletConfig {
   addPlaceholderFingerprints() {
     const hasAtLeastOne = this.extendedPublicKeys.some(xpub => xpub.xfp);
     if (!hasAtLeastOne) {
-      throw new Error('At least one XFP is required to add placeholders to other xpubs');
+      throw new Error("At least one XFP is required to add placeholders to other xpubs");
     }
 
     this.extendedPublicKeys.forEach(xpub => {
@@ -202,27 +178,6 @@ export class MultisigWalletConfig {
         xpub.xfp = String(parentFingerprint).slice(0, 8);
       }
     });
-  }
-
-  /**
-   * @description A simple wrapper for returning a json config
-   * since the params of the class are valid for caravan.
-   * @returns {JSON} JSON string required for Caravan wallet
-   */
-  toCaravanConfig() {
-    const options = {
-      name: this.name,
-      addressType: this.addressType,
-      network: this.network,
-      quorum: {
-        requiredSigners: this.requiredSigners,
-        totalSigners: this.extendedPublicKeys.length,
-      },
-      extendedPublicKeys: this.extendedPublicKeys,
-    };
-    if (this.client) options.client = this.client;
-    if (this.startingAddressIndex) options.startingAddressIndex = this.startingAddressIndex;
-    return JSON.stringify(options);
   }
 
   /**

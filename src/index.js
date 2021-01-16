@@ -27,7 +27,10 @@ import {
   ColdcardExportExtendedPublicKey,
   ColdcardSignMultisigTransaction,
   generateColdcardConfig,
-} from './coldcard';
+} from "./coldcard";
+import {
+  CARAVAN
+} from "./caravan";
 
 /**
  * Current unchained-wallets version.
@@ -72,6 +75,14 @@ export const KEYSTORES = {
   ...INDIRECT_KEYSTORES,
 };
 
+/**
+ * Enumeration of supported coordinators.
+ * 
+ * @type {string[]} 
+ */
+export const COORDINATORS = {
+  CARAVAN,
+};
 
 /**
  * Return an interaction class for obtaining metadata from the given

@@ -4,7 +4,7 @@ import {
   ColdcardSignMultisigTransaction,
   parseColdcardConfig,
   generateColdcardConfig,
-} from './coldcard';
+} from "./coldcard";
 import {
   MAINNET,
   TESTNET,
@@ -16,11 +16,12 @@ import {
   PENDING,
   ACTIVE,
   ERROR,
-} from './interaction';
-import {coldcardFixtures} from './coldcard.fixtures';
-import { MultisigWalletConfig } from './config';
-import { bip32PathToSequence, validateBIP32Path } from 'unchained-bitcoin/lib/paths';
-import { ExtendedPublicKey } from 'unchained-bitcoin/lib/keys';
+} from "./interaction";
+import {coldcardFixtures} from "./fixtures/coldcard";
+import { MultisigWalletConfig } from "./config";
+import { bip32PathToSequence, validateBIP32Path } from "unchained-bitcoin/lib/paths";
+import { ExtendedPublicKey } from "unchained-bitcoin/lib/keys";
+import { JSON_CONFIG_UUID } from "./fixtures/config";
 
 const {multisigs, transactions} = TEST_FIXTURES;
 
@@ -34,9 +35,9 @@ describe("ColdcardExportPublicKey", () => {
     });
   }
 
-  describe('constructor', () => {
+  describe("constructor", () => {
     it("fails with invalid network", () => {
-      expect(() => interactionBuilder({network: 'foo'})).toThrow(/Unknown network/i);
+      expect(() => interactionBuilder({network: "foo"})).toThrow(/Unknown network/i);
     });
     it("unknown chroot unsupported", () => {
       const interaction = interactionBuilder({
@@ -47,7 +48,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.unknown_chroot_error',
+        code: "coldcard.bip32_path.unknown_chroot_error",
       })).toBe(true);
     });
     it("invalid bip32Path unsupported", () => {
@@ -59,7 +60,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.path_error',
+        code: "coldcard.bip32_path.path_error",
       })).toBe(true);
     });
     it("hardened after unhardened unsupported", () => {
@@ -71,7 +72,7 @@ describe("ColdcardExportPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.no_hardened_relative_path_error',
+        code: "coldcard.bip32_path.no_hardened_relative_path_error",
       })).toBe(true);
     });
   });
@@ -96,7 +97,7 @@ describe("ColdcardExportPublicKey", () => {
         bip32Path: "m/45'/0/0",
       });
       const missingXpub = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingXpub, 'p2sh');
+      Reflect.deleteProperty(missingXpub, "p2sh");
       expect(() => interaction.parse(missingXpub)).toThrow(/Missing required params/i);
     });
     it("missing bip32path", () => {
@@ -105,7 +106,7 @@ describe("ColdcardExportPublicKey", () => {
         bip32Path: "m/45'/1/0",
       });
       const missingb32 = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingb32, 'p2sh_deriv');
+      Reflect.deleteProperty(missingb32, "p2sh_deriv");
       expect(() => interaction.parse(missingb32)).toThrow(/Missing required params/i);
     });
     it("xfp in file and computed xfp don't match", () => {
@@ -115,7 +116,7 @@ describe("ColdcardExportPublicKey", () => {
       });
       const reallyMissingXFP = {...coldcardFixtures.validColdcardXpubJSON};
       //set to a valid depth>1 xpub
-      reallyMissingXFP.xfp = '12341234';
+      reallyMissingXFP.xfp = "12341234";
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/Computed fingerprint does not match/i);
     });
     it("missing xfp but passes bc depth is 1", () => {
@@ -125,7 +126,7 @@ describe("ColdcardExportPublicKey", () => {
         bip32Path,
       });
       const missingXFP = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingXFP, 'xfp');
+      Reflect.deleteProperty(missingXFP, "xfp");
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(missingXFP);
       expect(result).toEqual({
@@ -140,7 +141,7 @@ describe("ColdcardExportPublicKey", () => {
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(reallyMissingXFP, 'xfp');
+      Reflect.deleteProperty(reallyMissingXFP, "xfp");
       //set to a valid depth>1 xpub
       reallyMissingXFP.p2sh = nodes["m/45'/0'/0'"].tpub;
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/No xfp/i);
@@ -245,9 +246,9 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
   }
 
-  describe('constructor', () => {
+  describe("constructor", () => {
     it("fails with invalid network", () => {
-      expect(() => interactionBuilder({network: 'foob'})).toThrow(/Unknown network/i);
+      expect(() => interactionBuilder({network: "foob"})).toThrow(/Unknown network/i);
     });
 
     it("unknown chroot unsupported", () => {
@@ -259,7 +260,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.unknown_chroot_error',
+        code: "coldcard.bip32_path.unknown_chroot_error",
       })).toBe(true);
     });
     it("invalid bip32Path unsupported", () => {
@@ -271,7 +272,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.path_error',
+        code: "coldcard.bip32_path.path_error",
       })).toBe(true);
     });
     it("hardened after unhardened unsupported", () => {
@@ -283,7 +284,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       expect(interaction.hasMessagesFor({
         state: PENDING,
         level: ERROR,
-        code: 'coldcard.bip32_path.no_hardened_relative_path_error',
+        code: "coldcard.bip32_path.no_hardened_relative_path_error",
       })).toBe(true);
     });
   });
@@ -307,7 +308,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path: "m/45'/0/0",
       });
       const missingXpub = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingXpub, 'p2sh');
+      Reflect.deleteProperty(missingXpub, "p2sh");
       expect(() => interaction.parse(missingXpub)).toThrow(/Missing required params/i);
     });
     it("missing bip32path", () => {
@@ -316,7 +317,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path: "m/45'/1/0",
       });
       const missingb32 = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingb32, 'p2sh_deriv');
+      Reflect.deleteProperty(missingb32, "p2sh_deriv");
       expect(() => interaction.parse(missingb32)).toThrow(/Missing required params/i);
     });
     it("xfp in file and computed xfp don't match", () => {
@@ -326,7 +327,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       });
       const reallyMissingXFP = {...coldcardFixtures.validColdcardXpubJSON};
       //set to a valid depth>1 xpub
-      reallyMissingXFP.xfp = '12341234';
+      reallyMissingXFP.xfp = "12341234";
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/Computed fingerprint does not match/i);
     });
     it("missing xfp but passes", () => {
@@ -336,7 +337,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path,
       });
       const missingXFP = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(missingXFP, 'xfp');
+      Reflect.deleteProperty(missingXFP, "xfp");
       expect(interaction.isSupported()).toEqual(true);
       const result = interaction.parse(missingXFP);
       expect(result).toEqual({
@@ -351,9 +352,9 @@ describe("ColdcardExportExtendedPublicKey", () => {
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = {...coldcardFixtures.validColdcardXpubJSON};
-      Reflect.deleteProperty(reallyMissingXFP, 'xfp');
+      Reflect.deleteProperty(reallyMissingXFP, "xfp");
       //set to a valid depth>1 xpub
-      reallyMissingXFP.p2sh = 'tpubDD7afgqjwFtnyu3YuReivwoGuJNyXNjFw5y9m4QDchpGzjgGuWhQUbBXafi73zqoUos7rCgLS24ebaj3d94UhuJQJfBUCN6FHB7bmp79J2J';
+      reallyMissingXFP.p2sh = "tpubDD7afgqjwFtnyu3YuReivwoGuJNyXNjFw5y9m4QDchpGzjgGuWhQUbBXafi73zqoUos7rCgLS24ebaj3d94UhuJQJfBUCN6FHB7bmp79J2J";
       expect(() => interaction.parse(reallyMissingXFP)).toThrow(/No xfp/i);
     });
 
@@ -558,19 +559,19 @@ describe("ColdcardSignMultisigTransaction", () => {
 describe("config", () => {
   let options;
   beforeEach(() => {
-    options = JSON.parse(JSON.stringify(coldcardFixtures.jsonConfigUUID));
+    options = JSON.parse(JSON.stringify(JSON_CONFIG_UUID));
   });
 
   describe("parseColdcardConfig", () => {
     it("should be able to instantiate MultisigWalletConfig from a coldcard config", () => {
-      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigName);
+      const config = parseColdcardConfig(coldcardFixtures.coldcardConfigUUID);
       const expectedKeys = options.extendedPublicKeys;
 
       expect(config.network).toEqual(options.network);
       config.extendedPublicKeys.forEach((key) => {
-        expect(key).toHaveProperty('xfp');
-        expect(key).toHaveProperty('xpub');
-        expect(key).toHaveProperty('bip32Path');
+        expect(key).toHaveProperty("xfp");
+        expect(key).toHaveProperty("xpub");
+        expect(key).toHaveProperty("bip32Path");
 
         // config's xpub array should have the right xfp and xpub 
         const keyIndex = expectedKeys.findIndex(
@@ -589,7 +590,7 @@ describe("config", () => {
       const config = parseColdcardConfig(coldcardFixtures.coldcardConfigSameDerivation);
       let derivation;
       config.extendedPublicKeys.forEach((key) => {
-        expect(key).toHaveProperty('bip32Path');
+        expect(key).toHaveProperty("bip32Path");
         if (derivation) {
           expect(key.bip32Path).toMatch(derivation);
         } else {
@@ -598,16 +599,16 @@ describe("config", () => {
       });
     });
 
-    it('should support flexible formatting for policy', () => {
+    it("should support flexible formatting for policy", () => {
       const requiredSigners = 2;
       const totalSigners = 3;
-      const policies = ['2 3', '2,3', '2 and 3', '2/3', '2 of 3'];
+      const policies = ["2 3", "2,3", "2 and 3", "2/3", "2 of 3"];
       policies.forEach(policy => {
         // replace the policy line with one with a different format
-        const coldcardConfig = coldcardFixtures.coldcardConfigName.split('\n').map(line => { 
+        const coldcardConfig = coldcardFixtures.coldcardConfigUUID.split("\n").map(line => { 
           if (line.match(/Policy/i)) return `Policy: ${policy}`; 
           else return line;
-        }).join('\n');
+        }).join("\n");
         
         const config = parseColdcardConfig(coldcardConfig);
         expect(config.requiredSigners).toEqual(requiredSigners);
@@ -615,11 +616,11 @@ describe("config", () => {
       });
     });
 
-    it('should throw if policy is in an unrecognized format', () => {
-        const coldcardConfig = coldcardFixtures.coldcardConfigName.split('\n').map(line => { 
-          if (line.match(/Policy/i)) return `Policy: ${'foobar'}`; 
+    it("should throw if policy is in an unrecognized format", () => {
+        const coldcardConfig = coldcardFixtures.coldcardConfigUUID.split("\n").map(line => { 
+          if (line.match(/Policy/i)) return `Policy: ${"foobar"}`; 
           else return line;
-        }).join('\n');
+        }).join("\n");
         expect(() => parseColdcardConfig(coldcardConfig)).toThrow(/unrecognized format/i);
     });
   });
@@ -628,14 +629,14 @@ describe("config", () => {
   describe("generateColdcardConfig", () => {
     it("should be able to export valid Coldcard config", () => {
       let output = generateColdcardConfig(options);
-      
+ 
       // test with uuid as name
-      expect(output).toMatch(coldcardFixtures.coldcardConfigUUID);
+      expect(output).toEqual(coldcardFixtures.coldcardConfigUUID);
       
       // test with name as fallback for missing uuid
       Reflect.deleteProperty(options, "uuid");
       output = generateColdcardConfig(options);
-      expect(output).toMatch(coldcardFixtures.coldcardConfigName);
+      expect(output).toEqual(coldcardFixtures.coldcardConfigName);
     });
     
     it("should be able to generate the same from a MultisigWalletConfig or object", () => {
@@ -644,7 +645,7 @@ describe("config", () => {
       expect(fromOptions).toEqual(config);
     });
 
-    it('should correctly mask derivation when bip32Path is unknown', () => {
+    it("should correctly mask derivation when bip32Path is unknown", () => {
       const xpubWithUnknownPath = options.extendedPublicKeys.find(
         ({ bip32Path }) => bip32Path && bip32Path.match(/unknown/i)
       );
@@ -656,7 +657,7 @@ describe("config", () => {
       const xpubWithMaskedPath = config.extendedPublicKeys.find(({ xpub }) => xpub === xpubWithUnknownPath.xpub);
       
       const xpub = config.extendedPublicKeys.find((key) => key.xpub === xpubWithMaskedPath.xpub);
-      expect(xpub).toHaveProperty('bip32Path');
+      expect(xpub).toHaveProperty("bip32Path");
       
       // check is valid bip32Path
       const pathError = validateBIP32Path(xpub.bip32Path);
@@ -667,12 +668,12 @@ describe("config", () => {
     });
 
     it("should add placeholder fingerprints if any xpubs are missing one", () => {
-      Reflect.deleteProperty(options.extendedPublicKeys[0], 'xfp');
+      Reflect.deleteProperty(options.extendedPublicKeys[0], "xfp");
       generateColdcardConfig(options);
     });
 
     it("should fail if all xpubs are missing fingerprints", () => {
-      options.extendedPublicKeys.forEach(key => Reflect.deleteProperty(key, 'xfp'));
+      options.extendedPublicKeys.forEach(key => Reflect.deleteProperty(key, "xfp"));
       expect(() => generateColdcardConfig(options)).toThrow(/at least one xfp is required/i);
     });
   });

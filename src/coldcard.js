@@ -8,7 +8,7 @@
  * * ColdcardSignMultisigTransaction
  * * ColdcardMultisigWalletConfig
  * 
- * The following API functions are implemented:
+ * The following API methods are implemented:
  * 
  * * generateColdcardConfig
  * * parseColdcardConfig
@@ -41,7 +41,7 @@ import {
   P2SH,
   P2SH_P2WSH,
   P2WSH,
-} from 'unchained-bitcoin';
+} from "unchained-bitcoin";
 import assert from "assert";
 import { bip32PathToSequence } from "unchained-bitcoin/lib/paths";
 
@@ -456,43 +456,43 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
       state: PENDING,
       level: INFO,
       code: "coldcard.install_multisig_config",
-      text: `Ensure your Coldcard has the multisig wallet installed.`,
+      text: "Ensure your Coldcard has the multisig wallet installed.",
     });
     messages.push({
       state: PENDING,
       level: INFO,
       code: "coldcard.download_psbt",
-      text: `Download and save this PSBT file to your SD card.`,
+      text: "Download and save this PSBT file to your SD card.",
     });
     messages.push({
       state: PENDING,
       level: INFO,
       code: "coldcard.transfer_psbt",
-      text: `Transfer the PSBT file to your Coldcard.`,
+      text: "Transfer the PSBT file to your Coldcard.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.transfer_psbt",
-      text: `Transfer the PSBT file to your Coldcard.`,
+      text: "Transfer the PSBT file to your Coldcard.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.select_psbt",
-      text: `Choose 'Ready To Sign' and select the PSBT.`,
+      text: "Choose 'Ready To Sign' and select the PSBT.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.sign_psbt",
-      text: `Verify the transaction details and sign.`,
+      text: "Verify the transaction details and sign.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.upload_signed_psbt",
-      text: `Upload the signed PSBT below.`,
+      text: "Upload the signed PSBT below.",
     });
     return messages;
   }
@@ -542,7 +542,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
  * @returns {string} - bip32Path string masked if is unknown
  */
 function getDerivation(xpub) {
-  assert(xpub.xpub && xpub.bip32Path, 'xpub object missing properties');
+  assert(xpub.xpub && xpub.bip32Path, "xpub object missing properties");
   const unknownBip32 = xpub.bip32Path.toLowerCase().includes("unknown");
   const derivation = unknownBip32
     ? `m${"/0".repeat(ExtendedPublicKey.fromBase58(xpub.xpub).depth)}` : xpub.bip32Path;
@@ -563,7 +563,7 @@ function validatePathForXpub(xpub, path) {
   const pathError = validateBIP32Path(path);
   assert(!pathError, pathError);
   const depth = ExtendedPublicKey.fromBase58(xpub).depth;
-  assert(depth === bip32PathToSequence(path).length, 'Path depth should match xpub depth');
+  assert(depth === bip32PathToSequence(path).length, "Path depth should match xpub depth");
 }
 
 /**
@@ -590,7 +590,7 @@ function validatePathForXpub(xpub, path) {
    * 4369050F: tpubD8NXmKsmWp3a3DXhbihAYbY...9C8n
    * 
    * @param {string} configString valid coldcard config string
-   * @returns {MultisigWalletConfig} new instance of MultisigWalletConfig
+   * @returns {module:config.MultisigWalletConfig} new instance of MultisigWalletConfig
    * @example
    * import { parseColdcardConfig } from "unchained-wallets";
    * 
@@ -627,7 +627,7 @@ function validatePathForXpub(xpub, path) {
    * }
    */
 export function parseColdcardConfig(configString) {
-    if (typeof configString !== 'string') {
+    if (typeof configString !== "string") {
       throw new TypeError(
         `ColdCard config must be a string, instead received ${typeof configString}`
       );
@@ -637,11 +637,11 @@ export function parseColdcardConfig(configString) {
     // split the text by line
     const lines = 
       configString
-        .split('\n')
+        .split("\n")
         // formatting
         .map(line => line.trim())
         // ignore comments
-        .filter(line => line[0] !== '#' && line.length);
+        .filter(line => line[0] !== "#" && line.length);
 
     // can have either one derivation that all xpubs share
     // or unique one per xpub. Either way they are on their own line
@@ -651,30 +651,30 @@ export function parseColdcardConfig(configString) {
     // for each line separate key and values by colon
     lines.forEach(line => {
       // trim white space and set to lowercase
-      const [key, value] = line.split(':').map(str => str.trim());
+      const [key, value] = line.split(":").map(str => str.trim());
       // handle recognized keys (name, format, derivation, and policy)
       switch (key.toLowerCase()) {
-        case 'name':
+        case "name":
           options.name = value;
           break;
         
-        case 'format':
+        case "format":
           options.addressType = value.toUpperCase();
           break;
 
-        case 'derivation': {
+        case "derivation": {
           const pathError = validateBIP32Path(value);
           assert(!pathError.length, pathError);
           derivations.push(value);
           break;
         }
 
-        case 'policy': {
-          assert(value.match(/(\d+)\D*(\d+)/g), 'Policy in an unrecognized format');
+        case "policy": {
+          assert(value.match(/(\d+)\D*(\d+)/g), "Policy in an unrecognized format");
           let [m, n] = value.match(/(\d+)/g);
           m = Number(m);
           // confirm we have valid numbers for m and n
-          assert(!isNaN(m) && !isNaN(n), 'Invalid policy in coldcard config');
+          assert(!isNaN(m) && !isNaN(n), "Invalid policy in coldcard config");
           options.requiredSigners = m;
           break;
         }
@@ -694,7 +694,7 @@ export function parseColdcardConfig(configString) {
             const network = getNetworkFromPrefix(prefix);
 
             if (options.network) {
-              assert(network === options.network, 'Extended public key networks from config do not match.');
+              assert(network === options.network, "Extended public key networks from config do not match.");
             }
             options.network = network;
 
@@ -750,7 +750,7 @@ export function generateColdcardConfig(_config) {
   let config = _config;
   // make sure we have a valid config object or can create one from the argument
   if (!(config instanceof MultisigWalletConfig)) {
-    assert(typeof config === 'object', 'Must pass an object or MultisigWalletConfig to generate Coldcard config');
+    assert(typeof config === "object", "Must pass an object or MultisigWalletConfig to generate Coldcard config");
     config = new MultisigWalletConfig(_config);
   }
     // add placeholder xfps for any keys that are missing them

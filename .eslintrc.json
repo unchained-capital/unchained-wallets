@@ -248,7 +248,7 @@
         "prefer-spread": "error",
         "prefer-template": "error",
         "quote-props": "off",
-        "quotes": "off",
+        "quotes": ["error", "double"],
         "radix": "error",
         "require-atomic-updates": "error",
         "require-await": "off",

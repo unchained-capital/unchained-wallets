@@ -1,8 +1,7 @@
-import { MultisigWalletConfig } from './config';
-import {coldcardFixtures} from './coldcard.fixtures';
-import {CARAVAN_CONFIG} from './config.fixtures';
+import { MultisigWalletConfig } from "./config";
+import { JSON_CONFIG_UUID } from "./fixtures/config";
 
-describe('MultisigWalletConfig', () => {
+describe("MultisigWalletConfig", () => {
   let jsonConfig, options;
   function configBuilderFromJson(json) {
     return MultisigWalletConfig.fromJSON(json);
@@ -18,11 +17,11 @@ describe('MultisigWalletConfig', () => {
   
   beforeEach(() => {
     // runs before each test in this block
-    options = JSON.parse(JSON.stringify(coldcardFixtures.jsonConfigUUID));
-    jsonConfig = JSON.stringify(coldcardFixtures.jsonConfigUUID);
+    options = JSON.parse(JSON.stringify(JSON_CONFIG_UUID));
+    jsonConfig = JSON.stringify(JSON_CONFIG_UUID);
   });
   
-  it('should be able to instantiate from json', () => {
+  it("should be able to instantiate from json", () => {
     const config = MultisigWalletConfig.fromJSON(jsonConfig);
 
     expect(config.name).toEqual(options.uuid);
@@ -35,10 +34,10 @@ describe('MultisigWalletConfig', () => {
     expect(config.extendedPublicKeys.length).toEqual(options.extendedPublicKeys.length);
   });
    
-  it('should throw with invalid json', () => {
+  it("should throw with invalid json", () => {
     const notJSON = "test";
     const definitelyNotJSON = 77;
-    const jsonConfigBad = { 'test': 0 };
+    const jsonConfigBad = { "test": 0 };
 
     expect(() => configBuilderFromJson(notJSON).toThrow(/Unable to parse JSON/i));
     expect(() => configBuilderFromJson(definitelyNotJSON).toThrow(/Not valid JSON/i));
@@ -49,11 +48,6 @@ describe('MultisigWalletConfig', () => {
   it("throws for config without extendedPublicKeys", () => {
     Reflect.deleteProperty(options, "extendedPublicKeys");
     expect(() => configBuilder(options)).toThrow("Wallet config needs array of extendedPublicKeys.");
-  });
-
-  it("throws for a config without a supported client type", () => {
-    options.client = {type: 'fake-node'};
-    expect(() => configBuilder(options)).toThrow("not supported");
   });
 
   it("throws with missing xfp if required", () => {
@@ -113,20 +107,8 @@ describe('MultisigWalletConfig', () => {
     expect(output.client.type).toEqual(options.client.type);
   });
 
-  it("should be able to import and export valid Caravan config", () => {
-    const config = MultisigWalletConfig.fromCaravanConfig(CARAVAN_CONFIG);
-    const caravanConfig = config.toCaravanConfig();
-    expect(caravanConfig).toBeTruthy();
-    const expectedConfig = JSON.parse(CARAVAN_CONFIG);
-    const actualConfig = JSON.parse(caravanConfig);
-    Object.keys(expectedConfig).forEach(key => {
-      expect(actualConfig).toHaveProperty(key);
-      expect(actualConfig[key]).toEqual(expectedConfig[key]);
-    });
-  });
-
   it("should be able to add placeholder root fingerprints", () => {
-    Reflect.deleteProperty(options.extendedPublicKeys[0], 'xfp');
+    Reflect.deleteProperty(options.extendedPublicKeys[0], "xfp");
     let config = new MultisigWalletConfig(options);
     // verify a root fingerprint is missing
     let isMissingOneXfp = config.extendedPublicKeys.some(xpub => !xpub.xfp);
@@ -139,7 +121,7 @@ describe('MultisigWalletConfig', () => {
 
     // confirm it fails if all xpubs are missing xfp
     options.extendedPublicKeys.forEach(key => {
-      if (key.xfp) Reflect.deleteProperty(key, 'xfp');
+      if (key.xfp) Reflect.deleteProperty(key, "xfp");
     });
 
     config = new MultisigWalletConfig(options);

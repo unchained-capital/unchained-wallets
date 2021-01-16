@@ -7,6 +7,7 @@ export const CARAVAN_CONFIG = JSON.stringify({
       totalSigners: 3,
     },
     startingAddressIndex: 5,
+    client: { type: "public" },
     extendedPublicKeys: [
       {
         name: "unchained",
