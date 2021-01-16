@@ -16,6 +16,8 @@
   "devDependencies": {
     "@babel/cli": "^7.7.0",
     "@babel/core": "^7.7.2",
+    "@babel/eslint-parser": "^7.12.1",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
     "@babel/preset-env": "^7.7.1",
     "babel-plugin-transform-inline-environment-variables": "^0.4.3",
     "eslint": "^6.6.0",
@@ -34,7 +36,7 @@
     "prepublish": "npm run compile",
     "pretest": "npm run compile",
     "prepare": "npm run compile",
-    "test": "jest lib",
+    "test": "jest src",
     "docs": "./bin/build-docs.sh",
     "lint": "eslint src"
   },
@@ -60,7 +62,8 @@
   },
   "babel": {
     "plugins": [
-      "transform-inline-environment-variables"
+      "transform-inline-environment-variables",
+      "@babel/plugin-proposal-class-properties"
     ],
     "presets": [
       [

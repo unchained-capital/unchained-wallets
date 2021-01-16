@@ -26,8 +26,11 @@ import {
   ColdcardExportPublicKey,
   ColdcardExportExtendedPublicKey,
   ColdcardSignMultisigTransaction,
-  ColdcardMultisigWalletConfig,
-} from './coldcard';
+  generateColdcardConfig,
+} from "./coldcard";
+import {
+  CARAVAN
+} from "./caravan";
 
 /**
  * Current unchained-wallets version.
@@ -72,6 +75,14 @@ export const KEYSTORES = {
   ...INDIRECT_KEYSTORES,
 };
 
+/**
+ * Enumeration of supported coordinators.
+ * 
+ * @type {string[]} 
+ */
+export const COORDINATORS = {
+  CARAVAN,
+};
 
 /**
  * Return an interaction class for obtaining metadata from the given
@@ -394,9 +405,7 @@ export function ConfirmMultisigAddress({keystore, network, bip32Path, multisig, 
 export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
   switch (KEYSTORE) {
     case COLDCARD:
-      return new ColdcardMultisigWalletConfig({
-        jsonConfig
-      });
+      return generateColdcardConfig(jsonConfig);
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -410,3 +419,4 @@ export * from "./trezor";
 export * from "./ledger";
 export * from "./hermit";
 export * from "./coldcard";
+export * from "./config";

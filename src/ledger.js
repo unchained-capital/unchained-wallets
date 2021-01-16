@@ -231,10 +231,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * The way the pubkey/xpub/fingerprints are grabbed makes this a little tricky.
    * Instead of re-writing how that works, let's just add a way to explicitly
    * close the transport.
-   * @return {Promise}
+   * @return {Promise} void return that closes the device transport
    */
   closeTransport() {
-    return this.withTransport( (transport) => {
+    return this.withTransport((transport) => {
       transport.close();
     })
   }

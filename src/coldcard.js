@@ -1,5 +1,5 @@
 /**
- * Provides classes for interacting with a Coldcard via TXT/JSON/PSBT files
+ * Provides classes and methods for interacting with a Coldcard via TXT/JSON/PSBT files
  *
  * The following API classes are implemented:
  *
@@ -7,6 +7,11 @@
  * * ColdcardExportExtendedPublicKey
  * * ColdcardSignMultisigTransaction
  * * ColdcardMultisigWalletConfig
+ * 
+ * The following API methods are implemented:
+ * 
+ * * generateColdcardConfig
+ * * parseColdcardConfig
  *
  * @module coldcard
  */
@@ -21,7 +26,10 @@ import {
   validateBIP32Path,
   getRelativeBIP32Path,
   convertExtendedPublicKey,
+  getNetworkFromPrefix,
+  validateRootFingerprint
 } from "unchained-bitcoin";
+import { MultisigWalletConfig } from "./config";
 import {
   IndirectKeystoreInteraction,
   PENDING,
@@ -29,7 +37,13 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
-import { P2SH, P2SH_P2WSH, P2WSH } from "unchained-bitcoin";
+import {
+  P2SH,
+  P2SH_P2WSH,
+  P2WSH,
+} from "unchained-bitcoin";
+import assert from "assert";
+import { bip32PathToSequence } from "unchained-bitcoin/lib/paths";
 
 export const COLDCARD = "coldcard";
 // Our constants use 'P2SH-P2WSH', their file uses 'P2SH_P2WSH' :\
@@ -58,6 +72,7 @@ export class ColdcardInteraction extends IndirectKeystoreInteraction {}
  * @extends {module:coldcard.ColdcardInteraction}
  */
 class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
+
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
@@ -310,6 +325,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
  * // "m/45'/0/0"
  */
 export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser {
+
   /**
    *
    * @param {object} options - options argument
@@ -357,6 +373,7 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
  * // "m/45'/0/0"
  */
 export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFileParser {
+
   /**
    *
    * @param {object} options - options argument
@@ -403,6 +420,7 @@ export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFil
  *
  */
 export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
+
   /**
    *
    * @param {object} options - options argument
@@ -438,43 +456,43 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
       state: PENDING,
       level: INFO,
       code: "coldcard.install_multisig_config",
-      text: `Ensure your Coldcard has the multisig wallet installed.`,
+      text: "Ensure your Coldcard has the multisig wallet installed.",
     });
     messages.push({
       state: PENDING,
       level: INFO,
       code: "coldcard.download_psbt",
-      text: `Download and save this PSBT file to your SD card.`,
+      text: "Download and save this PSBT file to your SD card.",
     });
     messages.push({
       state: PENDING,
       level: INFO,
       code: "coldcard.transfer_psbt",
-      text: `Transfer the PSBT file to your Coldcard.`,
+      text: "Transfer the PSBT file to your Coldcard.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.transfer_psbt",
-      text: `Transfer the PSBT file to your Coldcard.`,
+      text: "Transfer the PSBT file to your Coldcard.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.select_psbt",
-      text: `Choose 'Ready To Sign' and select the PSBT.`,
+      text: "Choose 'Ready To Sign' and select the PSBT.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.sign_psbt",
-      text: `Verify the transaction details and sign.`,
+      text: "Verify the transaction details and sign.",
     });
     messages.push({
       state: ACTIVE,
       level: INFO,
       code: "coldcard.upload_signed_psbt",
-      text: `Upload the signed PSBT below.`,
+      text: "Upload the signed PSBT below.",
     });
     return messages;
   }
@@ -516,119 +534,245 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
 }
 
 /**
- * Returns a valid multisig wallet config text file to send over to a Coldcard
- *
- * NOTE: technically only the root xfp of the signing device is required to be
- * correct, but we recommend only setting up the multisig wallet on the Coldcard
- * with complete xfp information. Here we actually turn this recommendation into a
- * requirement so as to minimize the number of wallet-config installations.
- *
- * This will likely move to its own generic class soon, and we'll only leave
- * the specifics of `adapt()` behind.
- *
- * This is an example Coldcard config file from
- * https://coldcardwallet.com/docs/multisig
- *
- * # Coldcard Multisig setup file (exported from 4369050F)
- * #
- * Name: MeMyself
- * Policy: 2 of 4
- * Derivation: m/45'
- * Format: P2WSH
- *
- * D0CFA66B: tpubD9429UXFGCTKJ9NdiNK4rC5...DdP9
- * 8E697B74: tpubD97nVL37v5tWyMf9ofh5rzn...XgSc
- * BE26B07B: tpubD9ArfXowvGHnuECKdGXVKDM...FxPa
- * 4369050F: tpubD8NXmKsmWp3a3DXhbihAYbY...9C8n
- *
+ * Gets and validates the derivation path from an xpub and masks
+ * with "fake" value if set to uknown
+ * @param {object} xpub - xpub object
+ * @param {string} xpub.xpub - Base58 encoded xpub
+ * @param {string} xpub.bip32Path - string representing the path 
+ * @returns {string} - bip32Path string masked if is unknown
  */
-export class ColdcardMultisigWalletConfig {
-  constructor({ jsonConfig }) {
-    if (typeof jsonConfig === "object") {
-      this.jsonConfig = jsonConfig;
-    } else if (typeof jsonConfig === "string") {
-      try {
-        this.jsonConfig = JSON.parse(jsonConfig);
-      } catch (error) {
-        throw new Error("Unable to parse JSON.");
-      }
-    } else {
-      throw new Error("Not valid JSON.");
-    }
+function getDerivation(xpub) {
+  assert(xpub.xpub && xpub.bip32Path, "xpub object missing properties");
+  const unknownBip32 = xpub.bip32Path.toLowerCase().includes("unknown");
+  const derivation = unknownBip32
+    ? `m${"/0".repeat(ExtendedPublicKey.fromBase58(xpub.xpub).depth)}` : xpub.bip32Path;
+  
+  const pathError = validateBIP32Path(derivation);
+  if (pathError) throw new Error(pathError);
+  return derivation;
+}
 
-    if (this.jsonConfig.uuid || this.jsonConfig.name) {
-      this.name = this.jsonConfig.uuid || this.jsonConfig.name;
-    } else {
-      throw new Error("Configuration file needs a UUID or a name.");
-    }
+/**
+ * @description validate that a path meets minimum requirements to be paired 
+ * with a given xpub
+ * @param {string} xpub - base58 encoded xpub
+ * @param {string} path - path to validate against xpub with
+ * @returns {void} - throws an error if not valid
+ */
+function validatePathForXpub(xpub, path) {
+  const pathError = validateBIP32Path(path);
+  assert(!pathError, pathError);
+  const depth = ExtendedPublicKey.fromBase58(xpub).depth;
+  assert(depth === bip32PathToSequence(path).length, "Path depth should match xpub depth");
+}
 
-    if (
-      this.jsonConfig.quorum.requiredSigners &&
-      this.jsonConfig.quorum.totalSigners
-    ) {
-      this.requiredSigners = this.jsonConfig.quorum.requiredSigners;
-      this.totalSigners = this.jsonConfig.quorum.totalSigners;
-    } else {
-      throw new Error(
-        "Configuration file needs quorum.requiredSigners and quorum.totalSigners."
+/**
+   * @description Takes a coldcard config string and creates
+   * a new instance of a MultisigWalletConfig.
+   * 
+   * NOTE for ColdCard: only the root xfp of the signing device is required to be correct, but we
+   * recommend only setting up the multisig wallet on the Coldcard with complete xfp
+   * information.
+   * 
+   * This is an example Coldcard config file from
+   * https://coldcardwallet.com/docs/multisig
+   * 
+   * # Coldcard Multisig setup file (exported from 4369050F)
+   * #
+   * Name: MeMyself
+   * Policy: 2 of 4
+   * Derivation: m/45'
+   * Format: P2WSH
+   * 
+   * D0CFA66B: tpubD9429UXFGCTKJ9NdiNK4rC5...DdP9
+   * 8E697B74: tpubD97nVL37v5tWyMf9ofh5rzn...XgSc
+   * BE26B07B: tpubD9ArfXowvGHnuECKdGXVKDM...FxPa
+   * 4369050F: tpubD8NXmKsmWp3a3DXhbihAYbY...9C8n
+   * 
+   * @param {string} configString valid coldcard config string
+   * @returns {module:config.MultisigWalletConfig} new instance of MultisigWalletConfig
+   * @example
+   * import { parseColdcardConfig } from "unchained-wallets";
+   * 
+   * const config = MultisigWalletConfig.fromColdCardConfig(ccFileData);
+   * console.log(JSON.parse(config.toJSON()))
+   * 
+   * {
+   *    name: MeMyself,
+   *    requiredSigners: 2
+   *    addressType: 'P2WSH',
+   *    network: 'testnet',
+   *    extendedPublicKeys: [
+   *      {
+   *        xfp: 'D0CFA66B',
+   *        xpub: 'tpubD9429UXFGCTKJ9NdiNK4rC5...DdP9',
+   *        bip32Path: 'm/45\''
+   *      },
+   *      {
+   *        xfp: '8E697B74',
+   *        xpub: 'tpubD97nVL37v5tWyMf9ofh5rzn...XgSc',
+   *        bip32Path: 'm/45\''
+   *      },
+   *      {
+   *        xfp: 'BE26B07B',
+   *        xpub: 'tpubD9ArfXowvGHnuECKdGXVKDM...FxPa',
+   *        bip32Path: 'm/45\''
+   *      },
+   *      {
+   *        xfp: '4369050F',
+   *        xpub: 'tpubD8NXmKsmWp3a3DXhbihAYbY...9C8n',
+   *        bip32Path: 'm/45\''
+   *      }
+   *    ]
+   * }
+   */
+export function parseColdcardConfig(configString) {
+    if (typeof configString !== "string") {
+      throw new TypeError(
+        `ColdCard config must be a string, instead received ${typeof configString}`
       );
     }
+    
+    const options = {};
+    // split the text by line
+    const lines = 
+      configString
+        .split("\n")
+        // formatting
+        .map(line => line.trim())
+        // ignore comments
+        .filter(line => line[0] !== "#" && line.length);
 
-    if (this.jsonConfig.addressType) {
-      this.addressType = jsonConfig.addressType;
-    } else {
-      throw new Error("Configuration file needs addressType.");
-    }
+    // can have either one derivation that all xpubs share
+    // or unique one per xpub. Either way they are on their own line
+    // and so need to be paired in the options appropriately
+    const derivations = [];
 
-    if (
-      this.jsonConfig.extendedPublicKeys &&
-      this.jsonConfig.extendedPublicKeys.every((xpub) => {
-        // For each xpub, check that xfp exists, the length is 8, type is string, and valid hex
-        if (!xpub.xfp || xpub.xfp === "Unknown") {
-          throw new Error("ExtendedPublicKeys missing at least one xfp.");
+    // for each line separate key and values by colon
+    lines.forEach(line => {
+      // trim white space and set to lowercase
+      const [key, value] = line.split(":").map(str => str.trim());
+      // handle recognized keys (name, format, derivation, and policy)
+      switch (key.toLowerCase()) {
+        case "name":
+          options.name = value;
+          break;
+        
+        case "format":
+          options.addressType = value.toUpperCase();
+          break;
+
+        case "derivation": {
+          const pathError = validateBIP32Path(value);
+          assert(!pathError.length, pathError);
+          derivations.push(value);
+          break;
         }
-        if (typeof xpub.xfp !== "string") {
-          throw new Error("XFP not a string");
+
+        case "policy": {
+          assert(value.match(/(\d+)\D*(\d+)/g), "Policy in an unrecognized format");
+          let [m, n] = value.match(/(\d+)/g);
+          m = Number(m);
+          // confirm we have valid numbers for m and n
+          assert(!isNaN(m) && !isNaN(n), "Invalid policy in coldcard config");
+          options.requiredSigners = m;
+          break;
         }
-        if (xpub.xfp.length !== 8) {
-          throw new Error("XFP not length 8");
+
+        default: {
+          // handle possible xfp: xpub pairs from config
+          try {
+            // will throw if not valid base58 
+            ExtendedPublicKey.fromBase58(value);
+            
+            // check if the key is a valid fingerprint
+            validateRootFingerprint(key);
+
+            // get the network from xpub prefix
+            const prefix = value.slice(0, 4);
+            
+            const network = getNetworkFromPrefix(prefix);
+
+            if (options.network) {
+              assert(network === options.network, "Extended public key networks from config do not match.");
+            }
+            options.network = network;
+
+            if (!options.extendedPublicKeys) {
+              options.extendedPublicKeys = [];
+            }
+            options.extendedPublicKeys.push({
+              xfp: key,
+              xpub: value,
+            });
+          } catch(e) {
+            // TODO: Should we handle this error or 
+            // allow for unknown keys/values? Don't know if this is an incorrect xpub
+            // or some unrecognized key;
+            break;
+          }
+          break;
         }
-        if (isNaN(Number(`0x${xpub.xfp}`))) {
-          throw new Error("XFP is invalid hex");
-        }
-        return true;
-      })
-    ) {
-      this.extendedPublicKeys = this.jsonConfig.extendedPublicKeys;
+      }
+    });
+    
+    // if only one derivation then assume they are all the same and add it to 
+    // each xpub
+    if (derivations.length === 1) {
+      options.extendedPublicKeys.forEach(key => {
+        validatePathForXpub(key.xpub, derivations[0]);
+        key.bip32Path = derivations[0];
+      });
     } else {
-      throw new Error("Configuration file needs extendedPublicKeys.");
+      // otherwise make sure there are the same number of derivations as keys
+      assert.strictEqual(
+        derivations.length, 
+        options.extendedPublicKeys.length,
+        "Expected to have the same number of derivation paths as keys"
+      );
+
+      options.extendedPublicKeys.forEach(key => {
+        const path = derivations.shift();
+        validatePathForXpub(key.xpub, path);
+        key.bip32Path = path;
+      });
     }
+    return new MultisigWalletConfig(options);
+}
+
+/**
+ * @description returns a config in a ColdCard compatible format
+ * @param {object|module:config.MultisigWalletConfig} _config - config instance
+ * or options object for creating a valid config to generate coldcard file fro
+ * @returns {string} output - config as a string compatible with coldcard
+ */
+export function generateColdcardConfig(_config) {
+  let config = _config;
+  // make sure we have a valid config object or can create one from the argument
+  if (!(config instanceof MultisigWalletConfig)) {
+    assert(typeof config === "object", "Must pass an object or MultisigWalletConfig to generate Coldcard config");
+    config = new MultisigWalletConfig(_config);
   }
+    // add placeholder xfps for any keys that are missing them
+    // this will fail if ALL of them are missing fingerprints
+    config.addPlaceholderFingerprints();
 
-  /**
-   * @returns {string} output to be written to a text file and uploaded to Coldcard.
-   */
-  adapt() {
+    // verify extended public keys and their fingerprints
+    config.validateExtendedPublicKeys(true);
+    
+    // Coldcard configs can't have spaces in the names, it just splits on space and takes the first word.
+    // Currently operating without derivation paths per xpub until feature is added.
     let output = `# Coldcard Multisig setup file (exported from unchained-wallets)
 # https://github.com/unchained-capital/unchained-wallets
 # v${COLDCARD_WALLET_CONFIG_VERSION}
 # 
-Name: ${this.name}
-Policy: ${this.requiredSigners} of ${this.totalSigners}
-Format: ${this.addressType}
-
+Name: ${config.name}
+Policy: ${config.requiredSigners} of ${config.extendedPublicKeys.length}
+Format: ${config.addressType}
 `;
-    // We need to loop over xpubs and output `Derivation: bip32path` and `xfp: xpub` for each
-    let xpubs = this.extendedPublicKeys.map((xpub) => {
-      // Mask the derivation to the appropriate depth if it is not known
-      const unknownBip32 = xpub.bip32Path.toLowerCase().includes("unknown");
-      const derivation = unknownBip32
-        ? `m${"/0".repeat(ExtendedPublicKey.fromBase58(xpub.xpub).depth)}`
-        : xpub.bip32Path;
-      return `Derivation: ${derivation}\n${xpub.xfp}: ${xpub.xpub}`;
-    });
+    // We need to loop over xpubs and output `xfp: xpub` for each
+    let xpubs = config.extendedPublicKeys.map((xpub) => `Derivation: ${getDerivation(xpub)}\n${xpub.xfp}: ${xpub.xpub}`);
     output += xpubs.join("\n");
     output += "\n";
     return output;
-  }
 }
