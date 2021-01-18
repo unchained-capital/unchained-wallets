@@ -181,7 +181,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
     messages() {
         const messages = super.messages();
         messages.push(commandMessage({
-            instructions: "Open Cobo Vault and direct to MultiSig PublicKey page",
+            instructions: "①Please open Cobo Vault, go to Menu > Multisig Wallet > More > Show/Export  XPUB. ②Click the camera icon above and scan the QR Code of XPUB displays on Cobo Vault",
         }));
         return messages;
     }
@@ -216,7 +216,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
 
     parseFile(jsonString) {
         try{
-            const {result} = JSON.parse(jsonString);
+            const result = JSON.parse(jsonString);
             return this.parseResult(result)
         }catch (e) {
             throw new Error("Unable to parse file")
@@ -303,7 +303,11 @@ export class CoboVaultSignMultisigTransaction extends CoboVaultReader {
     }
 
     parseFile(psbtB64) {
-        return parseSignaturesFromPSBT(psbtB64)
+        return {
+            success: true,
+            result: parseSignaturesFromPSBT(psbtB64),
+            type: "psbt",
+        };
     }
 }
 
