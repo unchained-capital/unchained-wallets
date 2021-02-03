@@ -1,3 +1,11 @@
+/**
+ * This module provides classes for interacting with Cobo Vault.
+ * Including reading wallet info QR from Cobo Vault, generating multisig QR
+ * to Cobo Vault and reading signature QR from Cobo Vault
+ *
+ * @module cobovault
+ */
+
 import {parseSignaturesFromPSBT, unsignedMultisigPSBT} from "unchained-bitcoin";
 
 export const COBOVAULT = 'cobovault';
@@ -29,7 +37,7 @@ function onlyUniq(value, index, self) {
  */
 function smartParseQR(qrs) {
     const enhancedQRS = qrs.filter(onlyUniq);
-    const first = qrs[0];
+    const first = enhancedQRS[0];
     try {
         //JSON
         return parseJSON(first)
@@ -44,7 +52,7 @@ function smartParseQR(qrs) {
             return {
                 success: true,
                 result: first,
-                type: 'text',
+                type: "text",
             }
         }
     }
@@ -158,6 +166,7 @@ export class CoboVaultDisplayer extends CoboVaultInteraction {
     }
 
     encodeUR(data) {
+        // 800~900 characters will make the most smooth QR reading experience for Cobo Vault
         return encodeUR(data, 800);
     }
 }
@@ -170,7 +179,7 @@ export class CoboVaultDisplayer extends CoboVaultInteraction {
  * @example
  * const interaction = new CoboVaultExportExtendedPublicKey();
  * const encodedString = readCoboVaultQRCode(); // application dependent
- * const {xpub, bip32Path} = interaction.parse(encoodedString);
+ * const {xpub, bip32Path, rootFingerprint} = interaction.parse(encodedString);
  * console.log(xpub);
  * // "xpub..."
  * console.log(bip32Path);
@@ -181,7 +190,10 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
     messages() {
         const messages = super.messages();
         messages.push(commandMessage({
-            instructions: "①Please open Cobo Vault, go to Menu > Multisig Wallet > More > Show/Export  XPUB. ②Click the camera icon above and scan the QR Code of XPUB displays on Cobo Vault",
+            instructions: "①Please open Cobo Vault, go to Menu > Multisig Wallet > More > Show/Export  XPUB.",
+        }));
+        messages.push(commandMessage({
+            instructions: "②Click the camera icon above and scan the QR Code of XPUB displays on Cobo Vault",
         }));
         return messages;
     }
@@ -227,9 +239,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
 /**
  * Returns signature request data to display in a QR code for CoboVault
  * and reads the signature data passed back by CoboVault in another QR
- * code.
- *
- * NOTE: Transactions with inputs & outputs to non-P2SH addresses are not supported by CoboVault.
+ * code or a psbt file.
  *
  * @extends {module:cobovault.CoboVaultDisplayer}
  * @example
@@ -241,7 +251,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
  * // `sign-bitcoin` and it will return another QR code which needs
  * // parsed.
  * const encodedString = readCoboVaultQRCode(); // application dependent
- * const signatures = interaction.parse(encoodedString);
+ * const signatures = interaction.parse(encodedString);
  * console.log(signatures);
  * // ["ababa...01", ... ]
  *

@@ -28,7 +28,7 @@ import {
   ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
 } from './coldcard';
-import {COBOVAULT, CoboVaultSignMultisigTransaction} from "./cobovault";
+import {COBOVAULT, CoboVaultSignMultisigTransaction, CoboVaultExportExtendedPublicKey} from "./cobovault";
 
 /**
  * Current unchained-wallets version.
@@ -61,6 +61,7 @@ export const DIRECT_KEYSTORES = {
 export const INDIRECT_KEYSTORES = {
   HERMIT,
   COLDCARD,
+  COBOVAULT,
 };
 
 /**
@@ -207,6 +208,8 @@ export function ExportExtendedPublicKey({
         network,
         includeXFP
       });
+    case COBOVAULT:
+      return new CoboVaultExportExtendedPublicKey();
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
