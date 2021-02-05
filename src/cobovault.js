@@ -41,13 +41,11 @@ function smartParseQR(qrs) {
     try {
         //JSON
         return parseJSON(first)
-    }
-    catch(e) {
+    } catch (e) {
         if (first.startsWith("UR")) {
             //UR
             return parseUR(enhancedQRS)
-        }
-        else {
+        } else {
             //raw text
             return {
                 success: true,
@@ -199,7 +197,11 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
     }
 
     parseResult(result) {
-        const {xpub, path: bip32Path, xfp} = result;
+        const {
+            xpub,
+            path: bip32Path,
+            xfp
+        } = result;
         if (!xpub) {
             throw new Error('No Extended PublicKey.');
         }
@@ -210,6 +212,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
         result.xpub = xpub;
         result.rootFingerprint = xfp;
         Reflect.deleteProperty(result, "xfp");
+        Reflect.deleteProperty(result, "path");
         return {
             success: true,
             result,
@@ -218,19 +221,19 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
     }
 
     parse(workloads) {
-        try{
+        try {
             const {result} = super.parse(workloads);
             return this.parseResult(result)
-        }catch (e) {
+        } catch (e) {
             throw new Error("Unable to parse qr code")
         }
     }
 
     parseFile(jsonString) {
-        try{
+        try {
             const result = JSON.parse(jsonString);
             return this.parseResult(result)
-        }catch (e) {
+        } catch (e) {
             throw new Error("Unable to parse file")
         }
     }
@@ -241,7 +244,7 @@ export class CoboVaultExportExtendedPublicKey extends CoboVaultReader {
  * and reads the signature data passed back by CoboVault in another QR
  * code or a psbt file.
  *
- * @extends {module:cobovault.CoboVaultDisplayer}
+ * @extends {module:cobovault.CoboVaultReader}
  * @example
  * const interaction = new CoboVaultSignMultisigTransaction({inputs, outputs, bip32Paths});
  * console.log(interaction.request());
@@ -265,7 +268,13 @@ export class CoboVaultSignMultisigTransaction extends CoboVaultReader {
      * @param {array<object>} options.outputs - outputs for the transaction
      * @param {array<string>} options.bip32Paths - BIP32 paths
      */
-    constructor({network, inputs, outputs, bip32Paths, psbt}) {
+    constructor({
+                    network,
+                    inputs,
+                    outputs,
+                    bip32Paths,
+                    psbt
+                }) {
         super();
         this.network = network;
         this.inputs = inputs;
@@ -296,6 +305,13 @@ export class CoboVaultSignMultisigTransaction extends CoboVaultReader {
     }
 
     request() {
+        if (typeof this.psbt === "string") {
+            if (this.psbt.startsWith("70736274")) {
+                return this.psbt;
+            } else {
+                return Buffer.from(this.psbt, "base64").toString('hex');
+            }
+        }
         return this.psbt.toHex();
     }
 
@@ -306,8 +322,7 @@ export class CoboVaultSignMultisigTransaction extends CoboVaultReader {
                 ...parsed,
                 result: parseSignaturesFromPSBT(parsed.result)
             }
-        }
-        else {
+        } else {
             return parsed
         }
     }
