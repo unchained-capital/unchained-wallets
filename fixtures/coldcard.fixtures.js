@@ -1,4 +1,4 @@
-import { COLDCARD_WALLET_CONFIG_VERSION } from "./coldcard";
+import { COLDCARD_WALLET_CONFIG_VERSION } from "../src";
 
 import { ROOT_FINGERPRINT } from "unchained-bitcoin";
 
