@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: custom.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: custom.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Provides classes for interacting via text-based copy/paste XPUBs and
+ * download/sign generic PSBT files using a custom "device'
+ *
+ * The following API classes are implemented:
+ *
+ * * CustomExportExtendedPublicKey
+ * * CustomSignMultisigTransaction
+ *
+ * @module custom
+ */
+import {
+  unsignedMultisigPSBT,
+  parseSignaturesFromPSBT,
+  MAINNET,
+  TESTNET,
+  validateBIP32Path,
+  validateRootFingerprint,
+  ExtendedPublicKey,
+} from "unchained-bitcoin";
+import {
+  IndirectKeystoreInteraction,
+  PENDING,
+  ACTIVE,
+  INFO,
+  ERROR,
+} from "./interaction";
+
+export const CUSTOM = "custom";
+
+/**
+ * Base class for interactions with Custom "devices"
+ *
+ * @extends {module:interaction.IndirectKeystoreInteraction}
+ */
+export class CustomInteraction extends IndirectKeystoreInteraction {}
+
+/**
+ * Base class for text-based (or clipboard pasted) ExtendedPublicKey
+ * This class handles parsing/validating the xpub and relevant
+ * derivation properties. If no root fingerprint is provided, one will
+ * be deterministically assigned.
+ *
+ * @extends {module:custom.CustomInteraction}
+ * @example
+ * const interaction = new CustomExportExtendedPublicKey({network: MAINNET, bip32Path: "m/45'/0'/0'"});
+ * const {xpub, rootFingerprint, bip32Path} = interaction.parse({xpub: xpub..., rootFingerprint: 0f056943});
+ * console.log(xpub);
+ * // "xpub..."
+ * console.log(rootFingerprint);
+ * // "0f056943"
+ * console.log(bip32Path);
+ * // "m/45'/0'/0'"
+ * ** OR **
+ * * const {xpub, rootFingerprint, bip32Path} = interaction.parse({xpub: xpub...});
+ * console.log(xpub);
+ * // "xpub..."
+ * console.log(rootFingerprint);
+ * // "096aed5e"
+ * console.log(bip32Path);
+ * // "m/45'/0'/0'"
+ */
+export class CustomExportExtendedPublicKey extends CustomInteraction {
+  /**
+   * @param {object} options - options argument
+   * @param {string} options.network - bitcoin network (needed for derivations)
+   * @param {string} options.bip32Path - bip32Path to interrogate
+   */
+  constructor({ network, bip32Path }) {
+    super();
+    if ([MAINNET, TESTNET].find((net) => net === network)) {
+      this.network = network;
+    } else {
+      throw new Error("Unknown network.");
+    }
+    this.validationErrorMessages = [];
+    this.bip32Path = bip32Path;
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.validationErrorMessages.push({
+        code: "custom.bip32_path.path_error",
+        text: bip32PathError,
+      });
+    }
+  }
+
+  isSupported() {
+    return this.validationErrorMessages.length === 0;
+  }
+
+  messages() {
+    const messages = super.messages();
+
+    if (this.validationErrorMessages.length) {
+      this.validationErrorMessages.forEach((e) => {
+        messages.push({
+          state: PENDING,
+          level: ERROR,
+          code: e.code,
+          text: e.text,
+        });
+      });
+    }
+
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "custom.import_xpub",
+      text: "Type or paste the extended public key here.",
+    });
+    return messages;
+  }
+
+  /**
+   * Parse the provided JSON and do some basic error checking
+   *
+   * @param {Object} data - JSON object with incoming data to be parsed (read: reformatted)
+   * @returns {Object} Object - ExtendedPublicKeyDerivation {xpub, bip32path, rootFingerprint}
+   */
+  parse(data) {
+    // build ExtendedPublicKey struct (validation happens in constructor)
+    let xpubClass;
+    let rootFingerprint;
+    try {
+      xpubClass = ExtendedPublicKey.fromBase58(data.xpub);
+    } catch (e) {
+      throw new Error("Not a valid ExtendedPublicKey.");
+    }
+    try {
+      if (data.rootFingerprint === "" || data.rootFingerprint === undefined) {
+        const pkLen = xpubClass.pubkey.length;
+        // If no fingerprint is provided, we will assign one deterministically
+        rootFingerprint = xpubClass.pubkey.substring(pkLen - 8);
+      } else {
+        validateRootFingerprint(data.rootFingerprint);
+        rootFingerprint = data.rootFingerprint;
+      }
+    } catch (e) {
+      throw new Error(
+        `Root fingerprint validation error: ${e.message.toLowerCase()}.`
+      );
+    }
+    const numSlashes = this.bip32Path.split("/").length;
+    const bipDepth = this.bip32Path.startsWith("m/")
+      ? numSlashes - 1
+      : numSlashes;
+
+    if (xpubClass.depth !== bipDepth) {
+      throw new Error(
+        `Depth of ExtendedPublicKey (${xpubClass.depth}) does not match depth of BIP32 path (${bipDepth}).`
+      );
+    }
+
+    return {
+      xpub: xpubClass.base58String,
+      rootFingerprint,
+      bip32Path: this.bip32Path,
+    };
+  }
+}
+
+/**
+ * Returns signature request data via a PSBT for a Custom "device" to sign and
+ * accepts a PSBT for parsing signatures from a Custom "device"
+ *
+ * @extends {module:custom.CustomInteraction}
+ * @example
+ * const interaction = new CustomSignMultisigTransaction({network, inputs, outputs, bip32paths, psbt});
+ * console.log(interaction.request());
+ * // "cHNidP8BA..."
+ *
+ * // Parse signatures from a signed PSBT
+ * const signatures = interaction.parse(psbt);
+ * console.log(signatures);
+ * // {'029e866...': ['3045...01', ...]}
+ *
+ */
+export class CustomSignMultisigTransaction extends CustomInteraction {
+  /**
+   * @param {object} options - options argument
+   * @param {string} options.network - bitcoin network
+   * @param {array&lt;object>} options.inputs - inputs for the transaction
+   * @param {array&lt;object>} options.outputs - outputs for the transaction
+   * @param {array&lt;string>} options.bip32Paths - BIP32 paths
+   * @param {object} [options.psbt] - PSBT of the transaction to sign, included or generated from the other options
+   */
+  constructor({ network, inputs, outputs, bip32Paths, psbt }) {
+    super();
+    this.network = network;
+    this.inputs = inputs;
+    this.outputs = outputs;
+    this.bip32Paths = bip32Paths;
+
+    if (psbt) {
+      this.psbt = psbt;
+    } else {
+      try {
+        this.psbt = unsignedMultisigPSBT(network, inputs, outputs);
+      } catch (e) {
+        throw new Error(
+          "Unable to build the PSBT from the provided parameters."
+        );
+      }
+    }
+  }
+
+  messages() {
+    const messages = super.messages();
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "custom.download_psbt",
+      text: `Download and save this PSBT file.`,
+    });
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "custom.sign_psbt",
+      text: `Add your signature to the PSBT.`,
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      code: "custom.sign_psbt",
+      text: `Verify the transaction details and sign.`,
+    });
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      code: "custom.upload_signed_psbt",
+      text: `Upload the signed PSBT.`,
+    });
+    return messages;
+  }
+
+  /**
+   * Request for the PSBT data that needs to be signed.
+   *
+   * NOTE: the application may be expecting the PSBT in some format
+   * other than the direct Object.
+   *
+   * E.g. PSBT in Base64 is interaction().request().toBase64()
+   *
+   * @returns {Object} Returns the local unsigned PSBT from transaction details
+   */
+  request() {
+    return this.psbt;
+  }
+
+  /**
+   *
+   * @param {Object} psbtObject - the PSBT
+   * @returns {Object} signatures - This calls a function in unchained-bitcoin which parses
+   * PSBT files for sigantures and then returns an object with the format
+   * {
+   *   pubkey1 : [sig1, sig2, ...],
+   *   pubkey2 : [sig1, sig2, ...]
+   * }
+   * This format may change in the future or there may be additional options for return type.
+   */
+  parse(psbtObject) {
+    const signatures = parseSignaturesFromPSBT(psbtObject);
+    if (!signatures || signatures.length === 0) {
+      throw new Error(
+        "No signatures found in the PSBT. Did you upload the right one?"
+      );
+    }
+    return signatures;
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-custom.html">custom</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-coldcard-ColdcardMultisigSettingsFileParser.html">ColdcardMultisigSettingsFileParser</a></li><li><a href="module-custom.CustomExportExtendedPublicKey.html">CustomExportExtendedPublicKey</a></li><li><a href="module-custom.CustomInteraction.html">CustomInteraction</a></li><li><a href="module-custom.CustomSignMultisigTransaction.html">CustomSignMultisigTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Mar 02 2021 19:33:54 GMT+0000 (UTC)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

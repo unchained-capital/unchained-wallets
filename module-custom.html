@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: LedgerExportPublicKey</title>
+    <title>JSDoc: Module: custom</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: LedgerExportPublicKey</h1>
+    <h1 class="page-title">Module: custom</h1>
 
     
 
@@ -28,10 +28,8 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-ledger.html">ledger</a>.</span>LedgerExportPublicKey<span class="signature">(bip32Path, includeXFP)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Returns the public key at a given BIP32 path.</p></div>
+            
         
     
 </header>
@@ -40,97 +38,26 @@
     <div class="container-overview">
     
         
-
-    
-    <h2>Constructor</h2>
-    
-
-    
-    <h4 class="name" id="LedgerExportPublicKey"><span class="type-signature"></span>new LedgerExportPublicKey<span class="signature">(bip32Path, includeXFP)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
+            <div class="description"><p>Provides classes for interacting via text-based copy/paste XPUBs and
+download/sign generic PSBT files using a custom &quot;device'</p>
+<p>The following API classes are implemented:</p>
+<ul>
+<li>CustomExportExtendedPublicKey</li>
+<li>CustomSignMultisigTransaction</li>
+</ul></div>
         
 
         
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>bip32Path</code></td>
             
 
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the BIP32 path for the HD node</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>includeXFP</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">boolean</span>
 
 
-            
-            </td>
 
-            
 
-            
 
-            <td class="description last"><p>return xpub with root fingerprint concatenated</p></td>
-        </tr>
 
-    
-    </tbody>
-</table>
 
 
 
@@ -166,7 +93,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line659">line 659</a>
+        <a href="custom.js.html">custom.js</a>, <a href="custom.js.html#line1">line 1</a>
     </li></ul></dd>
     
 
@@ -195,127 +122,28 @@
 
 
 
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>import {LedgerExportPublicKey} from "unchained-wallets";
-const interaction = new LedgerExportPublicKey({bip32Path: "m/48'/0'/0'/2'/0"});
-const publicKey = await interaction.run();
-console.log(publicKey);
-// "03..."</code></pre>
 
-
-
+        
     
     </div>
 
     
-        <h3 class="subsection-title">Extends</h3>
 
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-custom.CustomExportExtendedPublicKey.html">CustomExportExtendedPublicKey</a></dt>
+            <dd></dd>
         
-
-
-    <ul>
-        <li>module:ledger.LedgerExportHDNode</li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
+            <dt><a href="module-custom.CustomInteraction.html">CustomInteraction</a></dt>
+            <dd></dd>
         
-            
-
-    
-
-    
-    <h4 class="name" id="parsePublicKey"><span class="type-signature"></span>parsePublicKey<span class="signature">(publicKey)</span><span class="type-signature"> &rarr; {string}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Compress the given public key.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>publicKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>the uncompressed public key in hex</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
+            <dt><a href="module-custom.CustomSignMultisigTransaction.html">CustomSignMultisigTransaction</a></dt>
+            <dd></dd>
+        </dl>
     
 
     
@@ -326,192 +154,6 @@ console.log(publicKey);
 
     
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line695">line 695</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <ul>
-<li>the compressed public key in hex</li>
-</ul>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {string|Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Parses out and compresses the public key from the response of
-<code>LedgerExportHDNode</code>.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line670">line 670</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>(compressed) public key in hex (returns object if asked to include root fingerprint)</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
     
 
     

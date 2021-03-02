@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: TrezorConfirmMultisigAddress</title>
+    <title>JSDoc: Class: CustomSignMultisigTransaction</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: TrezorConfirmMultisigAddress</h1>
+    <h1 class="page-title">Class: CustomSignMultisigTransaction</h1>
 
     
 
@@ -29,15 +29,10 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-trezor.html">trezor</a>.</span>TrezorConfirmMultisigAddress<span class="signature">(options)</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-custom.html">custom</a>.</span>CustomSignMultisigTransaction<span class="signature">(options)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Shows a multisig address on the device and prompts the user to
-confirm it.
-If the optional publicKey parameter is used, the public key at
-the given BIP32 path is checked, returning an error if they don't match.</p>
-<p>Without the publicKey parameter, this function simply checks that the
-public key at the given BIP32 path is in the redeemscript (with
-validation on-device.</p></div>
+            <div class="class-description"><p>Returns signature request data via a PSBT for a Custom &quot;device&quot; to sign and
+accepts a PSBT for parsing signatures from a Custom &quot;device&quot;</p></div>
         
     
 </header>
@@ -52,17 +47,12 @@ validation on-device.</p></div>
     
 
     
-    <h4 class="name" id="TrezorConfirmMultisigAddress"><span class="type-signature"></span>new TrezorConfirmMultisigAddress<span class="signature">(options)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="CustomSignMultisigTransaction"><span class="type-signature"></span>new CustomSignMultisigTransaction<span class="signature">(options)</span><span class="type-signature"></span></h4>
     
 
     
 
 
-
-<div class="description">
-    <p>Most of the information required to confirm a multisig address
-lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</p>
-</div>
 
 
 
@@ -127,6 +117,8 @@ lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -152,6 +144,14 @@ lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -162,69 +162,126 @@ lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</
 
         <tr>
             
-                <td class="name"><code>bip32Path</code></td>
+                <td class="name"><code>inputs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">array.&lt;object></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>BIP32 path to the public key on this device used in the multisig address</p></td>
+            <td class="description last"><p>inputs for the transaction</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>multisig</code></td>
+                <td class="name"><code>outputs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Multisig</span>
+<span class="param-type">array.&lt;object></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>multisig object</p></td>
+            <td class="description last"><p>outputs for the transaction</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>publicKey</code></td>
+                <td class="name"><code>bip32Paths</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">array.&lt;string></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>optional public key to confirm</p></td>
+            <td class="description last"><p>BIP32 paths</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>psbt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>PSBT of the transaction to sign, included or generated from the other options</p></td>
         </tr>
 
     
@@ -272,7 +329,7 @@ lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line835">line 835</a>
+        <a href="custom.js.html">custom.js</a>, <a href="custom.js.html#line187">line 187</a>
     </li></ul></dd>
     
 
@@ -303,13 +360,14 @@ lives in the <code>Multisig</code> object from <code>unchained-bitcoin</code>.</
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>import {
-  generateMultisigFromPublicKeys, MAINNET, P2SH,
-} from "unchained-bitcoin";
-import {TrezorConfirmMultisigAddress} from "unchained-wallets";
-const multisig = generateMultisigFromPublicKeys(MAINNET, P2SH, 2, "03a...", "03b...");
-const interaction = new TrezorConfirmMultisigAddress({network: MAINNET, bip32Path: "m/45'/0'/0'/0/0", multisig});
-await interaction.run();</code></pre>
+    <pre class="prettyprint"><code>const interaction = new CustomSignMultisigTransaction({network, inputs, outputs, bip32paths, psbt});
+console.log(interaction.request());
+// "cHNidP8BA..."
+
+// Parse signatures from a signed PSBT
+const signatures = interaction.parse(psbt);
+console.log(signatures);
+// {'029e866...': ['3045...01', ...]}</code></pre>
 
 
 
@@ -323,7 +381,7 @@ await interaction.run();</code></pre>
 
 
     <ul>
-        <li><a href="module-trezor.TrezorInteraction.html">module:trezor.TrezorInteraction</a></li>
+        <li><a href="module-custom.CustomInteraction.html">module:custom.CustomInteraction</a></li>
     </ul>
 
 
@@ -350,248 +408,12 @@ await interaction.run();</code></pre>
     
 
     
-    <h4 class="name" id="connectParams"><span class="type-signature"></span>connectParams<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;function(), Object>}</span></h4>
+    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(psbtObject)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
 
 
-
-<div class="description">
-    <p>See <a href="https://github.com/trezor/connect/blob/v8/docs/methods/getAddress.md">https://github.com/trezor/connect/blob/v8/docs/methods/getAddress.md</a>.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#connectParams">module:trezor.TrezorInteraction#connectParams</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line914">line 914</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>TrezorConnect parameters</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array.&lt;function(), Object></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="messages"><span class="type-signature"></span>messages<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Adds messages about BIP32 path warnings.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#messages">module:trezor.TrezorInteraction#messages</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line848">line 848</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>messages for this interaction</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array.&lt;<a href="module-interaction.html#.Message">module:interaction.Message</a>></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="parse"><span class="type-signature"></span>parse<span class="signature">(payload)</span><span class="type-signature"> &rarr; {Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Override this method in a subclass to parse the payload of a
-successful response from the device.</p>
-<p>By default, the entire payload is returned.</p>
-</div>
 
 
 
@@ -626,7 +448,7 @@ successful response from the device.</p>
 
         <tr>
             
-                <td class="name"><code>payload</code></td>
+                <td class="name"><code>psbtObject</code></td>
             
 
             <td class="type">
@@ -642,7 +464,7 @@ successful response from the device.</p>
 
             
 
-            <td class="description last"><p>the raw payload from the device response</p></td>
+            <td class="description last"><p>the PSBT</p></td>
         </tr>
 
     
@@ -665,7 +487,7 @@ successful response from the device.</p>
     
     <dt class="tag-overrides">Overrides:</dt>
     <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#parse">module:trezor.TrezorInteraction#parse</a>
+        <a href="module-custom.CustomInteraction.html#parse">module:custom.CustomInteraction#parse</a>
     </li></ul></dd>
     
 
@@ -688,7 +510,7 @@ successful response from the device.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line304">line 304</a>
+        <a href="custom.js.html">custom.js</a>, <a href="custom.js.html#line261">line 261</a>
     </li></ul></dd>
     
 
@@ -717,9 +539,13 @@ successful response from the device.</p>
 
         
 <div class="param-desc">
-    <ul>
-<li>relevant or formatted data built from the raw payload</li>
-</ul>
+    <p>signatures - This calls a function in unchained-bitcoin which parses
+PSBT files for sigantures and then returns an object with the format
+{
+pubkey1 : [sig1, sig2, ...],
+pubkey2 : [sig1, sig2, ...]
+}
+This format may change in the future or there may be additional options for return type.</p>
 </div>
 
 
@@ -748,7 +574,125 @@ successful response from the device.</p>
     
 
     
-    <h4 class="name" id="request"><span class="type-signature"></span>request<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
+    <h4 class="name" id="request"><span class="type-signature"></span>request<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Request for the PSBT data that needs to be signed.</p>
+<p>NOTE: the application may be expecting the PSBT in some format
+other than the direct Object.</p>
+<p>E.g. PSBT in Base64 is interaction().request().toBase64()</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-custom.CustomInteraction.html#request">module:custom.CustomInteraction#request</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="custom.js.html">custom.js</a>, <a href="custom.js.html#line246">line 246</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns the local unsigned PSBT from transaction details</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {void}</span></h4>
     
 
     
@@ -782,7 +726,7 @@ successful response from the device.</p>
     
     <dt class="tag-overrides">Overrides:</dt>
     <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#request">module:trezor.TrezorInteraction#request</a>
+        <a href="module-custom.CustomInteraction.html#run">module:custom.CustomInteraction#run</a>
     </li></ul></dd>
     
 
@@ -805,7 +749,7 @@ successful response from the device.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line512">line 512</a>
+        <a href="interaction.js.html">interaction.js</a>, <a href="interaction.js.html#line619">line 619</a>
     </li></ul></dd>
     
 
@@ -834,7 +778,7 @@ successful response from the device.</p>
 
     <div class="param-desc">
     
-        <p>An error since this is a direct interaction.</p>
+        <p>An error since this is an indirect interaction.</p>
     
     </div>
 
@@ -854,127 +798,6 @@ successful response from the device.</p>
     <dd>
         
 <span class="param-type">void</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="run"><span class="type-signature">(async) </span>run<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Awaits the call of <code>this.method</code>, passing in the output of
-<code>this.params()</code>.</p>
-<p>If the call returns but is unsuccessful (<code>result.success</code>) is
-false, will throw the returned error message.  If some other
-error is thrown, it will not be caught.</p>
-<p>Otherwise it returns the result of passing <code>result.payload</code> to
-<code>this.parse</code>.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-overrides">Overrides:</dt>
-    <dd class="tag-overrides"><ul class="dummy"><li>
-        <a href="module-trezor.TrezorInteraction.html#run">module:trezor.TrezorInteraction#run</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="trezor.js.html">trezor.js</a>, <a href="trezor.js.html#line266">line 266</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>handles the work of calling TrezorConnect</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise</span>
 
 
     </dd>
