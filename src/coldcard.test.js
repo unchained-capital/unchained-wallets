@@ -16,7 +16,7 @@ import {
   ACTIVE,
   ERROR,
 } from './interaction';
-import {coldcardFixtures} from './coldcard.fixtures';
+import { coldcardFixtures } from "../fixtures/coldcard.fixtures";
 
 const {multisigs, transactions} = TEST_FIXTURES;
 

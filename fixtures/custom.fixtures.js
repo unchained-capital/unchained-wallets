@@ -12,6 +12,7 @@ export const customFixtures = {
     xpub: nodes[P2SH_BASE_TEST].xpub,
     rootFingerprint: ROOT_FINGERPRINT,
   },
+
   validCustomXpubJSON: {
     bip32Path: P2SH_BASE_MAIN,
     xpub: nodes[P2SH_BASE_MAIN].xpub,

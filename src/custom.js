@@ -92,7 +92,7 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
     const messages = super.messages();
 
     if (this.validationErrorMessages.length) {
-      this.validationErrorMessages.map((e) => {
+      this.validationErrorMessages.forEach((e) => {
         messages.push({
           state: PENDING,
           level: ERROR,
@@ -127,12 +127,10 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
       throw new Error("Not a valid ExtendedPublicKey.");
     }
     try {
-      const pkLen = xpubClass.pubkey.length;
-      // If no fingerprint is provided, we will assign one deterministically
-      const fakeRootFingerprint = xpubClass.pubkey.substring(pkLen - 8);
-
       if (data.rootFingerprint === "" || data.rootFingerprint === undefined) {
-        rootFingerprint = fakeRootFingerprint;
+        const pkLen = xpubClass.pubkey.length;
+        // If no fingerprint is provided, we will assign one deterministically
+        rootFingerprint = xpubClass.pubkey.substring(pkLen - 8);
       } else {
         validateRootFingerprint(data.rootFingerprint);
         rootFingerprint = data.rootFingerprint;

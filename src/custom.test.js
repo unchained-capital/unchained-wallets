@@ -4,7 +4,7 @@ import {
 } from "./custom";
 import { MAINNET, TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
 import { INFO, PENDING, ACTIVE, ERROR } from "./interaction";
-import { customFixtures } from "./custom.fixtures";
+import { customFixtures } from "../fixtures/custom.fixtures";
 
 const { multisigs, transactions } = TEST_FIXTURES;
 
@@ -22,7 +22,7 @@ describe("CustomExportExtendedPublicKey", () => {
         /Unknown network/i
       );
     });
-    it("invalid bip32Path unsupported", () => {
+    it("shows invalid bip32Path unsupported", () => {
       const interaction = interactionBuilder({
         network: TESTNET,
         bip32Path: "m/45'/1/01",
@@ -71,7 +71,7 @@ describe("CustomExportExtendedPublicKey", () => {
       );
     });
 
-    it("testnet no rootFingerprint is included so it gets computed", () => {
+    it("computes fake rootFingerprint when initialized on testnet", () => {
       const bip32Path = "m/45'/0'/0'";
       const interaction = interactionBuilder({
         network: TESTNET,
@@ -84,7 +84,7 @@ describe("CustomExportExtendedPublicKey", () => {
       expect(result).toEqual(customFixtures.validXpubFakeRootFingerprintOutput);
     });
 
-    it("mainnet no rootFingerprint is included so it gets computed", () => {
+    it("computes fake rootFingerprint when initialized on mainnet", () => {
       const bip32Path = "m/45'/1'/0'";
       const interaction = interactionBuilder({
         network: TESTNET,
@@ -97,7 +97,7 @@ describe("CustomExportExtendedPublicKey", () => {
       expect(result).toEqual(customFixtures.validTpubFakeRootFingerprintOutput);
     });
 
-    it("invalid rootFingerprint included", () => {
+    it("throws error on invalid rootFingerprint", () => {
       const bip32Path = "m/45'/1'/0'";
       const interaction = interactionBuilder({
         network: TESTNET,
@@ -111,7 +111,7 @@ describe("CustomExportExtendedPublicKey", () => {
       ).toThrow(/Root fingerprint validation error/i);
     });
 
-    it("should error as bip32 depth does not match depth in xpub param", () => {
+    it("throws error as bip32 depth does not match depth in provided xpub", () => {
       let bip32Path = "m/45'";
       const interaction = interactionBuilder({
         network: TESTNET,
@@ -123,7 +123,7 @@ describe("CustomExportExtendedPublicKey", () => {
       ).toThrow(/does not match depth of BIP32 path/i);
     });
 
-    it("should error as bip32 depth does not match depth in xpub param (bip32 missing m/ for whatever reason)", () => {
+    it("throws error as bip32 depth does not match depth in provided xpub (and bip32 missing m/ for whatever reason)", () => {
       let bip32Path = "45'/0'";
       const interaction = interactionBuilder({
         network: TESTNET,
@@ -152,6 +152,8 @@ describe("CustomExportExtendedPublicKey", () => {
 });
 
 describe("CustomSignMultisigTransaction", () => {
+  const testMultisig = multisigs[0];
+  const testTx = transactions[0];
   function interactionBuilder({ network, inputs, outputs, bip32Paths, psbt }) {
     return new CustomSignMultisigTransaction({
       network,
@@ -168,41 +170,41 @@ describe("CustomSignMultisigTransaction", () => {
   });
 
   describe("request", () => {
-    it("return psbt if there is one", () => {
+    it("returns psbt if there is one", () => {
       const interaction = interactionBuilder({
         network: TESTNET,
-        psbt: multisigs[0].psbt,
+        psbt: testMultisig.psbt,
       });
       const result = interaction.request();
-      expect(result).toEqual(multisigs[0].psbt);
+      expect(result).toEqual(testMultisig.psbt);
     });
 
-    it("construct psbt if there is not one", () => {
+    it("constructs psbt if there is not one", () => {
       const interaction = interactionBuilder({
-        network: transactions[0].network,
-        inputs: transactions[0].inputs,
-        outputs: transactions[0].outputs,
-        bip32Paths: transactions[0].bip32Paths,
+        network: testTx.network,
+        inputs: testTx.inputs,
+        outputs: testTx.outputs,
+        bip32Paths: testTx.bip32Paths,
       });
       const result = interaction.request().toBase64();
-      expect(result).toEqual(transactions[0].psbt);
+      expect(result).toEqual(testTx.psbt);
     });
   });
 
   describe("parse", () => {
-    it("return multi input, single signature set", () => {
+    it("returns multi input, single signature set", () => {
       const interaction = interactionBuilder({
-        psbt: multisigs[0].psbtPartiallySigned,
+        psbt: testMultisig.psbtPartiallySigned,
       });
-      const result = interaction.parse(multisigs[0].psbtPartiallySigned);
+      const result = interaction.parse(testMultisig.psbtPartiallySigned);
       const signatureSet = {};
-      signatureSet[multisigs[0].publicKey] = multisigs[0].transaction.signature;
+      signatureSet[testMultisig.publicKey] = testMultisig.transaction.signature;
       expect(result).toEqual(signatureSet);
       expect(Object.keys(result).length).toEqual(1);
     });
-    it("psbt has no signatures", () => {
-      const interaction = interactionBuilder({ psbt: multisigs[0].psbt });
-      expect(() => interaction.parse(multisigs[0].psbt)).toThrow(
+    it("throws error as psbt has no signatures", () => {
+      const interaction = interactionBuilder({ psbt: testMultisig.psbt });
+      expect(() => interaction.parse(testMultisig.psbt)).toThrow(
         /No signatures found/i
       );
     });
@@ -212,7 +214,7 @@ describe("CustomSignMultisigTransaction", () => {
     expect(
       interactionBuilder({
         network: TESTNET,
-        psbt: multisigs[0].psbt,
+        psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: PENDING,
         level: INFO,
@@ -225,7 +227,7 @@ describe("CustomSignMultisigTransaction", () => {
     expect(
       interactionBuilder({
         network: TESTNET,
-        psbt: multisigs[0].psbt,
+        psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: PENDING,
         level: INFO,
@@ -238,7 +240,7 @@ describe("CustomSignMultisigTransaction", () => {
     expect(
       interactionBuilder({
         network: TESTNET,
-        psbt: multisigs[0].psbt,
+        psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: ACTIVE,
         level: INFO,
@@ -251,7 +253,7 @@ describe("CustomSignMultisigTransaction", () => {
     expect(
       interactionBuilder({
         network: TESTNET,
-        psbt: multisigs[0].psbt,
+        psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: ACTIVE,
         level: INFO,
