@@ -1,6 +1,6 @@
 {
   "name": "unchained-wallets",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "Unchained Capital's HD Wallets Library",
   "main": "lib/index.js",
   "repository": {
