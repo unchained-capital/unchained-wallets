@@ -102,6 +102,12 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     messages.push({
       state: PENDING,
       level: INFO,
+      code: "coldcard.select_account",
+      text: "Enter 0 for account",
+    });
+    messages.push({
+      state: PENDING,
+      level: INFO,
       code: "coldcard.upload_key",
       text: "Upload the JSON file from your Coldcard.",
     });
@@ -222,7 +228,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
         (!data.p2sh_p2wsh_deriv || !data.p2sh_p2wsh))
     ) {
       throw new Error(
-        "Missing required params. Was this file exported from a Coldcard?"
+        "Missing required params. Was this file exported from a Coldcard?  If you are using firmware version 4.1.0 please upgrade to 4.1.1 or later."
       );
     }
 
