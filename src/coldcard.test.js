@@ -220,6 +220,17 @@ describe("ColdcardExportPublicKey", () => {
       text: "Upload the JSON file",
     })).toBe(true);
   });
+  it("has a message about selecting 0 for account ", () => {
+    expect(interactionBuilder({
+      network: TESTNET,
+      bip32Path: "m/45'",
+    }).hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "coldcard.select_account",
+      text: "Enter 0 for account",
+    })).toBe(true);
+  });
   it("has a message about exporting xpub", () => {
     expect(interactionBuilder({
       network: TESTNET,
@@ -402,6 +413,17 @@ describe("ColdcardExportExtendedPublicKey", () => {
       level: INFO,
       code: "coldcard.upload_key",
       text: "Upload the JSON file",
+    })).toBe(true);
+  });
+  it("has a message about selecting 0 for account ", () => {
+    expect(interactionBuilder({
+      network: TESTNET,
+      bip32Path: "m/45'",
+    }).hasMessagesFor({
+      state: PENDING,
+      level: INFO,
+      code: "coldcard.select_account",
+      text: "Enter 0 for account",
     })).toBe(true);
   });
   it("has a message about exporting xpub", () => {
