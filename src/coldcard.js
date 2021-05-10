@@ -58,6 +58,7 @@ export class ColdcardInteraction extends IndirectKeystoreInteraction {}
  * @extends {module:coldcard.ColdcardInteraction}
  */
 class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
+
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
@@ -316,6 +317,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
  * // "m/45'/0/0"
  */
 export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser {
+
   /**
    *
    * @param {object} options - options argument
@@ -363,6 +365,7 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
  * // "m/45'/0/0"
  */
 export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFileParser {
+
   /**
    *
    * @param {object} options - options argument
@@ -409,6 +412,7 @@ export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFil
  *
  */
 export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
+
   /**
    *
    * @param {object} options - options argument
