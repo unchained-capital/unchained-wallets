@@ -56,7 +56,7 @@ import {serializeTransactionOutputs} from "@ledgerhq/hw-app-btc/lib/serializeTra
 export const LEDGER = 'ledger';
 
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
-const TransportWebUsb = require("@ledgerhq/hw-transport-webusb").default;
+const TransportWebUSB = require("@ledgerhq/hw-transport-webusb").default;
 const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
@@ -183,7 +183,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     }
 
     try {
-      const transport = await TransportWebUsb.create();
+      const transport = await TransportWebUSB.create();
       return callback(transport);
     } catch (e) {
       if (e.message) {
@@ -234,8 +234,8 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * @return {Promise}
    */
   closeTransport() {
-    return this.withTransport( (transport) => {
-      transport.close();
+    return this.withTransport( async (transport) => {
+      await transport.close();
     })
   }
 }
@@ -346,7 +346,7 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
         const rawResult = await transport.send(0xe0, 0x01, 0x00, 0x00);
         return this.parseMetadata(rawResult);
       } finally {
-        transport.close();
+        await super.closeTransport();
       }
     });
   }
