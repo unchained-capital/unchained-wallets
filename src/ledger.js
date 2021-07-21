@@ -33,6 +33,8 @@ import {
   signatureNoSighashType,
   validateBIP32Path,
   fingerprintToFixedLengthHex,
+  translatePSBT,
+  addSignaturesToPSBT,
 } from "unchained-bitcoin";
 
 import {
@@ -810,16 +812,31 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
-   * @param {array<object>} options.inputs - inputs for the transaction
-   * @param {array<object>} options.outputs - outputs for the transaction
-   * @param {array<string>} options.bip32Paths - BIP32 paths
+   * @param {array<object>} [options.inputs] - inputs for the transaction
+   * @param {array<object>} [options.outputs] - outputs for the transaction
+   * @param {array<string>} [options.bip32Paths] - BIP32 paths
+   * @param {string} [options.psbt] - PSBT string encoded in base64
+   * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
    */
-  constructor({network, inputs, outputs, bip32Paths}) {
+  constructor({network, inputs, outputs, bip32Paths, psbt, keyDetails}) {
     super();
     this.network = network;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.bip32Paths = bip32Paths;
+    if (psbt === undefined || keyDetails === undefined) {
+      this.inputs = inputs;
+      this.outputs = outputs;
+      this.bip32Paths = bip32Paths;
+    } else {
+      const {
+        txInputs,
+        txOutputs,
+        bip32Derivations
+      } = translatePSBT( network, P2SH, psbt, keyDetails );
+      this.psbt = psbt;
+      this.inputs = txInputs;
+      this.outputs = txOutputs;
+      this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
+      this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
+    }
   }
 
   /**
@@ -960,7 +977,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
    * byte.
    *
-   * @returns {string[]} array of input signatures, one per input
+   * @returns {string[]|string} array of input signatures, one per input or PSBT in Base64
    */
   run() {
     return this.withApp(async (app, transport) => {
@@ -978,7 +995,14 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
             transactionVersion: 1, // tx version
           },
         );
-        return this.parse(transactionSignature);
+
+        // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
+        // rather than the normal array of signatures.
+        if (this.psbt !== undefined) {
+          return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.hexSignaturesToBuffers(transactionSignature))
+        } else {
+          return this.parse(transactionSignature);
+        }
       } finally {
         transport.close();
       }
@@ -989,6 +1013,12 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
     // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
     return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
+  }
+
+  hexSignaturesToBuffers(transactionSignature) {
+    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
+    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
+    return (transactionSignature || []).map(inputSignature => Buffer.from(`${signatureNoSighashType(inputSignature)}01`,"hex"));
   }
 
   ledgerInputs() {

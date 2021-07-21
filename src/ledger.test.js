@@ -1,5 +1,6 @@
 import {
   TEST_FIXTURES,
+  ROOT_FINGERPRINT,
 } from "unchained-bitcoin";
 import {
   PENDING,
@@ -244,6 +245,21 @@ describe('ledger', () => {
       });
     });
 
+    const tx = TEST_FIXTURES.transactions[0];
+    const keyDetails = {
+      xfp: ROOT_FINGERPRINT,
+      root: "m/45'/1'/100'",
+    };
+    function psbtInteractionBuilder() { return new LedgerSignMultisigTransaction({
+      network: tx.network,
+      inputs: [],
+      outputs: [],
+      bip32Paths: [],
+      psbt: tx.psbt,
+      keyDetails,
+    }); }
+
+    itHasAppMessages(psbtInteractionBuilder);
 
   });
 

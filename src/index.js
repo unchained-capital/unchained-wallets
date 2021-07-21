@@ -244,6 +244,8 @@ export function ExportExtendedPublicKey({
  * @param {object[]} options.inputs - transaction inputs
  * @param {object[]} options.outputs - transaction outputs
  * @param {string[]} options.bip32Paths - the BIP32 paths on this device corresponding to a public key in each input
+ * @param {string} [options.psbt] - the unsigned_psbt
+ * @param {object} [options.keyDetails] - Signing Key Fingerprint + Bip32 Root
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {
@@ -286,6 +288,7 @@ export function SignMultisigTransaction({
   outputs,
   bip32Paths,
   psbt,
+  keyDetails,
 }) {
   switch (keystore) {
     case COLDCARD:
@@ -316,6 +319,8 @@ export function SignMultisigTransaction({
         inputs,
         outputs,
         bip32Paths,
+        psbt,
+        keyDetails,
       });
     case TREZOR:
       return new TrezorSignMultisigTransaction({
