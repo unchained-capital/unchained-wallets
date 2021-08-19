@@ -61,6 +61,7 @@ export class CustomInteraction extends IndirectKeystoreInteraction {}
  * // "m/45'/0'/0'"
  */
 export class CustomExportExtendedPublicKey extends CustomInteraction {
+
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
@@ -127,7 +128,7 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
       throw new Error("Not a valid ExtendedPublicKey.");
     }
     try {
-      if (data.rootFingerprint === "" || data.rootFingerprint === undefined) {
+      if (data.rootFingerprint === "" || !data.rootFingerprint) {
         const pkLen = xpubClass.pubkey.length;
         // If no fingerprint is provided, we will assign one deterministically
         rootFingerprint = xpubClass.pubkey.substring(pkLen - 8);
@@ -176,6 +177,7 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
  *
  */
 export class CustomSignMultisigTransaction extends CustomInteraction {
+
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network

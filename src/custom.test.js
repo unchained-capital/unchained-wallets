@@ -103,8 +103,7 @@ describe("CustomExportExtendedPublicKey", () => {
         network: TESTNET,
         bip32Path,
       });
-      expect(() =>
-        interaction.parse({
+      expect(() => interaction.parse({
           xpub: customFixtures.validCustomTpubJSON.xpub,
           rootFingerprint: "zzzz",
         })
@@ -118,8 +117,7 @@ describe("CustomExportExtendedPublicKey", () => {
         bip32Path,
       });
 
-      expect(() =>
-        interaction.parse(customFixtures.validCustomTpubJSON)
+      expect(() => interaction.parse(customFixtures.validCustomTpubJSON)
       ).toThrow(/does not match depth of BIP32 path/i);
     });
 
@@ -130,8 +128,7 @@ describe("CustomExportExtendedPublicKey", () => {
         bip32Path,
       });
 
-      expect(() =>
-        interaction.parse(customFixtures.validCustomTpubJSON)
+      expect(() => interaction.parse(customFixtures.validCustomTpubJSON)
       ).toThrow(/does not match depth of BIP32 path/i);
     });
   });

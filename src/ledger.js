@@ -233,10 +233,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * The way the pubkey/xpub/fingerprints are grabbed makes this a little tricky.
    * Instead of re-writing how that works, let's just add a way to explicitly
    * close the transport.
-   * @return {Promise}
+   * @return {Promise} - promise to close the transport
    */
   closeTransport() {
-    return this.withTransport( async (transport) => {
+    return this.withTransport(async (transport) => {
       await transport.close();
     })
   }
@@ -821,7 +821,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   constructor({network, inputs, outputs, bip32Paths, psbt, keyDetails}) {
     super();
     this.network = network;
-    if (psbt === undefined || keyDetails === undefined) {
+    if (!psbt || !keyDetails) {
       this.inputs = inputs;
       this.outputs = outputs;
       this.bip32Paths = bip32Paths;
@@ -830,7 +830,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
         txInputs,
         txOutputs,
         bip32Derivations
-      } = translatePSBT( network, P2SH, psbt, keyDetails );
+      } = translatePSBT(network, P2SH, psbt, keyDetails);
       this.psbt = psbt;
       this.inputs = txInputs;
       this.outputs = txOutputs;
@@ -998,10 +998,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
         // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
         // rather than the normal array of signatures.
-        if (this.psbt !== undefined) {
-          return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.hexSignaturesToBuffers(transactionSignature))
+        if (this.psbt) {
+          return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.parseSignature(transactionSignature, "buffer"))
         } else {
-          return this.parse(transactionSignature);
+          return this.parseSignature(transactionSignature, "hex");
         }
       } finally {
         transport.close();
@@ -1009,16 +1009,14 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     });
   }
 
-  parse(transactionSignature) {
+  signatureFormatter(inputSignature, format) {
     // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
     // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
-    return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
+    return format === "buffer" ? Buffer.from(`${signatureNoSighashType(inputSignature)}01`, "hex") : `${signatureNoSighashType(inputSignature)}01`;
   }
 
-  hexSignaturesToBuffers(transactionSignature) {
-    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
-    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
-    return (transactionSignature || []).map(inputSignature => Buffer.from(`${signatureNoSighashType(inputSignature)}01`,"hex"));
+  parseSignature(transactionSignature, format="hex") {
+    return (transactionSignature || []).map(inputSignature => this.signatureFormatter(inputSignature, format));
   }
 
   ledgerInputs() {
