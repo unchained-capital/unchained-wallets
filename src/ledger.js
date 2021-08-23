@@ -827,13 +827,13 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       this.bip32Paths = bip32Paths;
     } else {
       const {
-        txInputs,
-        txOutputs,
+        unchainedInputs,
+        unchainedOutputs,
         bip32Derivations
       } = translatePSBT(network, P2SH, psbt, keyDetails);
       this.psbt = psbt;
-      this.inputs = txInputs;
-      this.outputs = txOutputs;
+      this.inputs = unchainedInputs;
+      this.outputs = unchainedOutputs;
       this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
       this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
     }

@@ -248,7 +248,7 @@ describe('ledger', () => {
     const tx = TEST_FIXTURES.transactions[0];
     const keyDetails = {
       xfp: ROOT_FINGERPRINT,
-      root: "m/45'/1'/100'",
+      path: "m/45'/1'/100'",
     };
     function psbtInteractionBuilder() { return new LedgerSignMultisigTransaction({
       network: tx.network,
