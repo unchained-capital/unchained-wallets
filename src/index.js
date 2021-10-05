@@ -33,6 +33,11 @@ import {
   TrezorSignMultisigTransaction,
   TrezorConfirmMultisigAddress,
 } from "./trezor";
+import {
+  KeystoneExportExtendedPublicKey,
+  KeystoneSignMultisigTransaction,
+  KEYSTONE,
+} from "./keystone";
 
 /**
  * Current unchained-wallets version.
@@ -66,6 +71,7 @@ export const INDIRECT_KEYSTORES = {
   HERMIT,
   COLDCARD,
   CUSTOM,
+  KEYSTONE,
 };
 
 /**
@@ -169,6 +175,7 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
  * @param {string} options.network - bitcoin network
  * @param {string} options.bip32Path - the BIP32 path of the HD node of the extended public key
  * @param {string} options.includeXFP - also return root fingerprint
+ * @param {string} options.addressType - the expected address type
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {MAINNET} from "unchained-bitcoin";
@@ -182,6 +189,7 @@ export function ExportExtendedPublicKey({
   network,
   bip32Path,
   includeXFP,
+  addressType,
 }) {
   switch (keystore) {
     case COLDCARD:
@@ -212,11 +220,17 @@ export function ExportExtendedPublicKey({
         network,
         includeXFP,
       });
+    case KEYSTONE:
+      return new KeystoneExportExtendedPublicKey({
+        bip32Path,
+        network,
+        includeXFP,
+        addressType
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when exporting extended public keys.",
+        text: "This keystore is not supported when exporting extended public keys.",
       });
   }
 }
@@ -324,11 +338,18 @@ export function SignMultisigTransaction({
         outputs,
         bip32Paths,
       });
+    case KEYSTONE:
+      return new KeystoneSignMultisigTransaction({
+        network,
+        inputs,
+        outputs,
+        bip32Paths,
+        psbt,
+      });
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when signing multisig transactions.",
+        text: "This keystore is not supported when signing multisig transactions.",
       });
   }
 }
@@ -406,8 +427,7 @@ export function ConfirmMultisigAddress({
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when confirming multisig addresses.",
+        text: "This keystore is not supported when confirming multisig addresses.",
       });
   }
 }
@@ -430,8 +450,7 @@ export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when translating external spend configuration files.",
+        text: "This keystore is not supported when translating external spend configuration files.",
       });
   }
 }
@@ -442,3 +461,4 @@ export * from "./custom";
 export * from "./hermit";
 export * from "./ledger";
 export * from "./trezor";
+export * from "./keystone";

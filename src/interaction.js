@@ -143,7 +143,7 @@ export const LEVELS = [INFO, WARNING, ERROR];
  *     messages.push({state: ACTIVE, level: INFO, text: `Interaction active: ${this.param}` code: "active"});
  *     return messages;
  *   }
- * 
+ *
  * }
  *
  * // usage
