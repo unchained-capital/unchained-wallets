@@ -1,6 +1,8 @@
 import {
   MAINNET,
+  ROOT_FINGERPRINT,
   TEST_FIXTURES,
+  PSBT_MAGIC_B64,
 } from "unchained-bitcoin";
 import {
   PENDING,
@@ -267,12 +269,12 @@ describe('trezor', () => {
           //   second byte is length of signature in bytes (0x03)
           // The string length is however long the signature is minus these two starting bytes
           // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parse({signatures: ["3003foobar"]})).toEqual(["3003foobar01"]);
+          expect(interactionBuilder().parsePayload({signatures: ["3003foobar"]})).toEqual(["3003foobar01"]);
           // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parse({signatures: ["3003foob01"]})).toEqual(["3003foob0101"]);
+          expect(interactionBuilder().parsePayload({signatures: ["3003foob01"]})).toEqual(["3003foob0101"]);
           // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
           // we expect this to chop off the 01 and add it back
-          expect(interactionBuilder().parse({signatures: ["3003foobar01"]})).toEqual(["3003foobar01"]);
+          expect(interactionBuilder().parsePayload({signatures: ["3003foobar01"]})).toEqual(["3003foobar01"]);
         });
 
         it("uses TrezorConnect.signTransaction", () => {
@@ -287,6 +289,49 @@ describe('trezor', () => {
 
       });
 
+    });
+
+    function psbtInteractionBuilder(tx, keyDetails, returnSignatureArray) {
+      return new TrezorSignMultisigTransaction({
+        network: tx.network,
+        inputs: [],
+        outputs: [],
+        bip32Paths: [],
+        psbt: tx.psbt,
+        keyDetails,
+        returnSignatureArray,
+      });
+    }
+
+    it("uses TrezorConnect.signTransaction via PSBT for testnet P2SH tx", () => {
+      const tx = TEST_FIXTURES.transactions[0]; // TESTNET_P2SH
+      const keyDetails = {
+        xfp: ROOT_FINGERPRINT,
+        path: "m/45'/1'/100'",
+      };
+      const interaction = psbtInteractionBuilder(tx, keyDetails, false);
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.signTransaction);
+      expect(params.coin).toEqual(trezorCoin(tx.network));
+      expect(params.inputs.length).toEqual(tx.inputs.length);
+      expect(params.outputs.length).toEqual(tx.outputs.length);
+
+      expect(interaction.parsePayload({signatures: tx.signature})).toContain(PSBT_MAGIC_B64)
+    });
+
+    it("uses TrezorConnect.signTransaction via PSBT for mainnet P2SH tx", () => {
+      const tx = TEST_FIXTURES.transactions[3]; // MAINNET_P2SH
+      const keyDetails = {
+        xfp: ROOT_FINGERPRINT,
+        path: "m/45'/0'/100'",
+      };
+      const interaction = psbtInteractionBuilder(tx, keyDetails, true);
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.signTransaction);
+      expect(params.coin).toEqual(trezorCoin(tx.network));
+      expect(params.inputs.length).toEqual(tx.inputs.length);
+      expect(params.outputs.length).toEqual(tx.outputs.length);
+      expect(interaction.parsePayload({signatures: ["3003foobar01"]})).toEqual(["3003foobar01"]);
     });
 
   });

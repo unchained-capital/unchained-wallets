@@ -331,6 +331,9 @@ export function SignMultisigTransaction({
         inputs,
         outputs,
         bip32Paths,
+        psbt,
+        keyDetails,
+        returnSignatureArray,
       });
     default:
       return new UnsupportedInteraction({
