@@ -13,6 +13,7 @@
  */
 
 import Bowser from "bowser";
+import {signatureNoSighashType} from 'unchained-bitcoin';
 
 /**
  * Constant representing a keystore which is unsupported due to the
@@ -523,6 +524,20 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
   parse() {
     throw new Error("This interaction is direct and does not support a `parse` method.");
   }
+
+  signatureFormatter(inputSignature, format) {
+    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
+    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
+    // While we don't anticipate Trezor making firmware changes to include SIGHASH bytes with signatures,
+    // We'll go ahead and make sure that we're not double adding the SIGHASH byte in case they do in the future.
+    const signatureWithSigHashByte = `${signatureNoSighashType(inputSignature)}01`;
+    return format === "buffer" ? Buffer.from(signatureWithSigHashByte, "hex") : signatureWithSigHashByte;
+  }
+
+  parseSignature(transactionSignature, format="hex") {
+    return (transactionSignature || []).map(inputSignature => this.signatureFormatter(inputSignature, format));
+  }
+
 
 }
 
