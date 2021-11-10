@@ -49,9 +49,8 @@
     "bitcoinjs-lib": "^4.0.5",
     "bowser": "^2.6.1",
     "core-js": "^2.6.10",
-    "hi-base32": "^0.5.0",
-    "pako": "^1.0.10",
     "punycode": "^2.1.1",
+    "sha": "^3.0.0",
     "trezor-connect": "^8.1.19",
     "unchained-bitcoin": "^0.1.8"
   },

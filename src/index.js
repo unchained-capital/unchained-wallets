@@ -16,7 +16,7 @@ import {
   HERMIT,
   HermitExportPublicKey,
   HermitExportExtendedPublicKey,
-  HermitSignTransaction,
+  HermitSignMultisigTransaction,
 } from "./hermit";
 import {
   LEDGER,
@@ -308,10 +308,8 @@ export function SignMultisigTransaction({
         psbt,
       });
     case HERMIT:
-      return new HermitSignTransaction({
-        inputs,
-        outputs,
-        bip32Paths,
+      return new HermitSignMultisigTransaction({
+        psbt
       });
     case LEDGER:
       return new LedgerSignMultisigTransaction({
@@ -442,6 +440,7 @@ export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
 }
 
 export * from "./interaction";
+export * from "./bcur";
 export * from "./coldcard";
 export * from "./custom";
 export * from "./hermit";
