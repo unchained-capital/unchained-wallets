@@ -14,7 +14,6 @@ import {
 } from "./custom";
 import {
   HERMIT,
-  HermitExportPublicKey,
   HermitExportExtendedPublicKey,
   HermitSignMultisigTransaction,
 } from "./hermit";
@@ -133,10 +132,6 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
         network,
         bip32Path,
         includeXFP,
-      });
-    case HERMIT:
-      return new HermitExportPublicKey({
-        bip32Path,
       });
     case LEDGER:
       return new LedgerExportPublicKey({

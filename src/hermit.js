@@ -15,24 +15,19 @@
  *
  * The following API classes are implemented:
  *
- * * HermitExportPublicKey
  * * HermitExportExtendedPublicKey
  * * HermitSignMultisigTransaction
  *
  * @module hermit
  */
 import {
-  toHexString,
-} from "unchained-bitcoin";
-import {
   IndirectKeystoreInteraction,
   PENDING,
   ACTIVE,
   INFO,
   ERROR,
-  UNSUPPORTED,
 } from "./interaction";
-import {BCUREncoder, BCURDecoder} from "./bcur";
+import {BCUREncoder} from "./bcur";
 
 export const HERMIT = 'hermit';
 
@@ -56,10 +51,6 @@ function commandMessage(data) {
  */
 export class HermitInteraction extends IndirectKeystoreInteraction {
 
-  constructor() {
-    super();
-  }
-
   messages() {
     const messages = super.messages();
     messages.push({
@@ -69,71 +60,6 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
       text: "Scan Hermit QR code sequence now.",
     });
     return messages;
-  }
-
-  /**
-   * Return a new `BCURDecoder` instance.
-   *
-   * This instance can be used by a calling application to decode the
-   * data this interaction will parse.
-   * 
-   */
-  buildDecoder() {
-    return new BCURDecoder();
-  }
-
-}
-
-/**
- * Reads a public key from data returned by Hermit's `display-pub` command.
- *
- * This interaction class works in tandem with the `BCURDecoder`
- * class.  The `BCURDecoder` parses data from Hermit, this class
- * interprets it.
- *
- * @extends {module:hermit.HermitInteraction}
- * @example
- * const interaction = new HermitExportPublicKey();
- * const data = readQRCodeSequence();  // using BCURDecoder
- * const {pubkey, bip32Path} = interaction.parse(data);
- * console.log(pubkey);
- * // "03..."
- * console.log(bip32Path);
- * // "m/45'/0'/0'/0/0"
- */
-export class HermitExportPublicKey extends HermitInteraction {
-
-  constructor({bip32Path}) {
-    super();
-    this.bip32Path = bip32Path;
-  }
-
-  messages() {
-    const messages = super.messages();
-    messages.push(commandMessage({
-      instructions: "Run the following Hermit command, replacing the BIP32 path if you need to:",
-      command: `display-pub ${this.bip32Path}`,
-    }));
-    return messages;
-  }
-
-  parse(jsonData) {
-    const result = JSON.parse(jsonData);
-    const {xpub, pubkey, bip32_path} = result;
-    if (!pubkey) {
-      if (xpub) {
-        throw new Error("Make sure you asked Hermit to display a plain public key and NOT an extended public key.");
-      } else {
-        throw new Error("No public key found.");
-      }
-    }
-    if (!bip32_path) {
-      throw new Error("No BIP32 path found.");
-    }
-    return {
-      pubkey,
-      bip32Path: bip32_path,
-    };
   }
 
 }
@@ -155,6 +81,9 @@ export class HermitExportPublicKey extends HermitInteraction {
  * console.log(bip32Path);
  * // "m/45'/0'/0'"
  */
+
+const DESCRIPTOR_REGEXP = new RegExp("^\\[([a-fA-F0-9]{8})((?:/[0-9]+'?)+)\\]([a-km-zA-NP-Z1-9]+)$");
+
 export class HermitExportExtendedPublicKey extends HermitInteraction {
 
   constructor({bip32Path}) {
@@ -171,25 +100,21 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
     return messages;
   }
 
-  parse(jsonData) {
-    const result = JSON.parse(jsonData);
-    const {xpub, pubkey, bip32_path} = result;
-    if (!xpub) {
-      if (pubkey) {
-        throw new Error("Make sure you asked Hermit to display an extended public key and NOT a plain public key.");
-      } else {
-        throw new Error("No extended public key found.");
-      }
+  parse(descriptor) {
+    if (!descriptor) {
+      throw new Error("No descriptor received from Hermit.");
     }
-    if (!bip32_path) {
-      throw new Error("No BIP32 path found.");
+    const result = descriptor.match(DESCRIPTOR_REGEXP);
+    if (result && result.length == 4) {
+      return {
+        rootFingerprint: result[1],
+        bip32Path: `m${result[2]}`,
+        xpub: result[3],
+      };
+    } else {
+      throw new Error("Invalid descriptor received from Hermit.");
     }
-    return {
-      xpub,
-      bip32Path: bip32_path,
-    };
   }
-
 }
 
 /**
@@ -251,13 +176,16 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
   }
 
   request() {
-    const psbtHex = [...atob(this.psbt)].map(c=> c.charCodeAt(0).toString(16).padStart(2,0)).join('');
-    const encoder = new BCUREncoder(psbtHex);
+    const unsignedPSBTHex = Buffer.from(this.psbt, 'base64').toString('hex');
+    const encoder = new BCUREncoder(unsignedPSBTHex);
     return encoder.parts();
   }
 
-  parse(signedPSBT) {
-    return signedPSBT;
+  parse(signedPSBTHex) {
+    if (!signedPSBTHex) {
+      throw new Error("No signature received from Hermit.");
+    }
+    return Buffer.from(signedPSBTHex, 'hex').toString('base64');
   }
 
 }

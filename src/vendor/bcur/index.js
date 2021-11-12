@@ -1,2 +1,2 @@
 export { encodeUR } from './encodeUR';
-export { decodeUR, extractSingleWorkload } from './decodeUR';
+export { smartDecodeUR, decodeUR, extractSingleWorkload } from './decodeUR';

@@ -9,7 +9,7 @@
  * @module bcur
  */
 
-import { encodeUR } from "./vendor/bcur";
+import { encodeUR, smartDecodeUR } from "./vendor/bcur";
 
 /**
  * Encoder class for BC UR data.
@@ -34,12 +34,11 @@ export class BCUREncoder {
   /**
    * Create a new encoder.
    *
-   * @param {string} data plain JavaScript string to encode
+   * @param {string} data a hex string to encode
    * @param {int} fragmentCapacity passed to internal bcur implementation
    * 
    */
   constructor(data, fragmentCapacity = 200) {
-    const messageBuffer = Buffer.from(data);
     this.data = data;
     this.fragmentCapacity = fragmentCapacity;
     this.encodeUR = encodeUR;
@@ -60,7 +59,7 @@ export class BCUREncoder {
 /**
  * Decoder class for BC UR data.
  *
- * Decodes data from a sequence of UR parts.
+ * Decodes hex data from a collection of UR parts.
  *
  * Designed for use by a calling application which is typically
  * in a loop parsing an animated sequence of QR codes.
@@ -78,6 +77,7 @@ export class BCUREncoder {
  * }
  * if (decoder.isSuccess()) {
  *   console.log(decoder.data());
+ *   // "deadbeef....abcd"
  * } else {
  *   console.log(decoder.error());
  * }
@@ -87,7 +87,32 @@ export class BCUREncoder {
 export class BCURDecoder {
 
   constructor() {
-    this.decoder = URDecoder();
+    this.summary = {
+      success: false,
+      current: 0,
+      length: 0,
+      workloads: [],
+      result: '',
+    };
+    this.error = null;
+  }
+
+  /**
+   * Reset this decoder.
+   *
+   * Clears any error message and received parts and returns counts to zero.
+   *
+   * @returns {null} Nothing is returned.
+   */
+  reset() {
+    this.summary = {
+      success: false,
+      current: 0,
+      length: 0,
+      workloads: [],
+      result: '',
+    };
+    this.error = null;
   }
 
   /**
@@ -95,22 +120,27 @@ export class BCURDecoder {
    *
    * It's OK to call this method multiple times for the same UR part.
    *
-   * @param [string] part the UR part, typically the contents of a QR code
+   * @param {string} part the UR part, typically the contents of a QR code
+   * @returns {null} Nothing is returned.
    */
   receivePart(part) {
-    return this.decoder.receivePart(part);
+    try {
+      this.summary = smartDecodeUR(this.summary.workloads.concat([part]));
+    } catch(e) {
+      this.error = e;
+    }
   }
 
   /**
    * Returns the current progress of this decoder.
    *
+   * @returns {object} An object with keys `totalParts` and `partsReceived`.
    * @example Before a single part is received
    * import {BCURDecoder} from "unchained-wallets";
    * const decoder = BCURDecoder();
    * console.log(decoder.progress())
    * // { totalParts: 0, partsReceived: 0 }
    *
-   * @return [bool]
    * import {BCURDecoder} from "unchained-wallets";
    * const decoder = BCURDecoder();
    * ...
@@ -124,49 +154,57 @@ export class BCURDecoder {
    * // { totalParts: 10, partsReceived: 3 }
    */
   progress() {
-    const totalParts = this.decoder.expectedPartCount();
-    const partsReceived = this.decoder.receivedPartIndexes().length;
+    const totalParts = this.summary.length;
+    const partsReceived = this.summary.current;
     return {totalParts, partsReceived};
   }
 
   /**
    * Is this decoder complete?
    *
-   * @return [bool]
+   * Will return `true` if there was an error.
+   *
+   * @returns {bool} Completion status
    */
   isComplete() {
-    return this.decoder.isComplete();
+    return this.summary.success || Boolean(this.error);
   }
 
   /**
    * Was this decoder successful?
    *
-   * @return [bool]
+   * Will return `false` if completed because of an error.
+   *
+   * @returns {bool} Success status
    */
   isSuccess() {
-    return this.decoder.isSuccess();
+    return this.summary.success;
   }
 
   /**
-   * Returns the decoded data.
+   * Returns the decoded data in hex.
    *
-   * @return [string]
+   * @returns {string} decoded data in hex or `null` if not successful
    */
   data() {
-    const ur = this.decoder.resultUR();
-    const decoded = ur.decodeCBOR();
-    const originalMessage = decoded.toString();
-    return originalMessage;
+    if (this.isSuccess()) {
+      return this.summary.result;
+    } else {
+      return null;
+    }
   }
 
   /**
    * Returns the error message.
    *
-   * @return [string]
+   * @returns {string} the error message
    */
-  error() {
-    return this.decoder.resultError();
+  errorMessage() {
+    if (this.error) {
+      return this.error.message;
+    } else {
+      return null;
+    }
   }
 
 }
-
