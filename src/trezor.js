@@ -36,10 +36,11 @@ import {
   P2SH,
   P2SH_P2WSH,
   P2WSH,
-  signatureNoSighashType,
   networkData,
   validateBIP32Path,
   fingerprintToFixedLengthHex,
+  translatePSBT,
+  addSignaturesToPSBT,
 } from "unchained-bitcoin";
 import bitcoin from "bitcoinjs-lib";
 
@@ -269,7 +270,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
     if (!result.success) {
       throw new Error(result.payload.error);
     }
-    return this.parse(result.payload);
+    return this.parsePayload(result.payload);
   }
 
   /**
@@ -301,7 +302,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * @param {Object} payload - the raw payload from the device response
    * @returns {Object} - relevant or formatted data built from the raw payload
    */
-  parse(payload) {
+  parsePayload(payload) {
     return payload;
   }
 
@@ -701,12 +702,37 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
    * @param {UTXO[]} options.inputs - inputs for the transaction
    * @param {TransactionOutput[]} options.outputs - outputs for the transaction
    * @param {string[]} options.bip32Paths - BIP32 paths on this device to sign with, one per each input
+   * @param {string} [options.psbt] - PSBT string encoded in base64
+   * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
+   * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
    */
-  constructor({network, inputs, outputs, bip32Paths}) {
+  constructor({
+                network,
+                inputs,
+                outputs,
+                bip32Paths,
+                psbt,
+                keyDetails,
+                returnSignatureArray,
+  }) {
     super({network});
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.bip32Paths = bip32Paths;
+    if (!psbt || !keyDetails) {
+      this.inputs = inputs;
+      this.outputs = outputs;
+      this.bip32Paths = bip32Paths;
+    } else {
+      const {
+        unchainedInputs,
+        unchainedOutputs,
+        bip32Derivations
+      } = translatePSBT(network, P2SH, psbt, keyDetails);
+      this.psbt = psbt;
+      this.inputs = unchainedInputs;
+      this.outputs = unchainedOutputs;
+      this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
+      this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
+      this.returnSignatureArray = returnSignatureArray;
+    }
   }
 
   /**
@@ -784,18 +810,21 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   }
 
   /**
-   * Parses the signature out of the response payload.
+   * Parses the signature(s) out of the response payload.
    *
    * Ensures each input's signature hasa a trailing `...01` {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL} byte.
    *
    * @param {Object} payload - the original payload from the device response
-   * @returns {string[]} array of input signatures, one per input
+   * @returns {string[]|string} array of input signatures, one per input or signed psbt with signatures inserted
    */
-  parse(payload) {
-    // While we don't anticipate Trezor making firmware changes to include SIGHASH bytes with signatures,
-    // let's go ahead and make sure that we're not double adding the SIGHASH byte in case they do in the future.
-
-    return (payload.signatures || []).map((inputSignature) => (`${signatureNoSighashType(inputSignature)}01`));
+  parsePayload(payload) {
+    // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
+    // rather than the normal array of signatures.
+    if (this.psbt && !this.returnSignatureArray) {
+      return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.parseSignature(payload.signatures, "buffer"))
+    } else {
+      return this.parseSignature(payload.signatures, "hex")
+    }
   }
 
 }

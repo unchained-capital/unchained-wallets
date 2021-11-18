@@ -1,5 +1,6 @@
 import {
   TEST_FIXTURES,
+  ROOT_FINGERPRINT,
 } from "unchained-bitcoin";
 import {
   PENDING,
@@ -233,17 +234,32 @@ describe('ledger', () => {
           //   second byte is length of signature in bytes (0x03)
           // The string length is however long the signature is minus these two starting bytes
           // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parse(["3003foobar"])).toEqual(["3003foobar01"]);
+          expect(interactionBuilder().parseSignature(["3003foobar"])).toEqual(["3003foobar01"]);
           // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parse(["3003foob01"])).toEqual(["3003foob0101"]);
+          expect(interactionBuilder().parseSignature(["3003foob01"])).toEqual(["3003foob0101"]);
           // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
           // we expect this to chop off the 01 and add it back
-          expect(interactionBuilder().parse(["3003foobar01"])).toEqual(["3003foobar01"]);
+          expect(interactionBuilder().parseSignature(["3003foobar01"])).toEqual(["3003foobar01"]);
         });
 
       });
     });
 
+    const tx = TEST_FIXTURES.transactions[0];
+    const keyDetails = {
+      xfp: ROOT_FINGERPRINT,
+      path: "m/45'/1'/100'",
+    };
+    function psbtInteractionBuilder() { return new LedgerSignMultisigTransaction({
+      network: tx.network,
+      inputs: [],
+      outputs: [],
+      bip32Paths: [],
+      psbt: tx.psbt,
+      keyDetails,
+    }); }
+
+    itHasAppMessages(psbtInteractionBuilder);
 
   });
 

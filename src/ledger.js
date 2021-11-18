@@ -30,9 +30,10 @@ import {
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
-  signatureNoSighashType,
   validateBIP32Path,
   fingerprintToFixedLengthHex,
+  translatePSBT,
+  addSignaturesToPSBT,
 } from "unchained-bitcoin";
 
 import {
@@ -114,7 +115,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  *       return app.doSomething(this.param); // Not a real Ledger API call
  *     });
  *   }
- * 
+ *
  * }
  *
  * // usage
@@ -231,10 +232,10 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * The way the pubkey/xpub/fingerprints are grabbed makes this a little tricky.
    * Instead of re-writing how that works, let's just add a way to explicitly
    * close the transport.
-   * @return {Promise}
+   * @return {Promise} - promise to close the transport
    */
   closeTransport() {
-    return this.withTransport( async (transport) => {
+    return this.withTransport(async (transport) => {
       await transport.close();
     })
   }
@@ -810,16 +811,33 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
-   * @param {array<object>} options.inputs - inputs for the transaction
-   * @param {array<object>} options.outputs - outputs for the transaction
-   * @param {array<string>} options.bip32Paths - BIP32 paths
+   * @param {array<object>} [options.inputs] - inputs for the transaction
+   * @param {array<object>} [options.outputs] - outputs for the transaction
+   * @param {array<string>} [options.bip32Paths] - BIP32 paths
+   * @param {string} [options.psbt] - PSBT string encoded in base64
+   * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
+   * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
    */
-  constructor({network, inputs, outputs, bip32Paths}) {
+  constructor({network, inputs, outputs, bip32Paths, psbt, keyDetails, returnSignatureArray= false}) {
     super();
     this.network = network;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.bip32Paths = bip32Paths;
+    if (!psbt || !keyDetails) {
+      this.inputs = inputs;
+      this.outputs = outputs;
+      this.bip32Paths = bip32Paths;
+    } else {
+      const {
+        unchainedInputs,
+        unchainedOutputs,
+        bip32Derivations
+      } = translatePSBT(network, P2SH, psbt, keyDetails);
+      this.psbt = psbt;
+      this.inputs = unchainedInputs;
+      this.outputs = unchainedOutputs;
+      this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
+      this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
+      this.returnSignatureArray = returnSignatureArray;
+    }
   }
 
   /**
@@ -960,7 +978,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
    * byte.
    *
-   * @returns {string[]} array of input signatures, one per input
+   * @returns {string[]|string} array of input signatures, one per input or PSBT in Base64
    */
   run() {
     return this.withApp(async (app, transport) => {
@@ -978,17 +996,18 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
             transactionVersion: 1, // tx version
           },
         );
-        return this.parse(transactionSignature);
+
+        // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
+        // rather than the normal array of signatures.
+        if (this.psbt && !this.returnSignatureArray) {
+          return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.parseSignature(transactionSignature, "buffer"))
+        } else {
+          return this.parseSignature(transactionSignature, "hex");
+        }
       } finally {
         transport.close();
       }
     });
-  }
-
-  parse(transactionSignature) {
-    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
-    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
-    return (transactionSignature || []).map(inputSignature => `${signatureNoSighashType(inputSignature)}01`);
   }
 
   ledgerInputs() {
