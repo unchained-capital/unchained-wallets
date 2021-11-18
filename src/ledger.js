@@ -30,7 +30,6 @@ import {
   getFingerprintFromPublicKey,
   deriveExtendedPublicKey,
   unsignedMultisigTransaction,
-  signatureNoSighashType,
   validateBIP32Path,
   fingerprintToFixedLengthHex,
   translatePSBT,
@@ -116,7 +115,7 @@ export const LEDGER_BOTH_BUTTONS = 'ledger_both_buttons';
  *       return app.doSomething(this.param); // Not a real Ledger API call
  *     });
  *   }
- * 
+ *
  * }
  *
  * // usage
@@ -817,8 +816,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * @param {array<string>} [options.bip32Paths] - BIP32 paths
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
+   * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
    */
-  constructor({network, inputs, outputs, bip32Paths, psbt, keyDetails}) {
+  constructor({network, inputs, outputs, bip32Paths, psbt, keyDetails, returnSignatureArray= false}) {
     super();
     this.network = network;
     if (!psbt || !keyDetails) {
@@ -836,6 +836,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       this.outputs = unchainedOutputs;
       this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
       this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
+      this.returnSignatureArray = returnSignatureArray;
     }
   }
 
@@ -998,7 +999,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
         // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
         // rather than the normal array of signatures.
-        if (this.psbt) {
+        if (this.psbt && !this.returnSignatureArray) {
           return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.parseSignature(transactionSignature, "buffer"))
         } else {
           return this.parseSignature(transactionSignature, "hex");
@@ -1007,16 +1008,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
         transport.close();
       }
     });
-  }
-
-  signatureFormatter(inputSignature, format) {
-    // Ledger signatures include the SIGHASH byte (0x01) if signing for P2SH-P2WSH or P2WSH ...
-    // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
-    return format === "buffer" ? Buffer.from(`${signatureNoSighashType(inputSignature)}01`, "hex") : `${signatureNoSighashType(inputSignature)}01`;
-  }
-
-  parseSignature(transactionSignature, format="hex") {
-    return (transactionSignature || []).map(inputSignature => this.signatureFormatter(inputSignature, format));
   }
 
   ledgerInputs() {
