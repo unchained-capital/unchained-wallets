@@ -87,14 +87,7 @@ export class BCUREncoder {
 export class BCURDecoder {
 
   constructor() {
-    this.summary = {
-      success: false,
-      current: 0,
-      length: 0,
-      workloads: [],
-      result: '',
-    };
-    this.error = null;
+    this.reset();
   }
 
   /**

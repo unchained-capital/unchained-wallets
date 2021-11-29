@@ -90,6 +90,9 @@ describe("BCURDecoder", () => {
       decoder.receivePart(part);
       expect(vendorBCUR.smartDecodeUR).toHaveBeenCalledWith(['a', 'b', 'c']);
       expect(decoder.error).toEqual(error);
+      expect(decoder.isComplete()).toEqual(true);
+      expect(decoder.isSuccess()).toEqual(false);
+      expect(decoder.errorMessage()).toEqual("some message");
     });
 
   });
