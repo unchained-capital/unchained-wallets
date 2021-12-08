@@ -29,6 +29,8 @@ describe("HermitExportExtendedPublicKey", () => {
 
   itHasACommandMessage(interaction, `display-xpub ${bip32Path}`);
 
+  const toHex = (text) => Buffer.from(text, 'utf8').toString('hex');
+
   describe("parse", () => {
 
     it("throws an error when no descriptor is returned", () => {
@@ -37,30 +39,35 @@ describe("HermitExportExtendedPublicKey", () => {
       expect(() => { interaction.parse(""); }).toThrow(/no descriptor/i);
     });
 
+    it("throws an error when a non-hex descriptor is returned", () => {
+      expect(() => { interaction.parse("zzz"); }).toThrow(/invalid descriptor/i);
+    });
+
     it("throws an error when the descriptor has an invalid XFP", () => {
-      expect(() => { interaction.parse(`[${descriptorPath}]${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[1234567 ${descriptorPath}]${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[1234567${descriptorPath}]${xpub}`); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${descriptorPath}]${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[1234567 ${descriptorPath}]${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[1234567${descriptorPath}]${xpub}`)); }).toThrow(/invalid descriptor/i);
     });
 
     it("throws an error when the descriptor has an invalid BIP32 path", () => {
-      expect(() => { interaction.parse(`[${xfp}]${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/'${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/'1${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/1'/${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/1'/'${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}]/a'/'${xpub}`); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/'${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/'1${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/1'/${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/1'/'${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}]/a'/'${xpub}`)); }).toThrow(/invalid descriptor/i);
     });
 
     it("throws an error when the descriptor has an invalid xpub", () => {
-      expect(() => { interaction.parse(`[${xfp}${descriptorPath}]`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}${descriptorPath}] ${xpub}`); }).toThrow(/invalid descriptor/i);
-      expect(() => { interaction.parse(`[${xfp}${descriptorPath}]_hello`); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}${descriptorPath}]`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}${descriptorPath}] ${xpub}`)); }).toThrow(/invalid descriptor/i);
+      expect(() => { interaction.parse(toHex(`[${xfp}${descriptorPath}]_hello`)); }).toThrow(/invalid descriptor/i);
     });
 
     it("successfully parses a well-formed descriptor", () => {
-      expect(interaction.parse(`[${xfp}${descriptorPath}]${xpub}`)).toEqual({
+      const descriptor = toHex(`[${xfp}${descriptorPath}]${xpub}`);
+      expect(interaction.parse(descriptor)).toEqual({
         rootFingerprint: xfp,
         bip32Path,
         xpub,
