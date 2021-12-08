@@ -559,13 +559,13 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
  *     this.param = param;
  *   }
  *
- *   async request() {
- *     // Or do something complicated...
+ *   request() {
+ *     // Construct the data to be passed to the keystore...
  *     return this.param;
  *   }
  *
  *   parse(response) {
- *     // Or do something complicated with `response`...
+ *     // Parse data returned from the keystore...
  *     return response;
  *   }
  *
@@ -584,13 +584,19 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
 
   /**
    * Sets the `this.indirect` property to `true`.  This property can
-   * be utilized when introspecting on interaction classes..
+   * be utilized when introspecting on interaction classes.
+   *
+   * The `this.workflow` property is an array containing one or both
+   * of the strings `request` and/or `parse`.  Their presence and
+   * order indicates to calling applications whether they are
+   * necessary and in which order they should be run.
    *
    * @constructor
    */
   constructor() {
     super();
     this.indirect = true;
+    this.workflow = ["parse"];
   }
 
   /**
@@ -620,7 +626,6 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    *
    */
   parse(response) {
-    console.log(response);
     throw new Error("Override the `parse` method in this interaction.");
   }
 
