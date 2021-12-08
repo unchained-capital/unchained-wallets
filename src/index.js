@@ -306,7 +306,8 @@ export function SignMultisigTransaction({
       });
     case HERMIT:
       return new HermitSignMultisigTransaction({
-        psbt
+        psbt,
+        returnSignatureArray,
       });
     case LEDGER:
       return new LedgerSignMultisigTransaction({

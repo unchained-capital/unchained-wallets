@@ -21,6 +21,9 @@
  * @module hermit
  */
 import {
+  parseSignaturesFromPSBT,
+} from "unchained-bitcoin";
+import {
   IndirectKeystoreInteraction,
   PENDING,
   ACTIVE,
@@ -100,10 +103,11 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
     return messages;
   }
 
-  parse(descriptor) {
-    if (!descriptor) {
+  parse(descriptorHex) {
+    if (!descriptorHex) {
       throw new Error("No descriptor received from Hermit.");
     }
+    const descriptor = Buffer.from(descriptorHex, 'hex').toString('utf8');
     const result = descriptor.match(DESCRIPTOR_REGEXP);
     if (result && result.length == 4) {
       return {
@@ -148,9 +152,11 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
    * @param {object} options - options argument
    * @param {array<object>} options.psbt - unsigned PSBT to sign
    */
-  constructor({psbt}) {
+  constructor({psbt, returnSignatureArray=false}) {
     super();
     this.psbt = psbt;
+    this.workflow.unshift("request");
+    this.returnSignatureArray = returnSignatureArray;
   }
 
   messages() {
@@ -185,7 +191,12 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
     if (!signedPSBTHex) {
       throw new Error("No signature received from Hermit.");
     }
-    return Buffer.from(signedPSBTHex, 'hex').toString('base64');
+    if (this.returnSignatureArray) {
+      const signatures = parseSignaturesFromPSBT(signedPSBTHex);
+      return Object.values(signatures)[0];
+    } else {
+      return Buffer.from(signedPSBTHex, 'hex').toString('base64');
+    }
   }
 
 }
