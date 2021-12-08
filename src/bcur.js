@@ -118,7 +118,11 @@ export class BCURDecoder {
    */
   receivePart(part) {
     try {
-      this.summary = smartDecodeUR(this.summary.workloads.concat([part]));
+      const workloads = this.summary.workloads.includes(part) ? this.summary.workloads : [
+        ...this.summary.workloads,
+        part,
+      ];
+      this.summary = smartDecodeUR(workloads);
     } catch(e) {
       this.error = e;
     }
