@@ -68,7 +68,8 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
 }
 
 /**
- * Reads a public key from data returned by Hermit's `display-xpub` command.
+ * Reads an extended public key from data returned by Hermit's
+ * `display-xpub` command.
  *
  * This interaction class works in tandem with the `BCURDecoder`
  * class.  The `BCURDecoder` parses data from Hermit, this class
@@ -76,15 +77,27 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
  * 
  * @extends {module:hermit.HermitInteraction}
  * @example
+ * // Hermit returns a descriptor encoded as hex through BC-UR.  Some
+ * // application function needs to work with the BCURDecoder class to
+ * // parse this data.
+ * const descriptorHex = readQRCodeSequence();
+ * 
+ * // The interaction parses the data from Hermit
  * const interaction = new HermitExportExtendedPublicKey();
- * const data = readQRCodeSequence();  // using BCURDecoder
- * const {xpub, bip32Path} = interaction.parse(data);
+ * const {xpub, bip32Path, rootFingerprint} = interaction.parse(descriptorHex);
+ * 
  * console.log(xpub);
  * // "xpub..."
+ * 
  * console.log(bip32Path);
  * // "m/45'/0'/0'"
+ * 
+ * console.log(rootFingerprint);
+ * // "abcdefgh"
+ * 
  */
 
+// FIXME -- move all this descriptor regex and extraction stuff to unchained-bitcoin
 const DESCRIPTOR_REGEXP = new RegExp("^\\[([a-fA-F0-9]{8})((?:/[0-9]+'?)+)\\]([a-km-zA-NP-Z1-9]+)$");
 
 export class HermitExportExtendedPublicKey extends HermitInteraction {
@@ -136,12 +149,18 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
  * console.log(urParts);
  * // [ "ur:...", "ur:...", ... ]
  *
+ * // Some application function which knows how to display an animated
+ * // QR code sequence.
  * displayQRCodeSequence(urParts);
- * // ...
  *
- * const data = readQRCodeSequence();  // using BCURDecoder
- * const signedPSBT = interaction.parse(data);
- * console.log(signedPSBT);
+ * // Hermit returns a PSBT encoded as hex through BC-UR.  Some
+ * // application function needs to work with the BCURDecoder class to
+ * // parse this data.
+ * const signedPSBTHex = readQRCodeSequence();
+ *
+ * // The interaction parses the data from Hermit.
+ * const signedPSBTBase64 = interaction.parse(signedPSBTHex);
+ * console.log(signedPSBTBase64);
  * // "cHNidP8B..."
  *
  */
@@ -151,6 +170,7 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
    *
    * @param {object} options - options argument
    * @param {array<object>} options.psbt - unsigned PSBT to sign
+   * @param {bool} options.returnSignatureArray - return a signed PSBT or an array of signatures (useful in Caravan's testing app)
    */
   constructor({psbt, returnSignatureArray=false}) {
     super();

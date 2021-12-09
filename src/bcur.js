@@ -1,5 +1,6 @@
 /**
- * Provides classes for encoding & decoding data using the Blockchain Commons UR format.
+ * Provides classes for encoding & decoding data using the Blockchain
+ * Commons UR (BC-UR) format.
  *
  * The following API classes are implemented:
  *
@@ -14,7 +15,7 @@ import { encodeUR, smartDecodeUR } from "./vendor/bcur";
 /**
  * Encoder class for BC UR data.
  *
- * Encodes data as a sequence of UR parts.  Each UR is a string.
+ * Encodes a hex string as a sequence of UR parts.  Each UR is a string.
  *
  * Designed for use by a calling application which will typically take
  * the resulting strings and display them as a sequence of animated QR
@@ -22,8 +23,8 @@ import { encodeUR, smartDecodeUR } from "./vendor/bcur";
  *
  * @example
  * import {BCUREncoder} from "unchained-wallets";
- * const data = "hello there ...";
- * const encoder = BCUREncoder(data);
+ * const hexString = "deadbeef";
+ * const encoder = BCUREncoder(hexString);
  * console.log(encoder.parts())
  * // [ "ur:...", "ur:...", ... ]
  * 
@@ -34,14 +35,13 @@ export class BCUREncoder {
   /**
    * Create a new encoder.
    *
-   * @param {string} data a hex string to encode
+   * @param {string} hexString a hex string to encode
    * @param {int} fragmentCapacity passed to internal bcur implementation
    * 
    */
-  constructor(data, fragmentCapacity = 200) {
-    this.data = data;
+  constructor(hexString, fragmentCapacity = 200) {
+    this.hexString = hexString;
     this.fragmentCapacity = fragmentCapacity;
-    this.encodeUR = encodeUR;
   }
 
   /**
@@ -51,7 +51,7 @@ export class BCUREncoder {
    * 
    */
   parts() {
-    return encodeUR(this.data, this.fragmentCapacity);
+    return encodeUR(this.hexString, this.fragmentCapacity);
   }
 
 }
@@ -59,7 +59,7 @@ export class BCUREncoder {
 /**
  * Decoder class for BC UR data.
  *
- * Decodes hex data from a collection of UR parts.
+ * Decodes a hex string from a collection of UR parts.
  *
  * Designed for use by a calling application which is typically
  * in a loop parsing an animated sequence of QR codes.
@@ -68,18 +68,27 @@ export class BCUREncoder {
  * import {BCURDecoder} from "unchained-wallets";
  * const decoder = new BCURDecoder();
  *
- * // while the application is still reading data...
- * while (reading() && !decoder.isComplete()) {
- *   console.log(decoder.progress());
- *   // {totalParts: 10, partsReceived; 3}
- *   const qrCodeData = scanQRCode(); // application dependent
- *   decoder.receivePart(qrCodeData);
+ * // Read data until the decoder is complete...
+ * while (!decoder.isComplete()) {
+ *
+ *   // Progress can be fed back to the calling application for visualization in its UI
+ *   console.log(decoder.progress());  // {totalParts: 10, partsReceived; 3}
+ *
+ *   // Application-defined function to obtain a single UR part string.
+ *   const part = scanQRCode();
+ *   decoder.receivePart(part);
  * }
+ *
+ * // Check for an error
  * if (decoder.isSuccess()) {
- *   console.log(decoder.data());
- *   // "deadbeef....abcd"
+ *
+ *   // Data can be passed back to the calling application
+ *   console.log(decoder.data()); // "deadbeef"
+ *   
  * } else {
- *   console.log(decoder.error());
+ *
+ *   // Errors can be passed back to the calling application
+ *   console.log(decoder.errorMessage());
  * }
  * 
  * 
@@ -132,15 +141,12 @@ export class BCURDecoder {
    * Returns the current progress of this decoder.
    *
    * @returns {object} An object with keys `totalParts` and `partsReceived`.
-   * @example Before a single part is received
+   * @example
    * import {BCURDecoder} from "unchained-wallets";
    * const decoder = BCURDecoder();
    * console.log(decoder.progress())
    * // { totalParts: 0, partsReceived: 0 }
    *
-   * import {BCURDecoder} from "unchained-wallets";
-   * const decoder = BCURDecoder();
-   * ...
    * decoder.receivePart(part);
    * ...
    * decoder.receivePart(part);
@@ -149,6 +155,7 @@ export class BCURDecoder {
    * ...
    * console.log(decoder.progress())
    * // { totalParts: 10, partsReceived: 3 }
+   * 
    */
   progress() {
     const totalParts = this.summary.length;
@@ -179,7 +186,7 @@ export class BCURDecoder {
   }
 
   /**
-   * Returns the decoded data in hex.
+   * Returns the decoded data as a hex string.
    *
    * @returns {string} decoded data in hex or `null` if not successful
    */
