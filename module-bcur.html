@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: ledger</title>
+    <title>JSDoc: Module: bcur</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: ledger</h1>
+    <h1 class="page-title">Module: bcur</h1>
 
     
 
@@ -38,16 +38,12 @@
     <div class="container-overview">
     
         
-            <div class="description"><p>This module provides classes for Ledger hardware wallets.</p>
-<p>The base classes provided are <code>LedgerDashboardInteraction</code> and
-<code>LedgerBitcoinInteraction</code> for interactions requiring being in the
-Ledger dashboard vs. bitcoin app, respectively.</p>
+            <div class="description"><p>Provides classes for encoding &amp; decoding data using the Blockchain
+Commons UR (BC-UR) format.</p>
 <p>The following API classes are implemented:</p>
 <ul>
-<li>LedgerGetMetadata</li>
-<li>LedgerExportPublicKey</li>
-<li>LedgerExportExtendedPublicKey</li>
-<li>LedgerSignMultisigTransaction</li>
+<li>BCUREncoder</li>
+<li>BCURDecoder</li>
 </ul></div>
         
 
@@ -97,7 +93,7 @@ Ledger dashboard vs. bitcoin app, respectively.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line1">line 1</a>
+        <a href="bcur.js.html">bcur.js</a>, <a href="bcur.js.html#line1">line 1</a>
     </li></ul></dd>
     
 
@@ -139,28 +135,10 @@ Ledger dashboard vs. bitcoin app, respectively.</p>
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
-            <dt><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></dt>
+            <dt><a href="module-bcur.BCURDecoder.html">BCURDecoder</a></dt>
             <dd></dd>
         
-            <dt><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></dt>
+            <dt><a href="module-bcur.BCUREncoder.html">BCUREncoder</a></dt>
             <dd></dd>
         </dl>
     
@@ -171,321 +149,6 @@ Ledger dashboard vs. bitcoin app, respectively.</p>
 
     
 
-    
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id=".LEDGER"><span class="type-signature">(static, constant) </span>LEDGER<span class="type-signature"> :string</span></h4>
-
-
-
-
-<div class="description">
-    <p>Constant defining Ledger interactions.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">string</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-default">Default Value:</dt>
-    <dd class="tag-default"><ul class="dummy">
-            <li>ledger</li>
-        </ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line57">line 57</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id=".LEDGER_BOTH_BUTTONS"><span class="type-signature">(static, constant) </span>LEDGER_BOTH_BUTTONS<span class="type-signature"> :string</span></h4>
-
-
-
-
-<div class="description">
-    <p>Constant representing the action of pushing both buttons on a
-Ledger device.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">string</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-default">Default Value:</dt>
-    <dd class="tag-default"><ul class="dummy">
-            <li>'ledger_both_buttons'</li>
-        </ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line88">line 88</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id=".LEDGER_LEFT_BUTTON"><span class="type-signature">(static, constant) </span>LEDGER_LEFT_BUTTON<span class="type-signature"> :string</span></h4>
-
-
-
-
-<div class="description">
-    <p>Constant representing the action of pushing the left button on a
-Ledger device.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">string</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-default">Default Value:</dt>
-    <dd class="tag-default"><ul class="dummy">
-            <li>'ledger_left_button'</li>
-        </ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line70">line 70</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id=".LEDGER_RIGHT_BUTTON"><span class="type-signature">(static, constant) </span>LEDGER_RIGHT_BUTTON<span class="type-signature"> :string</span></h4>
-
-
-
-
-<div class="description">
-    <p>Constant representing the action of pushing the right button on a
-Ledger device.</p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">string</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-default">Default Value:</dt>
-    <dd class="tag-default"><ul class="dummy">
-            <li>'ledger_right_button'</li>
-        </ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="ledger.js.html">ledger.js</a>, <a href="ledger.js.html#line79">line 79</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
     
 
     

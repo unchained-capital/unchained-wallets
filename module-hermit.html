@@ -38,15 +38,18 @@
     <div class="container-overview">
     
         
-            <div class="description"><p>Provides classes for interacting with a Hermit installation through
-QR codes.</p>
-<p>The base classes provided are <code>HermitDisplayer</code> and <code>HermitReader</code>
-for displaying &amp; reading a QR code to/from Hermit, respectively.
-Functions <code>parseHermitQRCodeData</code> and <code>encodeHermitQRCodeData</code>
-handle the Hermit QR-code data protocol.</p>
+            <div class="description"><p>Provides classes for interacting with Hermit.</p>
+<p>Hermit uses the Blockchain Commons UR encoding for data IO with
+individual UR parts represented as QR codes.</p>
+<p>When receiving data from Hermit, calling applications are
+responsible for parsing UR parts from the animated sequence of QR
+codes Hermit displays.  The <code>BCURDecode</code> class is designed to make
+this easy.</p>
+<p>When sending data to Hermit, these interaction classes encode the
+data into UR parts.  Calling applications are responsible for
+displaying these UR parts as an animated QR code sequence.</p>
 <p>The following API classes are implemented:</p>
 <ul>
-<li>HermitExportPublicKey</li>
 <li>HermitExportExtendedPublicKey</li>
 <li>HermitSignMultisigTransaction</li>
 </ul></div>
@@ -140,22 +143,10 @@ handle the Hermit QR-code data protocol.</p>
         <h3 class="subsection-title">Classes</h3>
 
         <dl>
-            <dt><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></dt>
-            <dd></dd>
-        
             <dt><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></dt>
             <dd></dd>
         
-            <dt><a href="module-hermit.HermitReader.html">HermitReader</a></dt>
-            <dd></dd>
-        
-            <dt><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></dt>
+            <dt><a href="module-hermit.HermitSignMultisigTransaction.html">HermitSignMultisigTransaction</a></dt>
             <dd></dd>
         </dl>
     
@@ -167,83 +158,23 @@ handle the Hermit QR-code data protocol.</p>
     
 
     
-
-    
-        <h3 class="subsection-title">Methods</h3>
+        <h3 class="subsection-title">Members</h3>
 
         
             
+<h4 class="name" id="~DESCRIPTOR_REGEXP"><span class="type-signature">(inner, constant) </span>DESCRIPTOR_REGEXP<span class="type-signature"></span></h4>
 
-    
-
-    
-    <h4 class="name" id=".encodeHermitQRCodeData"><span class="type-signature">(static) </span>encodeHermitQRCodeData<span class="signature">(data)</span><span class="type-signature"> &rarr; {string}</span></h4>
-    
-
-    
 
 
 
 <div class="description">
-    <p>Encode the given <code>data</code> as a string to be put into a
-Hermit-readable QR code.</p>
+    <p>Reads an extended public key from data returned by Hermit's
+<code>display-xpub</code> command.</p>
+<p>This interaction class works in tandem with the <code>BCURDecoder</code>
+class.  The <code>BCURDecoder</code> parses data from Hermit, this class
+interprets it.</p>
 </div>
 
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>data</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>plain JavaScript object to encode</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -279,7 +210,7 @@ Hermit-readable QR code.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="hermit.js.html">hermit.js</a>, <a href="hermit.js.html#line78">line 78</a>
+        <a href="hermit.js.html">hermit.js</a>, <a href="hermit.js.html#line101">line 101</a>
     </li></ul></dd>
     
 
@@ -294,203 +225,31 @@ Hermit-readable QR code.</p>
 
 
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>base32-encoded, gzipped, JSON data</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
+    <h5>Example</h5>
     
+    <pre class="prettyprint"><code>// Hermit returns a descriptor encoded as hex through BC-UR.  Some
+// application function needs to work with the BCURDecoder class to
+// parse this data.
+const descriptorHex = readQRCodeSequence();
 
+// The interaction parses the data from Hermit
+const interaction = new HermitExportExtendedPublicKey();
+const {xpub, bip32Path, rootFingerprint} = interaction.parse(descriptorHex);
 
+console.log(xpub);
+// "xpub..."
+
+console.log(bip32Path);
+// "m/45'/0'/0'"
+
+console.log(rootFingerprint);
+// "abcdefgh"</code></pre>
 
 
 
         
-            
-
     
 
-    
-    <h4 class="name" id=".parseHermitQRCodeData"><span class="type-signature">(static) </span>parseHermitQRCodeData<span class="signature">(encodedString)</span><span class="type-signature"> &rarr; {object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Parse the data from a Hermit-created QR-code.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>encodedString</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>base32-encoded, gzipped, JSON data</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="hermit.js.html">hermit.js</a>, <a href="hermit.js.html#line44">line 44</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>the parsed data</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
     
 
     
@@ -506,13 +265,13 @@ Hermit-readable QR code.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-custom.html">custom</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-coldcard-ColdcardMultisigSettingsFileParser.html">ColdcardMultisigSettingsFileParser</a></li><li><a href="module-custom.CustomExportExtendedPublicKey.html">CustomExportExtendedPublicKey</a></li><li><a href="module-custom.CustomInteraction.html">CustomInteraction</a></li><li><a href="module-custom.CustomSignMultisigTransaction.html">CustomSignMultisigTransaction</a></li><li><a href="module-hermit.HermitDisplayer.html">HermitDisplayer</a></li><li><a href="module-hermit.HermitExportExtendedPublicKey.html">HermitExportExtendedPublicKey</a></li><li><a href="module-hermit.HermitExportPublicKey.html">HermitExportPublicKey</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitReader.html">HermitReader</a></li><li><a href="module-hermit.HermitSignTransaction.html">HermitSignTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bcur.html">bcur</a></li><li><a href="module-coldcard.html">coldcard</a></li><li><a href="module-custom.html">custom</a></li><li><a href="module-hermit.html">hermit</a></li><li><a href="module-interaction.html">interaction</a></li><li><a href="module-ledger.html">ledger</a></li><li><a href="module-trezor.html">trezor</a></li></ul><h3>Classes</h3><ul><li><a href="module-bcur.BCURDecoder.html">BCURDecoder</a></li><li><a href="module-bcur.BCUREncoder.html">BCUREncoder</a></li><li><a href="module-coldcard.ColdcardExportExtendedPublicKey.html">ColdcardExportExtendedPublicKey</a></li><li><a href="module-coldcard.ColdcardExportPublicKey.html">ColdcardExportPublicKey</a></li><li><a href="module-coldcard.ColdcardInteraction.html">ColdcardInteraction</a></li><li><a href="module-coldcard.ColdcardMultisigWalletConfig.html">ColdcardMultisigWalletConfig</a></li><li><a href="module-coldcard.ColdcardSignMultisigTransaction.html">ColdcardSignMultisigTransaction</a></li><li><a href="module-coldcard-ColdcardMultisigSettingsFileParser.html">ColdcardMultisigSettingsFileParser</a></li><li><a href="module-custom.CustomExportExtendedPublicKey.html">CustomExportExtendedPublicKey</a></li><li><a href="module-custom.CustomInteraction.html">CustomInteraction</a></li><li><a href="module-custom.CustomSignMultisigTransaction.html">CustomSignMultisigTransaction</a></li><li><a href="module-hermit.HermitInteraction.html">HermitInteraction</a></li><li><a href="module-hermit.HermitSignMultisigTransaction.html">HermitSignMultisigTransaction</a></li><li><a href="module-interaction.DirectKeystoreInteraction.html">DirectKeystoreInteraction</a></li><li><a href="module-interaction.IndirectKeystoreInteraction.html">IndirectKeystoreInteraction</a></li><li><a href="module-interaction.KeystoreInteraction.html">KeystoreInteraction</a></li><li><a href="module-interaction.UnsupportedInteraction.html">UnsupportedInteraction</a></li><li><a href="module-ledger.LedgerBitcoinInteraction.html">LedgerBitcoinInteraction</a></li><li><a href="module-ledger.LedgerDashboardInteraction.html">LedgerDashboardInteraction</a></li><li><a href="module-ledger.LedgerExportExtendedPublicKey.html">LedgerExportExtendedPublicKey</a></li><li><a href="module-ledger.LedgerExportPublicKey.html">LedgerExportPublicKey</a></li><li><a href="module-ledger.LedgerGetMetadata.html">LedgerGetMetadata</a></li><li><a href="module-ledger.LedgerInteraction.html">LedgerInteraction</a></li><li><a href="module-ledger.LedgerSignMultisigTransaction.html">LedgerSignMultisigTransaction</a></li><li><a href="module-ledger-LedgerExportHDNode.html">LedgerExportHDNode</a></li><li><a href="module-trezor.TrezorConfirmMultisigAddress.html">TrezorConfirmMultisigAddress</a></li><li><a href="module-trezor.TrezorExportExtendedPublicKey.html">TrezorExportExtendedPublicKey</a></li><li><a href="module-trezor.TrezorExportHDNode.html">TrezorExportHDNode</a></li><li><a href="module-trezor.TrezorExportPublicKey.html">TrezorExportPublicKey</a></li><li><a href="module-trezor.TrezorGetMetadata.html">TrezorGetMetadata</a></li><li><a href="module-trezor.TrezorInteraction.html">TrezorInteraction</a></li><li><a href="module-trezor.TrezorSignMultisigTransaction.html">TrezorSignMultisigTransaction</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ConfigAdapter">ConfigAdapter</a></li><li><a href="global.html#ConfirmMultisigAddress">ConfirmMultisigAddress</a></li><li><a href="global.html#DIRECT_KEYSTORES">DIRECT_KEYSTORES</a></li><li><a href="global.html#ExportExtendedPublicKey">ExportExtendedPublicKey</a></li><li><a href="global.html#ExportPublicKey">ExportPublicKey</a></li><li><a href="global.html#GetMetadata">GetMetadata</a></li><li><a href="global.html#INDIRECT_KEYSTORES">INDIRECT_KEYSTORES</a></li><li><a href="global.html#KEYSTORES">KEYSTORES</a></li><li><a href="global.html#SignMultisigTransaction">SignMultisigTransaction</a></li><li><a href="global.html#VERSION">VERSION</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Nov 18 2021 22:16:48 GMT+0000 (UTC)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Dec 14 2021 19:42:22 GMT+0000 (UTC)
 </footer>
 
 <script> prettyPrint(); </script>

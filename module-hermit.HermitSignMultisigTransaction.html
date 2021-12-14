@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: CustomInteraction</title>
+    <title>JSDoc: Class: HermitSignMultisigTransaction</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: CustomInteraction</h1>
+    <h1 class="page-title">Class: HermitSignMultisigTransaction</h1>
 
     
 
@@ -29,9 +29,13 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="module-custom.html">custom</a>.</span>CustomInteraction<span class="signature">()</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="module-hermit.html">hermit</a>.</span>HermitSignMultisigTransaction<span class="signature">(options)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Base class for interactions with Custom &quot;devices&quot;</p></div>
+            <div class="class-description"><p>Displays a signature request for Hermit's <code>sign</code> command and reads
+the resulting signature.</p>
+<p>This interaction class works in tandem with the <code>BCURDecoder</code>
+class.  The <code>BCURDecoder</code> parses data from Hermit, this class
+interprets it.</p></div>
         
     
 </header>
@@ -46,7 +50,7 @@
     
 
     
-    <h4 class="name" id="CustomInteraction"><span class="type-signature"></span>new CustomInteraction<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="HermitSignMultisigTransaction"><span class="type-signature"></span>new HermitSignMultisigTransaction<span class="signature">(options)</span><span class="type-signature"></span></h4>
     
 
     
@@ -59,6 +63,127 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>options argument</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>psbt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">array.&lt;object></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>unsigned PSBT to sign</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>returnSignatureArray</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bool</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>return a signed PSBT or an array of signatures (useful in Caravan's testing app)</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -94,7 +219,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="custom.js.html">custom.js</a>, <a href="custom.js.html#line36">line 36</a>
+        <a href="hermit.js.html">hermit.js</a>, <a href="hermit.js.html#line175">line 175</a>
     </li></ul></dd>
     
 
@@ -123,6 +248,28 @@
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>const interaction = new HermitSignMultisigTransaction({psbt});
+const urParts = interaction.request();
+console.log(urParts);
+// [ "ur:...", "ur:...", ... ]
+
+// Some application function which knows how to display an animated
+// QR code sequence.
+displayQRCodeSequence(urParts);
+
+// Hermit returns a PSBT encoded as hex through BC-UR.  Some
+// application function needs to work with the BCURDecoder class to
+// parse this data.
+const signedPSBTHex = readQRCodeSequence();
+
+// The interaction parses the data from Hermit.
+const signedPSBTBase64 = interaction.parse(signedPSBTHex);
+console.log(signedPSBTBase64);
+// "cHNidP8B..."</code></pre>
+
+
 
     
     </div>
@@ -134,7 +281,7 @@
 
 
     <ul>
-        <li><a href="module-interaction.IndirectKeystoreInteraction.html">module:interaction.IndirectKeystoreInteraction</a></li>
+        <li><a href="module-hermit.HermitInteraction.html">module:hermit.HermitInteraction</a></li>
     </ul>
 
 
@@ -243,12 +390,12 @@ of this interaction.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.IndirectKeystoreInteraction.html#parse">module:interaction.IndirectKeystoreInteraction#parse</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-hermit.HermitInteraction.html#parse">module:hermit.HermitInteraction#parse</a>
+    </li></ul></dd>
     
 
     
@@ -362,12 +509,12 @@ for the interaction.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.IndirectKeystoreInteraction.html#request">module:interaction.IndirectKeystoreInteraction#request</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-hermit.HermitInteraction.html#request">module:hermit.HermitInteraction#request</a>
+    </li></ul></dd>
     
 
     
@@ -477,12 +624,12 @@ for the interaction.</p>
     
 
     
-    <dt class="inherited-from">Inherited From:</dt>
-    <dd class="inherited-from"><ul class="dummy"><li>
-        <a href="module-interaction.IndirectKeystoreInteraction.html#run">module:interaction.IndirectKeystoreInteraction#run</a>
-    </li></ul></dd>
-    
 
+    
+    <dt class="tag-overrides">Overrides:</dt>
+    <dd class="tag-overrides"><ul class="dummy"><li>
+        <a href="module-hermit.HermitInteraction.html#run">module:hermit.HermitInteraction#run</a>
+    </li></ul></dd>
     
 
     
