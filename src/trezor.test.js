@@ -93,7 +93,7 @@ describe('trezor', () => {
     it("parses metadata", () => {
 
       expect(
-        interactionBuilder().parse({
+        interactionBuilder().parsePayload({
           bootloader_hash: "5112...846e9",
           bootloader_mode: null,
           device_id: "BDF9...F198",
@@ -209,7 +209,7 @@ describe('trezor', () => {
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
     it("parses out the public key from the response payload", () => {
-      expect(interactionBuilder().parse({publicKey: "foobar"})).toEqual("foobar");
+      expect(interactionBuilder().parsePayload({publicKey: "foobar"})).toEqual("foobar");
     });
 
     it("uses TrezorConnect.getPublicKey", () => {
@@ -238,7 +238,7 @@ describe('trezor', () => {
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
     it("parses out the extended public key from the response payload", () => {
-      expect(interactionBuilder().parse({xpub: "foobar"})).toEqual("foobar");
+      expect(interactionBuilder().parsePayload({xpub: "foobar"})).toEqual("foobar");
     });
 
     it("uses TrezorConnect.getPublicKey", () => {

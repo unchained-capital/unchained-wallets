@@ -186,7 +186,7 @@ try {
  *     ];
  *   }
  *
- *   parse(payload) {
+ *   parsePayload(payload) {
  *     return payload.someValue;
  *   }
  *
@@ -260,7 +260,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * error is thrown, it will not be caught.
    *
    * Otherwise it returns the result of passing `result.payload` to
-   * `this.parse`.
+   * `this.parsePayload`.
    *
    * @returns {Promise} handles the work of calling TrezorConnect
    */
@@ -367,7 +367,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
    * @param {Object} payload - the original payload from the device response
    * @returns {Object} device metadata & features
    */
-  parse(payload) {
+  parsePayload(payload) {
     // Example result:
     //
     // {
@@ -589,7 +589,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
    * @param {object} payload - the original payload from the device response
    * @returns {string|Object} the (compressed) public key in hex or Object if root fingerprint requested
    */
-  parse(payload) {
+  parsePayload(payload) {
     if (this.includeXFP) {
       const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
         payload,
@@ -636,7 +636,7 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
    * @param {object} payload the original payload from the device response
    * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
-  parse(payload) {
+  parsePayload(payload) {
     if (this.includeXFP) {
       const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
         payload,
@@ -986,7 +986,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
     }
   }
 
-  parse(payload) {
+  parsePayload(payload) {
     if (!this.publicKey) {
       return payload;
     }
