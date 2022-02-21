@@ -106,11 +106,12 @@ export const TREZOR_BOTH_BUTTONS = 'trezor_both_buttons';
 export const TREZOR_PUSH_AND_HOLD_BUTTON = 'trezor_push_and_hold_button';
 
 // eslint-disable-next-line no-process-env
-const TREZOR_DEV = process.env.TREZOR_DEV
+const env_variables = { ...process.env}; // Accessing directly does not appear to work, let's make a copy
+const TREZOR_DEV = env_variables.TREZOR_DEV || env_variables.REACT_APP_TREZOR_DEV;
 try {
   if (TREZOR_DEV) TrezorConnect.init({
       connectSrc: 'https://localhost:8088/',
-      lazyLoad: true,
+      lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
       manifest: {
         email: "help@unchained-capital.com",
         appUrl: "https://github.com/unchained-capital/unchained-wallets"
@@ -123,9 +124,7 @@ try {
 } catch(e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
-  /* eslint-disable no-process-env */
-  if (process.env.NODE_ENV !== 'test') {
-    /* eslint-enable */
+  if (env_variables.NODE_ENV !== 'test') {
     console.error("Unable to call TrezorConnect.manifest.");
   }
 }
@@ -265,6 +264,16 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * @returns {Promise} handles the work of calling TrezorConnect
    */
   async run() {
+    if (TREZOR_DEV) {
+      await TrezorConnect.blockchainSetCustomBackend({
+        coin: "Regtest",
+        blockchainLink: {
+          type: 'blockbook',
+          url: ['http://localhost:3035'],
+        },
+      })
+    }
+
     const [method, params] = this.connectParams();
     const result = await method(params);
     if (!result.success) {
@@ -1011,7 +1020,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  * @returns {string} Trezor API spelling for this network
  */
 export function trezorCoin(network) {
-  return (network === MAINNET ? "Bitcoin" : "Testnet");
+  const testnet_network = TREZOR_DEV ? "Regtest" : "Testnet";
+  return (network === MAINNET ? "Bitcoin" : testnet_network);
 }
 
 function trezorInput(input, bip32Path) {
