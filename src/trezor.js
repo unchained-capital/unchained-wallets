@@ -42,7 +42,7 @@ import {
   translatePSBT,
   addSignaturesToPSBT,
 } from "unchained-bitcoin";
-import bitcoin from "bitcoinjs-lib";
+import {ECPair, payments} from "bitcoinjs-lib";
 
 import {
   DirectKeystoreInteraction,
@@ -990,9 +990,9 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
     if (!this.publicKey) {
       return payload;
     }
-    const keyPair = bitcoin.ECPair.fromPublicKey(
+    const keyPair = ECPair.fromPublicKey(
       Buffer.from(this.publicKey, 'hex'));
-    const { address } = bitcoin.payments.p2pkh({
+    const { address } = payments.p2pkh({
       pubkey: keyPair.publicKey,
       network: networkData(this.network),
     });
