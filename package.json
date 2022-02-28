@@ -35,6 +35,7 @@
     "pretest": "npm run compile",
     "prepare": "npm run compile",
     "test": "jest lib",
+    "testdebug": "node --inspect-brk node_modules/.bin/jest --runInBand lib",
     "docs": "./bin/build-docs.sh",
     "lint": "eslint src --ignore-pattern src/vendor"
   },

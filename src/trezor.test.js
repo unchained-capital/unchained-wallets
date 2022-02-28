@@ -2,7 +2,7 @@ import {
   MAINNET,
   ROOT_FINGERPRINT,
   TEST_FIXTURES,
-  PSBT_MAGIC_B64,
+  PSBT_MAGIC_B64, networkData,
 } from "unchained-bitcoin";
 import {
   PENDING,
@@ -21,6 +21,7 @@ import {
   TrezorSignMultisigTransaction,
   TrezorConfirmMultisigAddress,
 } from "./trezor";
+import {ECPair, payments} from "bitcoinjs-lib";
 
 const TrezorConnect = require("trezor-connect").default;
 
@@ -91,7 +92,6 @@ describe('trezor', () => {
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
     it("parses metadata", () => {
-
       expect(
         interactionBuilder().parsePayload({
           bootloader_hash: "5112...846e9",
@@ -362,9 +362,6 @@ describe('trezor', () => {
       });
 
     });
-  });
-
-  describe("TrezorConfirmMultisigAddress", () => {
 
     TEST_FIXTURES.multisigs.forEach((fixture) => {
 
@@ -390,6 +387,45 @@ describe('trezor', () => {
           expect(params.bundle[1].crossChain).toBe(true);
           // FIXME check multisig details
         });
+      });
+    });
+
+    describe(`parsePayload`, () => {
+      TEST_FIXTURES.multisigs.forEach((fixture) => {
+        it("passes through payload if payload address matches addresses for the public key", () => {
+          function createAddress(publicKey, network) {
+            const keyPair = ECPair.fromPublicKey(
+              Buffer.from(publicKey, 'hex'));
+            const {address} = payments.p2pkh({
+              pubkey: keyPair.publicKey,
+              network: networkData(network),
+            });
+            return address;
+          }
+
+          const interaction = new TrezorConfirmMultisigAddress(fixture);
+          const address = createAddress(fixture.publicKey, fixture.network);
+          const payload = [{address}, {address}]
+          const result = interaction.parsePayload(payload);
+          expect(result).toEqual(payload);
+        });
+        it("errors if payload has no matching address", () => {
+          const interaction = new TrezorConfirmMultisigAddress(fixture);
+          const payload = [{address: "not matching"}, {address: "not matching"}]
+          expect(() => {
+            interaction.parsePayload(payload);
+          }).toThrow("Wrong public key specified");
+        });
+      });
+
+      it("passes through payload if there's no public key", () => {
+        const fixture = TEST_FIXTURES.multisigs[0];
+        const fixtureCopy = {...fixture}
+        Reflect.deleteProperty(fixtureCopy, 'publicKey');
+        const interaction = new TrezorConfirmMultisigAddress(fixtureCopy);
+        const payload = []
+        const result = interaction.parsePayload(payload);
+        expect(result).toEqual(payload);
       });
     });
   });
