@@ -106,11 +106,19 @@ export const TREZOR_BOTH_BUTTONS = 'trezor_both_buttons';
 export const TREZOR_PUSH_AND_HOLD_BUTTON = 'trezor_push_and_hold_button';
 
 // eslint-disable-next-line no-process-env
-const TREZOR_DEV = process.env.TREZOR_DEV
+const env_variables = { ...process.env}; // Accessing directly does not appear to work, let's make a copy
+
+const ENV_TREZOR_CONNECT_URL = env_variables.TREZOR_CONNECT_URL || env_variables.REACT_APP_TREZOR_CONNECT_URL;
+const ENV_TREZOR_BLOCKBOOK_URL = env_variables.TREZOR_BLOCKBOOK_URL || env_variables.REACT_APP_TREZOR_BLOCKBOOK_URL;
+
+const TREZOR_CONNECT_URL = ENV_TREZOR_CONNECT_URL || "https://localhost:8088/";
+const TREZOR_BLOCKBOOK_URL = ENV_TREZOR_BLOCKBOOK_URL || "http://localhost:3035";
+
+const TREZOR_DEV = env_variables.TREZOR_DEV || env_variables.REACT_APP_TREZOR_DEV;
 try {
   if (TREZOR_DEV) TrezorConnect.init({
-      connectSrc: 'https://localhost:8088/',
-      lazyLoad: true,
+      connectSrc: TREZOR_CONNECT_URL,
+      lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
       manifest: {
         email: "help@unchained-capital.com",
         appUrl: "https://github.com/unchained-capital/unchained-wallets"
@@ -123,9 +131,7 @@ try {
 } catch(e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
-  /* eslint-disable no-process-env */
-  if (process.env.NODE_ENV !== 'test') {
-    /* eslint-enable */
+  if (env_variables.NODE_ENV !== 'test') {
     console.error("Unable to call TrezorConnect.manifest.");
   }
 }
@@ -266,6 +272,17 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    */
   async run() {
     const [method, params] = this.connectParams();
+
+    if (TREZOR_DEV && method === TrezorConnect.signTransaction) {
+      await TrezorConnect.blockchainSetCustomBackend({
+        coin: "Regtest",
+        blockchainLink: {
+          type: 'blockbook',
+          url: [TREZOR_BLOCKBOOK_URL],
+        },
+      })
+    }
+
     const result = await method(params);
     if (!result.success) {
       throw new Error(result.payload.error);
@@ -1011,7 +1028,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  * @returns {string} Trezor API spelling for this network
  */
 export function trezorCoin(network) {
-  return (network === MAINNET ? "Bitcoin" : "Testnet");
+  const testnet_network = TREZOR_DEV ? "Regtest" : "Testnet";
+  return (network === MAINNET ? "Bitcoin" : testnet_network);
 }
 
 function trezorInput(input, bip32Path) {
