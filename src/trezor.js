@@ -42,7 +42,7 @@ import {
   translatePSBT,
   addSignaturesToPSBT,
 } from "unchained-bitcoin";
-import {ECPair, payments} from "bitcoinjs-lib";
+import { ECPair, payments } from "bitcoinjs-lib";
 
 import {
   DirectKeystoreInteraction,
@@ -51,7 +51,7 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
-import {MULTISIG_ROOT} from './index';
+import { MULTISIG_ROOT } from "./index";
 
 /**
  * Constant defining Trezor interactions.
@@ -59,14 +59,14 @@ import {MULTISIG_ROOT} from './index';
  * @type {string}
  * @default trezor
  */
-export const TREZOR = 'trezor';
+export const TREZOR = "trezor";
 
 const TrezorConnect = require("trezor-connect").default;
 
 const ADDRESS_SCRIPT_TYPES = {
-  [P2SH]: 'SPENDMULTISIG',
-  [P2SH_P2WSH]: 'SPENDP2SHWITNESS',
-  [P2WSH]: 'SPENDWITNESS',
+  [P2SH]: "SPENDMULTISIG",
+  [P2SH_P2WSH]: "SPENDP2SHWITNESS",
+  [P2WSH]: "SPENDWITNESS",
 };
 
 /**
@@ -76,7 +76,7 @@ const ADDRESS_SCRIPT_TYPES = {
  * @type {string}
  * @default 'trezor_left_button'
  */
-export const TREZOR_LEFT_BUTTON = 'trezor_left_button';
+export const TREZOR_LEFT_BUTTON = "trezor_left_button";
 
 /**
  * Constant representing the action of pushing the right button on a
@@ -85,7 +85,7 @@ export const TREZOR_LEFT_BUTTON = 'trezor_left_button';
  * @type {string}
  * @default 'trezor_right_button'
  */
-export const TREZOR_RIGHT_BUTTON = 'trezor_right_button';
+export const TREZOR_RIGHT_BUTTON = "trezor_right_button";
 
 /**
  * Constant representing the action of pushing both buttons on a
@@ -94,7 +94,7 @@ export const TREZOR_RIGHT_BUTTON = 'trezor_right_button';
  * @type {string}
  * @default 'trezor_both_buttons'
  */
-export const TREZOR_BOTH_BUTTONS = 'trezor_both_buttons';
+export const TREZOR_BOTH_BUTTONS = "trezor_both_buttons";
 
 /**
  * Constant representing the action of pushing and holding the Confirm
@@ -103,35 +103,43 @@ export const TREZOR_BOTH_BUTTONS = 'trezor_both_buttons';
  * @type {string}
  * @default 'trezor_push_and_hold_button'
  */
-export const TREZOR_PUSH_AND_HOLD_BUTTON = 'trezor_push_and_hold_button';
+export const TREZOR_PUSH_AND_HOLD_BUTTON = "trezor_push_and_hold_button";
 
 // eslint-disable-next-line no-process-env
-const env_variables = { ...process.env}; // Accessing directly does not appear to work, let's make a copy
+const env_variables = { ...process.env }; // Accessing directly does not appear to work, let's make a copy
 
-const ENV_TREZOR_CONNECT_URL = env_variables.TREZOR_CONNECT_URL || env_variables.REACT_APP_TREZOR_CONNECT_URL;
-const ENV_TREZOR_BLOCKBOOK_URL = env_variables.TREZOR_BLOCKBOOK_URL || env_variables.REACT_APP_TREZOR_BLOCKBOOK_URL;
+const ENV_TREZOR_CONNECT_URL =
+  env_variables.TREZOR_CONNECT_URL ||
+  env_variables.REACT_APP_TREZOR_CONNECT_URL;
+const ENV_TREZOR_BLOCKBOOK_URL =
+  env_variables.TREZOR_BLOCKBOOK_URL ||
+  env_variables.REACT_APP_TREZOR_BLOCKBOOK_URL;
 
 const TREZOR_CONNECT_URL = ENV_TREZOR_CONNECT_URL || "https://localhost:8088/";
-const TREZOR_BLOCKBOOK_URL = ENV_TREZOR_BLOCKBOOK_URL || "http://localhost:3035";
+const TREZOR_BLOCKBOOK_URL =
+  ENV_TREZOR_BLOCKBOOK_URL || "http://localhost:3035";
 
-const TREZOR_DEV = env_variables.TREZOR_DEV || env_variables.REACT_APP_TREZOR_DEV;
+const TREZOR_DEV =
+  env_variables.TREZOR_DEV || env_variables.REACT_APP_TREZOR_DEV;
 try {
-  if (TREZOR_DEV) TrezorConnect.init({
+  if (TREZOR_DEV)
+    TrezorConnect.init({
       connectSrc: TREZOR_CONNECT_URL,
       lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
       manifest: {
         email: "help@unchained-capital.com",
-        appUrl: "https://github.com/unchained-capital/unchained-wallets"
-      }
-    })
-  else TrezorConnect.manifest({
-      email: "help@unchained-capital.com",
-      appUrl: "https://github.com/unchained-capital/unchained-wallets"
+        appUrl: "https://github.com/unchained-capital/unchained-wallets",
+      },
     });
-} catch(e) {
+  else
+    TrezorConnect.manifest({
+      email: "help@unchained-capital.com",
+      appUrl: "https://github.com/unchained-capital/unchained-wallets",
+    });
+} catch (e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
-  if (env_variables.NODE_ENV !== 'test') {
+  if (env_variables.NODE_ENV !== "test") {
     console.error("Unable to call TrezorConnect.manifest.");
   }
 }
@@ -204,7 +212,6 @@ try {
  * console.log(result); // someValue from payload
  */
 export class TrezorInteraction extends DirectKeystoreInteraction {
-
   /**
    * Trezor interactions require knowing the bitcoin network they are
    * for.
@@ -212,7 +219,7 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
    */
-  constructor({network}) {
+  constructor({ network }) {
     super();
     this.network = network;
     this.trezorCoin = trezorCoin(network);
@@ -277,10 +284,10 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
       await TrezorConnect.blockchainSetCustomBackend({
         coin: "Regtest",
         blockchainLink: {
-          type: 'blockbook',
+          type: "blockbook",
           url: [TREZOR_BLOCKBOOK_URL],
         },
-      })
+      });
     }
 
     const result = await method(params);
@@ -305,7 +312,11 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
    */
   connectParams() {
     return [
-      () => { throw new Error("Override the `connectParams` method on a subclass of TrezorInteraction."); },
+      () => {
+        throw new Error(
+          "Override the `connectParams` method on a subclass of TrezorInteraction."
+        );
+      },
       {},
     ];
   }
@@ -322,7 +333,6 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
   parsePayload(payload) {
     return payload;
   }
-
 }
 
 /**
@@ -352,7 +362,6 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
  * }
  */
 export class TrezorGetMetadata extends TrezorInteraction {
-
   /**
    * This class doesn't actually require a `network`.
    *
@@ -371,10 +380,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
    * @returns {Array<function, Object>} TrezorConnect parameters
    */
   connectParams() {
-    return [
-      TrezorConnect.getFeatures,
-      {},
-    ];
+    return [TrezorConnect.getFeatures, {}];
   }
 
   /**
@@ -417,10 +423,13 @@ export class TrezorGetMetadata extends TrezorInteraction {
     //   vendor: "bitcointrezor.com"
     // }
     const {
-      major_version, minor_version, patch_version,
+      major_version,
+      minor_version,
+      patch_version,
       label,
       model,
-      pin_protection, passphrase_protection,
+      pin_protection,
+      passphrase_protection,
     } = payload;
     let spec = `Model ${model} v.${major_version}.${minor_version}.${patch_version}`;
     if (pin_protection) {
@@ -443,9 +452,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
       passphrase: passphrase_protection,
     };
   }
-
 }
-
 
 /**
  * Base class for interactions exporting information about an HD node
@@ -464,7 +471,6 @@ export class TrezorGetMetadata extends TrezorInteraction {
  *
  */
 export class TrezorExportHDNode extends TrezorInteraction {
-
   /**
    * Requires a BIP32 path to the node to export as well as which network.
    *
@@ -473,8 +479,8 @@ export class TrezorExportHDNode extends TrezorInteraction {
    * @param {string} bip32Path - the BIP32 path for the HD node
    * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
    */
-  constructor({network, bip32Path, includeXFP}) {
-    super({network});
+  constructor({ network, bip32Path, includeXFP }) {
+    super({ network });
     this.bip32Path = bip32Path;
     this.includeXFP = includeXFP;
     this.bip32ValidationErrorMessage = {};
@@ -482,7 +488,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
     if (bip32PathError.length) {
       this.bip32ValidationErrorMessage = {
         text: bip32PathError,
-        code: 'trezor.bip32_path.path_error',
+        code: "trezor.bip32_path.path_error",
       };
     }
   }
@@ -496,8 +502,9 @@ export class TrezorExportHDNode extends TrezorInteraction {
   messages() {
     const messages = super.messages();
 
-    const bip32PathSegments = (this.bip32Path || '').split('/');
-    if (bip32PathSegments.length < 4) { // m, 45', 0', 0', ...
+    const bip32PathSegments = (this.bip32Path || "").split("/");
+    if (bip32PathSegments.length < 4) {
+      // m, 45', 0', 0', ...
       messages.push({
         state: PENDING,
         level: ERROR,
@@ -525,11 +532,11 @@ export class TrezorExportHDNode extends TrezorInteraction {
     return messages;
   }
 
-  extractDetailsFromPayload({payload, pubkey}) {
+  extractDetailsFromPayload({ payload, pubkey }) {
     if (payload.length !== 2) {
       throw new Error("Payload does not have two responses.");
     }
-    let keyMaterial = '';
+    let keyMaterial = "";
     let rootFingerprint = null;
     for (let i = 0; i < payload.length; i++) {
       // Find the payload with bip32 = MULTISIG_ROOT to get xfp
@@ -556,10 +563,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
       return [
         TrezorConnect.getPublicKey,
         {
-          bundle: [
-            {path: this.bip32Path},
-            {path: MULTISIG_ROOT},
-          ],
+          bundle: [{ path: this.bip32Path }, { path: MULTISIG_ROOT }],
           coin: this.trezorCoin,
           crossChain: true,
         },
@@ -574,7 +578,6 @@ export class TrezorExportHDNode extends TrezorInteraction {
       },
     ];
   }
-
 }
 
 /**
@@ -590,8 +593,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
  * // "03..."
  */
 export class TrezorExportPublicKey extends TrezorExportHDNode {
-
-  constructor({network, bip32Path, includeXFP}) {
+  constructor({ network, bip32Path, includeXFP }) {
     super({
       network,
       bip32Path,
@@ -608,7 +610,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
    */
   parsePayload(payload) {
     if (this.includeXFP) {
-      const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
+      const { rootFingerprint, keyMaterial } = this.extractDetailsFromPayload({
         payload,
         pubkey: true,
       });
@@ -619,7 +621,6 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
     }
     return payload.publicKey;
   }
-
 }
 
 /**
@@ -635,8 +636,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
  * // "xpub..."
  */
 export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
-
-  constructor({network, bip32Path, includeXFP}) {
+  constructor({ network, bip32Path, includeXFP }) {
     super({
       network,
       bip32Path,
@@ -655,7 +655,7 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
    */
   parsePayload(payload) {
     if (this.includeXFP) {
-      const {rootFingerprint, keyMaterial} = this.extractDetailsFromPayload({
+      const { rootFingerprint, keyMaterial } = this.extractDetailsFromPayload({
         payload,
         pubkey: false,
       });
@@ -666,8 +666,6 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
     }
     return payload.xpub;
   }
-
-
 }
 
 /**
@@ -712,7 +710,6 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
  * @extends {module:trezor.TrezorInteraction}
  */
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
-
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
@@ -724,25 +721,22 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
    * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
    */
   constructor({
-                network,
-                inputs,
-                outputs,
-                bip32Paths,
-                psbt,
-                keyDetails,
-                returnSignatureArray,
+    network,
+    inputs,
+    outputs,
+    bip32Paths,
+    psbt,
+    keyDetails,
+    returnSignatureArray,
   }) {
-    super({network});
+    super({ network });
     if (!psbt || !keyDetails) {
       this.inputs = inputs;
       this.outputs = outputs;
       this.bip32Paths = bip32Paths;
     } else {
-      const {
-        unchainedInputs,
-        unchainedOutputs,
-        bip32Derivations
-      } = translatePSBT(network, P2SH, psbt, keyDetails);
+      const { unchainedInputs, unchainedOutputs, bip32Derivations } =
+        translatePSBT(network, P2SH, psbt, keyDetails);
       this.psbt = psbt;
       this.inputs = unchainedInputs;
       this.outputs = unchainedOutputs;
@@ -811,6 +805,20 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   }
 
   /**
+   * Request for the PSBT data that needs to be signed.
+   *
+   * NOTE: the application may be expecting the PSBT in some format
+   * other than the direct Object.
+   *
+   * E.g. PSBT in Base64 is interaction().request().toBase64()
+   *
+   * @returns {Object} Returns the local unsigned PSBT from transaction details
+   */
+  request() {
+    return this.psbt;
+  }
+
+  /**
    * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/signTransaction.md}.
    *
    * @returns {Array<function, Object>} TrezorConnect parameters
@@ -819,7 +827,9 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
     return [
       TrezorConnect.signTransaction,
       {
-        inputs: this.inputs.map((input, inputIndex) => trezorInput(input, this.bip32Paths[inputIndex])),
+        inputs: this.inputs.map((input, inputIndex) =>
+          trezorInput(input, this.bip32Paths[inputIndex])
+        ),
         outputs: this.outputs.map((output) => trezorOutput(output)),
         coin: this.trezorCoin,
       },
@@ -838,12 +848,37 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
     // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
     // rather than the normal array of signatures.
     if (this.psbt && !this.returnSignatureArray) {
-      return addSignaturesToPSBT(this.network, this.psbt, this.pubkeys, this.parseSignature(payload.signatures, "buffer"))
+      return addSignaturesToPSBT(
+        this.network,
+        this.psbt,
+        this.pubkeys,
+        this.parseSignature(payload.signatures, "buffer")
+      );
     } else {
-      return this.parseSignature(payload.signatures, "hex")
+      return this.parseSignature(payload.signatures, "hex");
     }
   }
 
+  /**
+   *
+   * @param {Object} psbtObject - the PSBT
+   * @returns {Object} signatures - This calls a function in unchained-bitcoin which parses
+   * PSBT files for sigantures and then returns an object with the format
+   * {
+   *   pubkey1 : [sig1, sig2, ...],
+   *   pubkey2 : [sig1, sig2, ...]
+   * }
+   * This format may change in the future or there may be additional options for return type.
+   */
+  parse(psbtObject) {
+    const signatures = parseSignaturesFromPSBT(psbtObject);
+    if (!signatures || signatures.length === 0) {
+      throw new Error(
+        "No signatures found in the PSBT. Did you upload the right one?"
+      );
+    }
+    return signatures;
+  }
 }
 
 /**
@@ -867,7 +902,6 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
  * await interaction.run();
  */
 export class TrezorConfirmMultisigAddress extends TrezorInteraction {
-
   /**
    * Most of the information required to confirm a multisig address
    * lives in the `Multisig` object from `unchained-bitcoin`.
@@ -878,8 +912,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
    * @param {Multisig} options.multisig - multisig object
    * @param {string} options.publicKey - optional public key to confirm
    */
-  constructor({network, bip32Path, multisig, publicKey}) {
-    super({network});
+  constructor({ network, bip32Path, multisig, publicKey }) {
+    super({ network });
     this.bip32Path = bip32Path;
     this.multisig = multisig;
     this.publicKey = publicKey;
@@ -898,7 +932,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
       messages.push({
         state: ACTIVE,
         level: INFO,
-        text:`Confirm in the Trezor Connect window that you want to ‘Export multiple ${this.trezorCoin} addresses’. You may be prompted to enter your PIN. You may also receive a warning about your selected BIP32 path.`,
+        text: `Confirm in the Trezor Connect window that you want to ‘Export multiple ${this.trezorCoin} addresses’. You may be prompted to enter your PIN. You may also receive a warning about your selected BIP32 path.`,
         code: "trezor.connect.confirm_address",
       });
     } else {
@@ -929,7 +963,6 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
       code: "trezor.confirm_address",
     });
 
-
     messages.push({
       state: ACTIVE,
       level: INFO,
@@ -947,7 +980,6 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
       ],
       code: "trezor.confirm_address",
     });
-
 
     return messages;
   }
@@ -977,12 +1009,15 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
               crossChain: true,
               multisig: {
                 m: multisigRequiredSigners(this.multisig),
-                pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)),
+                pubkeys: multisigPublicKeys(this.multisig).map((publicKey) =>
+                  trezorPublicKey(publicKey)
+                ),
               },
-              scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
+              scriptType:
+                ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
             },
           ],
-        }
+        },
       ];
     } else {
       return [
@@ -995,7 +1030,9 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
           crossChain: true,
           multisig: {
             m: multisigRequiredSigners(this.multisig),
-            pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)),
+            pubkeys: multisigPublicKeys(this.multisig).map((publicKey) =>
+              trezorPublicKey(publicKey)
+            ),
           },
           scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
         },
@@ -1007,8 +1044,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
     if (!this.publicKey) {
       return payload;
     }
-    const keyPair = ECPair.fromPublicKey(
-      Buffer.from(this.publicKey, 'hex'));
+    const keyPair = ECPair.fromPublicKey(Buffer.from(this.publicKey, "hex"));
     const { address } = payments.p2pkh({
       pubkey: keyPair.publicKey,
       network: networkData(this.network),
@@ -1018,7 +1054,6 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
     }
     return payload;
   }
-
 }
 
 /**
@@ -1029,7 +1064,7 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  */
 export function trezorCoin(network) {
   const testnet_network = TREZOR_DEV ? "Regtest" : "Testnet";
-  return (network === MAINNET ? "Bitcoin" : testnet_network);
+  return network === MAINNET ? "Bitcoin" : testnet_network;
 }
 
 function trezorInput(input, bip32Path) {
@@ -1042,12 +1077,12 @@ function trezorInput(input, bip32Path) {
     multisig: {
       m: requiredSigners,
       pubkeys: publicKeys.map((publicKey) => trezorPublicKey(publicKey)),
-      signatures: Array(publicKeys.length).fill(''),
+      signatures: Array(publicKeys.length).fill(""),
     },
     prev_hash: input.txid,
     prev_index: input.index,
     address_n: bip32PathToSequence(bip32Path),
-    ...(input.amountSats && {amount: BigNumber(input.amountSats).toString()}),
+    ...(input.amountSats && { amount: BigNumber(input.amountSats).toString() }),
   };
 }
 
@@ -1059,7 +1094,7 @@ function trezorPublicKey(publicKey) {
       depth: 0,
       child_num: 0,
       fingerprint: 0,
-      chain_code: '0'.repeat(64),
+      chain_code: "0".repeat(64),
       public_key: publicKey,
     },
   };
@@ -1069,6 +1104,6 @@ function trezorOutput(output) {
   return {
     amount: BigNumber(output.amountSats).toFixed(0),
     address: output.address,
-    script_type: 'PAYTOADDRESS',
+    script_type: "PAYTOADDRESS",
   };
 }
