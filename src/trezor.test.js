@@ -23,7 +23,7 @@ import {
 } from "./trezor";
 import {ECPair, payments} from "bitcoinjs-lib";
 
-const TrezorConnect = require("trezor-connect").default;
+const TrezorConnect = require("@trezor/connect").default;
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {
