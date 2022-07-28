@@ -46,13 +46,13 @@
     "@ledgerhq/hw-transport-node-hid": "^5.34.0",
     "@ledgerhq/hw-transport-u2f": "^5.34.0",
     "@ledgerhq/hw-transport-webusb": "5.53.0",
+    "@trezor/connect": "^9.0.0-beta.5",
     "bignumber.js": "^8.1.1",
     "bitcoinjs-lib": "^5.1.10",
     "bowser": "^2.6.1",
     "core-js": "^2.6.10",
     "punycode": "^2.1.1",
     "sha": "^3.0.0",
-    "trezor-connect": "^8.1.19",
     "unchained-bitcoin": "^0.1.8"
   },
   "directories": {
