@@ -61,7 +61,7 @@ import {MULTISIG_ROOT} from './index';
  */
 export const TREZOR = 'trezor';
 
-const TrezorConnect = require("@trezor/connect").default;
+const TrezorConnect = require("@trezor/connect-web").default;
 
 const ADDRESS_SCRIPT_TYPES = {
   [P2SH]: 'SPENDMULTISIG',
