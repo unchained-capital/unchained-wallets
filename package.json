@@ -22,7 +22,7 @@
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jest": "^23.0.3",
     "jest": "^24.9.0",
-    "jest-junit": "^9.0.0",
+    "jest-junit": "^9.0.3",
     "jsdoc": "^3.6.3",
     "mocha": "^6.2.2"
   },
