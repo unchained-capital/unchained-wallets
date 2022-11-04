@@ -1099,7 +1099,7 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
         // signature?
         transport.setExchangeTimeout(20000);
 
-        const vrs = await app.signMessageNew_async(
+        const vrs = await app.signMessageNew(
           this.bip32Path,
           this.message
         );
