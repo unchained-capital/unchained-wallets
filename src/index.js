@@ -23,6 +23,7 @@ import {
   LedgerExportPublicKey,
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
+  LedgerSignMessage,
 } from "./ledger";
 import {
   TREZOR,
@@ -148,6 +149,33 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
       return new UnsupportedInteraction({
         code: "unsupported",
         text: "This keystore is not supported when exporting public keys.",
+      });
+  }
+}
+
+/**
+ * Return an interaction class for signing a message by the given `keystore`
+ * for the given `bip32Path`.
+ *
+ * **Supported keystores:** Ledger
+ *
+ * @param {Object} options - options argument
+ * @param {KEYSTORES} options.keystore - keystore to use
+ * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
+ * @param {string} options.message - the message to be signed (in hex)
+ * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
+ */
+export function SignMessage({ keystore, bip32Path, message }) {
+  switch (keystore) {
+    case LEDGER:
+      return new LedgerSignMessage({
+        bip32Path,
+        message,
+      });
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when signing a message.",
       });
   }
 }

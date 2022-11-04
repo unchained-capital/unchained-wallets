@@ -11,6 +11,7 @@
  * * LedgerExportPublicKey
  * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
+ * * LedgerSignMessage
  *
  * @module ledger
  */
@@ -1045,4 +1046,68 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return false;
   }
 
+}
+
+/**
+ * Returns a signature for a given message by a single public key.
+ *
+ * @extends {module:ledger.LedgerBitcoinInteraction}
+ */
+export class LedgerSignMessage extends LedgerBitcoinInteraction {
+
+  /**
+   * @param {object} options - options argument
+   * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
+   * @param {string} options.message - the message to be signed (in hex)
+   */
+  constructor({bip32Path, message}) {
+    super();
+    this.bip32Path = bip32Path;
+    this.message = message;
+  }
+
+  /**
+   * Adds messages describing the signing flow.
+   *
+   * @returns {module:interaction.Message[]} messages for this interaction
+   */
+  messages() {
+    const messages = super.messages();
+
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      code: "ledger.sign",
+      // (version is optional)
+      text: 'Your Ledger will ask you to "Confirm Message" for signing.',
+      action: LEDGER_RIGHT_BUTTON,
+    });
+    // TODO: are more messages required?
+
+    return messages;
+  }
+
+  /**
+   * See {@link https://github.com/LedgerHQ/ledger-live/tree/develop/libs/ledgerjs/packages/hw-app-btc#signmessagenew}.
+   *
+   * @return {object} {v, r, s}
+   */
+  run() {
+    return this.withApp(async (app, transport) => {
+      try {
+        // TODO: what would be an appropriate amount of time to wait for a
+        // signature?
+        transport.setExchangeTimeout(20000);
+
+        const vrs = await app.signMessageNew_async(
+          this.bip32Path,
+          this.message
+        );
+
+        return vrs;
+      } finally {
+        transport.close();
+      }
+    });
+  }
 }
