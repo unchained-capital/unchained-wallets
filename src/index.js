@@ -32,6 +32,7 @@ import {
   TrezorExportExtendedPublicKey,
   TrezorSignMultisigTransaction,
   TrezorConfirmMultisigAddress,
+  TrezorSignMessage,
 } from "./trezor";
 
 /**
@@ -157,7 +158,7 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
  * Return an interaction class for signing a message by the given `keystore`
  * for the given `bip32Path`.
  *
- * **Supported keystores:** Ledger
+ * **Supported keystores:** Ledger, Trezor
  *
  * @param {Object} options - options argument
  * @param {KEYSTORES} options.keystore - keystore to use
@@ -169,6 +170,11 @@ export function SignMessage({ keystore, bip32Path, message }) {
   switch (keystore) {
     case LEDGER:
       return new LedgerSignMessage({
+        bip32Path,
+        message,
+      });
+    case TREZOR:
+      return new TrezorSignMessage({
         bip32Path,
         message,
       });
