@@ -1087,14 +1087,6 @@ export class TrezorSignMessage extends TrezorInteraction {
     ];
   }
 
-  /**
-   * Parses the signature out of the response payload.
-   */
-  parsePayload(payload) {
-    console.log("Received response payload: ", payload);
-    return payload;
-  }
-
 }
 
 /**
