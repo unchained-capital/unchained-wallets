@@ -1080,9 +1080,6 @@ export class TrezorSignMessage extends TrezorInteraction {
       {
         path: this.bip32Path,
         message: this.message,
-
-        // convert message from hex
-        hex: true,
       },
     ];
   }
