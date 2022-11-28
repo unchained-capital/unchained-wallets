@@ -20,6 +20,7 @@ import {
   TrezorExportExtendedPublicKey,
   TrezorSignMultisigTransaction,
   TrezorConfirmMultisigAddress,
+  TrezorSignMessage,
 } from "./trezor";
 import {ECPair, payments} from "bitcoinjs-lib";
 
@@ -427,6 +428,40 @@ describe('trezor', () => {
         const result = interaction.parsePayload(payload);
         expect(result).toEqual(payload);
       });
+    });
+  });
+
+  describe("TrezorSignMessage", () => {
+    const _bip32Path = "m/45'/0'/0'/0'";
+
+    function interactionBuilder(bip32Path, message) {
+      return new TrezorSignMessage({
+        network: MAINNET,
+        bip32Path: bip32Path || _bip32Path,
+        message: message || "hello world",
+      });
+    }
+
+    itHasStandardMessages(interactionBuilder);
+    itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
+
+    it('constructor adds error message on invalid bip32path', () => {
+      const interaction = new TrezorSignMessage({
+        bip32Path: 'm/foo',
+        network: MAINNET,
+      });
+      expect(interaction.hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: "trezor.bip32_path.path_error",
+      })).toBe(true);
+    })
+
+    it("uses TrezorConnect.signMessage", () => {
+      const interaction = interactionBuilder();
+      const [method, params] = interaction.connectParams();
+      expect(method).toEqual(TrezorConnect.signMessage);
+      expect(params.path).toEqual(_bip32Path);
     });
   });
 });
