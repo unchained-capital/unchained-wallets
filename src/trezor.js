@@ -1042,6 +1042,15 @@ export class TrezorSignMessage extends TrezorInteraction {
     super({network: network});
     this.bip32Path = bip32Path;
     this.message = message;
+
+    this.bip32ValidationErrorMessage = {};
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.bip32ValidationErrorMessage = {
+        text: bip32PathError,
+        code: 'trezor.bip32_path.path_error',
+      };
+    }
   }
 
   /**
@@ -1051,6 +1060,25 @@ export class TrezorSignMessage extends TrezorInteraction {
    */
   messages() {
     const messages = super.messages();
+
+    const bip32PathSegments = (this.bip32Path || '').split('/');
+    if (bip32PathSegments.length < 4) { // m, 45', 0', 0', ...
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        text: "BIP32 path must be at least depth 3.",
+        code: "trezor.bip32_path.minimum",
+      });
+    }
+
+    if (Object.entries(this.bip32ValidationErrorMessage).length) {
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        code: this.bip32ValidationErrorMessage.code,
+        text: this.bip32ValidationErrorMessage.text,
+      });
+    }
 
     messages.push({
       state: ACTIVE,
