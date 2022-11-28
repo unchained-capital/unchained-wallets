@@ -1064,6 +1064,15 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
     super();
     this.bip32Path = bip32Path;
     this.message = message;
+    this.bip32ValidationErrorMessage = false;
+
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.bip32ValidationErrorMessage = {
+        text: bip32PathError,
+        code: 'ledger.bip32_path.path_error',
+      };
+    }
   }
 
   /**
@@ -1073,6 +1082,15 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
    */
   messages() {
     const messages = super.messages();
+
+    if (Object.entries(this.bip32ValidationErrorMessage).length) {
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        code: this.bip32ValidationErrorMessage.code,
+        text: this.bip32ValidationErrorMessage.text,
+      });
+    }
 
     messages.push({
       state: ACTIVE,
