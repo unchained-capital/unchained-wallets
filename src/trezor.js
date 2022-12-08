@@ -1022,6 +1022,99 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
 }
 
 /**
+ * Returns a signature for a message given a bip32 path.
+ *
+ * @extends {module:trezor.TrezorInteraction}
+ */
+export class TrezorSignMessage extends TrezorInteraction {
+
+  /**
+   * @param {object} options - option argument
+   * @param {string} option.network - network
+   * @param {string} option.bip32Path - bip32 path on this device to sign with
+   * @param {string} option.message - hex-encoded string to sign
+   */
+  constructor({
+                network,
+                bip32Path,
+                message,
+  }) {
+    super({network: network});
+    this.bip32Path = bip32Path;
+    this.message = message;
+
+    this.bip32ValidationErrorMessage = {};
+    const bip32PathError = validateBIP32Path(bip32Path);
+    if (bip32PathError.length) {
+      this.bip32ValidationErrorMessage = {
+        text: bip32PathError,
+        code: 'trezor.bip32_path.path_error',
+      };
+    }
+  }
+
+  /**
+   * Adds messages describing the signing flow.
+   *
+   * @returns {module:interaction.Message[]} messages for this interaction
+   */
+  messages() {
+    const messages = super.messages();
+
+    const bip32PathSegments = (this.bip32Path || '').split('/');
+    if (bip32PathSegments.length < 4) { // m, 45', 0', 0', ...
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        text: "BIP32 path must be at least depth 3.",
+        code: "trezor.bip32_path.minimum",
+      });
+    }
+
+    if (Object.entries(this.bip32ValidationErrorMessage).length) {
+      messages.push({
+        state: PENDING,
+        level: ERROR,
+        code: this.bip32ValidationErrorMessage.code,
+        text: this.bip32ValidationErrorMessage.text,
+      });
+    }
+
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Confirm in the Trezor Connect window that you want to 'Sign message'.  You may be prompted to enter your PIN.",
+      code: "trezor.connect.sign",
+    });
+
+    messages.push({
+      state: ACTIVE,
+      level: INFO,
+      text: "Confirm the message to be signed on your Trezor device and approve for signing.",
+      code: "trezor.sign",
+    });
+
+    return messages;
+  }
+
+  /**
+   * See {@link https://github.com/trezor/connect/blob/v8/docs/methods/signMessage.md}.
+   *
+   * @returns {Array<function, Object>} TrezorConnect parameters
+   */
+  connectParams() {
+    return [
+      TrezorConnect.signMessage,
+      {
+        path: this.bip32Path,
+        message: this.message,
+      },
+    ];
+  }
+
+}
+
+/**
  * Returns the Trezor API version of the given network.
  *
  * @param {string} network - bitcoin network

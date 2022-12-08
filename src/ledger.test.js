@@ -14,6 +14,7 @@ import {
   LedgerExportPublicKey,
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
+  LedgerSignMessage,
 } from "./ledger";
 
 function itHasStandardMessages(interactionBuilder) {
@@ -269,6 +270,20 @@ describe('ledger', () => {
 
     itHasAppMessages(interactionBuilder);
 
+  });
+
+  describe("LedgerSignMessage", () => {
+    function interactionBuilder(bip32Path, message) { return new LedgerSignMessage({bip32Path: (bip32Path || "m/48'/1'/0'/2'/0/0"), message: (message || "hello world")}); }
+
+    itHasAppMessages(interactionBuilder);
+
+    it('constructor adds error message on invalid bip32path', () => {
+      expect(interactionBuilder('m/foo').hasMessagesFor({
+        state: PENDING,
+        level: ERROR,
+        code: "ledger.bip32_path.path_error",
+      })).toBe(true);
+    })
   });
 
 
