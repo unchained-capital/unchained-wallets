@@ -24,7 +24,7 @@
     "jest": "^24.9.0",
     "jest-junit": "^9.0.0",
     "jsdoc": "^3.6.3",
-    "mocha": "^6.2.2"
+    "mocha": "^10.2.0"
   },
   "scripts": {
     "compile-images": "node images/compile.js",
