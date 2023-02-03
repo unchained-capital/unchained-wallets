@@ -1,6 +1,6 @@
 {
   "name": "unchained-wallets",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "Unchained Capital's HD Wallets Library",
   "main": "lib/index.js",
   "repository": {
@@ -13,8 +13,11 @@
     "url": "https://github.com/unchained-capital/unchained-wallets/issues"
   },
   "homepage": "https://github.com/unchained-capital/unchained-wallets",
+  "engines": {
+    "node": ">=16"
+  },
   "devDependencies": {
-    "@babel/cli": "^7.7.0",
+    "@babel/cli": "^7.20.7",
     "@babel/core": "^7.7.2",
     "@babel/preset-env": "^7.7.1",
     "babel-plugin-transform-inline-environment-variables": "^0.4.3",
@@ -53,7 +56,7 @@
     "core-js": "^2.6.10",
     "punycode": "^2.1.1",
     "sha": "^3.0.0",
-    "unchained-bitcoin": "^0.1.8"
+    "unchained-bitcoin": "file:../unchained-bitcoin"
   },
   "directories": {
     "lib": "lib"
