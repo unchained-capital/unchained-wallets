@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import {
   TEST_FIXTURES,
   ROOT_FINGERPRINT,
