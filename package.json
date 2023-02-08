@@ -20,6 +20,9 @@
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.7.2",
     "@babel/preset-env": "^7.7.1",
+    "@babel/preset-typescript": "^7.18.6",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
     "babel-plugin-transform-inline-environment-variables": "^0.4.3",
     "eslint": "^6.6.0",
     "eslint-plugin-import": "^2.18.2",
@@ -28,15 +31,19 @@
     "jest-environment-jsdom": "^29.4.1",
     "jest-junit": "^9.0.0",
     "jsdoc": "^4.0.0",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "typescript": "^4.9.5"
   },
   "scripts": {
     "compile-images": "node images/compile.js",
-    "compile": "babel -d lib/ src/ && npm run compile-images",
-    "compile:trezor-dev": "TREZOR_DEV=true babel --watch -d lib/ src/ && npm run compile-images",
-    "compile:watch": "babel --watch -d lib/ src/ && npm run compile-images",
+    "check-types": "tsc",
+    "check-types:watch": "tsc --watch",
+    "compile": "babel --extensions .ts,.js -d lib/ src/ && npm run compile-images",
+    "compile:trezor-dev": "TREZOR_DEV=true babel --extensions .ts,.js --watch -d lib/ src/ && npm run compile-images",
+    "compile:watch": "babel --watch --extensions .ts,.js -d lib/ src/ && compile-images",
     "prepublish": "npm run compile",
     "prepare": "npm run compile",
+    "pretest": "npm run check-types && npm run compile",
     "test": "jest src",
     "testdebug": "node --inspect-brk node_modules/.bin/jest --runInBand lib",
     "docs": "./bin/build-docs.sh",
@@ -66,6 +73,7 @@
       "transform-inline-environment-variables"
     ],
     "presets": [
+      "@babel/typescript",
       [
         "@babel/env",
         {
