@@ -73,7 +73,7 @@
                 "allowKeywords": true
             }
         ],
-        "eol-last": "off",
+        "eol-last": 2,
         "eqeqeq": "off",
         "func-call-spacing": "error",
         "func-name-matching": "error",
