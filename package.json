@@ -68,7 +68,7 @@
     "core-js": "^2.6.10",
     "punycode": "^2.1.1",
     "sha": "^3.0.0",
-    "unchained-bitcoin": "^0.1.10"
+    "unchained-bitcoin": "unchained-capital/unchained-bitcoin"
   },
   "directories": {
     "lib": "lib"
