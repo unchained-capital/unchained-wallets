@@ -1,104 +1,96 @@
-import {
-  BCUREncoder,
-  BCURDecoder,
-} from "./bcur";
+import { BCUREncoder, BCURDecoder } from "./bcur";
 
-import vendorBCUR from "./vendor/bcur";
-
-jest.mock("./vendor/bcur", () => ({
-  smartDecodeUR: jest.fn(),
-  encodeUR: jest.fn(),
-}));
-
+import * as vendorEncodeUR from "./vendor/bcur/encodeUR";
+import * as vendorDecodeUR from "./vendor/bcur/decodeUR";
 
 describe("BCUREncoder", () => {
-
   describe("parts", () => {
-
-    it("it returns encoded UR parts", () => {
-      const encoder = new BCUREncoder("deadbeef", 250);
-      const parts = ['a', 'b'];
-      vendorBCUR.encodeUR.mockReturnValue(parts);
-      expect(encoder.parts()).toEqual(parts);
-      expect(vendorBCUR.encodeUR).toHaveBeenCalledWith("deadbeef", 250);
+    afterEach(() => {
+      jest.clearAllMocks();
     });
-
+    it("it returns encoded UR parts", () => {
+      const parts = ["a", "b"];
+      const encodeMock = jest
+        .spyOn(vendorEncodeUR, "encodeUR")
+        .mockReturnValue(parts);
+      const encoder = new BCUREncoder("deadbeef", 250);
+      expect(encoder.parts()).toEqual(parts);
+      expect(encodeMock).toHaveBeenCalledWith("deadbeef", 250);
+    });
   });
-
 });
 
 describe("BCURDecoder", () => {
-
-  let decoder;
+  let decoder, decodeMock;
 
   beforeEach(() => {
     decoder = new BCURDecoder();
   });
 
   describe("reset", () => {
-
     it("resets the summary when in a success state", () => {
       decoder.summary.success = true;
       decoder.summary.current = 5;
       decoder.summary.length = 5;
-      decoder.summary.workloads = ['a', 'b', 'c', 'd', 'e'];
+      decoder.summary.workloads = ["a", "b", "c", "d", "e"];
       decoder.summary.result = "deadbeef";
       decoder.reset();
       expect(decoder.summary.success).toEqual(false);
       expect(decoder.summary.current).toEqual(0);
       expect(decoder.summary.length).toEqual(0);
       expect(decoder.summary.workloads).toEqual([]);
-      expect(decoder.summary.result).toEqual('');
+      expect(decoder.summary.result).toEqual("");
       expect(decoder.error).toBeNull();
     });
 
     it("resets the summary when in an error state", () => {
-      decoder.error = {message: "some message"};
+      decoder.error = { message: "some message" };
       decoder.reset();
       expect(decoder.summary.success).toEqual(false);
       expect(decoder.summary.current).toEqual(0);
       expect(decoder.summary.length).toEqual(0);
       expect(decoder.summary.workloads).toEqual([]);
-      expect(decoder.summary.result).toEqual('');
+      expect(decoder.summary.result).toEqual("");
       expect(decoder.error).toBeNull();
     });
   });
 
   describe("receivePart", () => {
-
     beforeEach(() => {
-      vendorBCUR.smartDecodeUR.mockReset();
+      decodeMock = jest.spyOn(vendorDecodeUR, "smartDecodeUR");
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
     });
 
     it("delegates to smartDecodeUR", () => {
-      decoder.summary.workloads = ['a', 'b'];
-      const part = 'c';
+      decoder.summary.workloads = ["a", "b"];
+      const part = "c";
       const summary = "summary";
-      vendorBCUR.smartDecodeUR.mockReturnValue(summary);
+      decodeMock.mockReturnValue(summary);
       decoder.receivePart(part);
-      expect(vendorBCUR.smartDecodeUR).toHaveBeenCalledWith(['a', 'b', 'c']);
+      expect(decodeMock).toHaveBeenCalledWith(["a", "b", "c"]);
       expect(decoder.summary).toEqual(summary);
     });
 
     it("handles errors when decoding", () => {
-      decoder.summary.workloads = ['a', 'b'];
-      const part = 'c';
+      decoder.summary.workloads = ["a", "b"];
+      const part = "c";
       const error = new Error("some message");
-      vendorBCUR.smartDecodeUR.mockImplementation(() => {
+      decodeMock.mockImplementation(() => {
         throw error;
       });
       decoder.receivePart(part);
-      expect(vendorBCUR.smartDecodeUR).toHaveBeenCalledWith(['a', 'b', 'c']);
+      expect(decodeMock).toHaveBeenCalledWith(["a", "b", "c"]);
       expect(decoder.error).toEqual(error);
       expect(decoder.isComplete()).toEqual(true);
       expect(decoder.isSuccess()).toEqual(false);
       expect(decoder.errorMessage()).toEqual("some message");
     });
-
   });
 
   describe("progress", () => {
-
     it("returns the current progress", () => {
       decoder.summary.length = 5;
       decoder.summary.current = 3;
@@ -107,11 +99,9 @@ describe("BCURDecoder", () => {
         partsReceived: 3,
       });
     });
-
   });
 
   describe("isComplete", () => {
-
     it("is false if the  summary is not successful and there is no error", () => {
       expect(decoder.isComplete()).toEqual(false);
     });
@@ -121,16 +111,13 @@ describe("BCURDecoder", () => {
       expect(decoder.isComplete()).toEqual(true);
     });
 
-
     it("is true if there is an error", () => {
-      decoder.error = {message: "some message"};
+      decoder.error = { message: "some message" };
       expect(decoder.isComplete()).toEqual(true);
     });
-
   });
 
   describe("isSuccess", () => {
-
     it("is false if the  summary is not successful", () => {
       expect(decoder.isSuccess()).toEqual(false);
     });
@@ -139,12 +126,9 @@ describe("BCURDecoder", () => {
       decoder.summary.success = true;
       expect(decoder.isSuccess()).toEqual(true);
     });
-
   });
 
-
   describe("data", () => {
-
     it("returns null if not successful", () => {
       expect(decoder.data()).toBeNull();
     });
@@ -154,21 +138,16 @@ describe("BCURDecoder", () => {
       decoder.summary.result = "deadbeef";
       expect(decoder.data()).toEqual("deadbeef");
     });
-
   });
 
-
   describe("errorMessage", () => {
-
     it("returns null if no error", () => {
       expect(decoder.errorMessage()).toBeNull();
     });
 
     it("returns the error message if there is an error", () => {
-      decoder.error = {message: "some message"};
+      decoder.error = { message: "some message" };
       expect(decoder.errorMessage()).toEqual("some message");
     });
-
   });
-
 });

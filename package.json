@@ -73,7 +73,14 @@
   "directories": {
     "lib": "lib"
   },
+  "jest": {
+    "modulePathIgnorePatterns": [
+      "src/vendor",
+      "lib/vendor"
+    ]
+  },
   "babel": {
+    "passPerPreset": true,
     "plugins": [
       "@babel/proposal-class-properties",
       "transform-inline-environment-variables"
