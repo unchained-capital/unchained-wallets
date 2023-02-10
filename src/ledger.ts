@@ -406,7 +406,6 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
       }
 
       let versionString = mcuVersion.toString();
-      // mcuVersion = mcuVersion.toString();
 
       if (!seVersionLength) {
         seVersion = "0.0.0";
