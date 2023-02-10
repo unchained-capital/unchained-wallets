@@ -49,7 +49,7 @@ import {
 import { splitTransaction } from "@ledgerhq/hw-app-btc/lib/splitTransaction";
 import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
-import { AppClient } from "ledger-bitcoin";
+import { AppClient } from "./vendor/ledger-bitcoin";
 import { BitcoinNetwork, DeviceError, KeyDerivation, TxInput } from "./types";
 
 /**
@@ -823,8 +823,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
       } else {
         const rootFingerprint = await this.getFingerprint(true);
         const xpub = await this.withApp(async (app) => {
-          // return await app.getExtendedPubkey(this.bip32Path);
-          return await app.getExtendedPubkey("m/48'/1'/0'/2'", true);
+          return await app.getExtendedPubkey(this.bip32Path, true);
         });
         return { xpub, rootFingerprint };
       }
