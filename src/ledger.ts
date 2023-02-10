@@ -48,6 +48,8 @@ import {
 
 import { splitTransaction } from "@ledgerhq/hw-app-btc/lib/splitTransaction";
 import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
+import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
+import { AppClient } from "ledger-bitcoin";
 import { BitcoinNetwork, DeviceError, KeyDerivation, TxInput } from "./types";
 
 /**
@@ -89,6 +91,12 @@ export const LEDGER_RIGHT_BUTTON = "ledger_right_button";
  */
 export const LEDGER_BOTH_BUTTONS = "ledger_both_buttons";
 
+export interface AppAndVersion {
+  name: string;
+  version: string;
+  flags: number | Buffer;
+}
+
 /**
  * Base class for interactions with Ledger hardware wallets.
  *
@@ -126,6 +134,8 @@ export const LEDGER_BOTH_BUTTONS = "ledger_both_buttons";
  *
  */
 export class LedgerInteraction extends DirectKeystoreInteraction {
+  appVersion?: string;
+
   /**
    * Adds `pending` messages at the `info` level about ensuring the
    * device is plugged in (`device.connect`) and unlocked
@@ -204,6 +214,23 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     }
   }
 
+  setAppVersion() {
+    return this.withTransport(async (transport) => {
+      const response: AppAndVersion = await getAppAndVersion(transport);
+      this.appVersion = response.version;
+      return this.appVersion;
+    });
+  }
+
+  async isLegacyApp(): Promise<boolean> {
+    const version = await this.setAppVersion();
+    const [majorVersion, minorVersion] = version.split(".");
+    if (+majorVersion > 1 && +minorVersion >= 1) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Can be called by a subclass during its `run()` method.
    *
@@ -225,7 +252,12 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   withApp(callback) {
     return this.withTransport(async (transport) => {
-      const app = new LedgerBtc(transport);
+      let app;
+      if (await this.isLegacyApp()) {
+        app = new LedgerBtc(transport);
+      } else {
+        app = new AppClient(transport);
+      }
       return callback(app, transport);
     });
   }
@@ -621,13 +653,24 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    * @param {boolean} root fingerprint or not
    * @returns {string} fingerprint
    */
-  async getFingerprint(root = false) {
-    const pubkey = root
-      ? await this.getMultisigRootPublicKey()
-      : await this.getParentPublicKey();
-    let fp = getFingerprintFromPublicKey(pubkey);
-    // If asked for a root XFP, zero pad it to length of 8.
-    return root ? fingerprintToFixedLengthHex(fp) : fp.toString();
+  async getFingerprint(root = false): Promise<number | string> {
+    if (await this.isLegacyApp()) {
+      const pubkey = root
+        ? await this.getMultisigRootPublicKey()
+        : await this.getParentPublicKey();
+      let fp = getFingerprintFromPublicKey(pubkey);
+      // If asked for a root XFP, zero pad it to length of 8.
+      return root ? fingerprintToFixedLengthHex(fp) : fp.toString();
+    } else {
+      return await this.getXfp();
+    }
+  }
+
+  // v2 App and above only
+  getXfp() {
+    return this.withApp(async (app) => {
+      return await app.getMasterFingerprint();
+    });
   }
 
   getParentPublicKey() {
@@ -758,25 +801,35 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    */
   async run() {
     try {
-      const walletPublicKey = await super.run();
-      const fingerprint = await this.getFingerprint();
+      if (await this.isLegacyApp()) {
+        const walletPublicKey = await super.run();
+        const fingerprint = await this.getFingerprint();
+        const xpub = deriveExtendedPublicKey(
+          this.bip32Path,
+          walletPublicKey.publicKey,
+          walletPublicKey.chainCode,
+          +fingerprint,
+          this.network
+        );
 
-      const xpub = deriveExtendedPublicKey(
-        this.bip32Path,
-        walletPublicKey.publicKey,
-        walletPublicKey.chainCode,
-        fingerprint,
-        this.network
-      );
-
-      if (this.includeXFP) {
-        let rootFingerprint = await this.getFingerprint(true);
-        return {
-          rootFingerprint,
-          xpub,
-        };
+        if (this.includeXFP) {
+          let rootFingerprint = await this.getFingerprint(true);
+          return {
+            rootFingerprint,
+            xpub,
+          };
+        }
+        return xpub;
+      } else {
+        const rootFingerprint = await this.getFingerprint(true);
+        const xpub = await this.withApp(async (app) => {
+          // return await app.getExtendedPubkey(this.bip32Path);
+          return await app.getExtendedPubkey("m/48'/1'/0'/2'", true);
+        });
+        return { xpub, rootFingerprint };
       }
-      return xpub;
+    } catch (e) {
+      console.error(e);
     } finally {
       await super.closeTransport();
     }
