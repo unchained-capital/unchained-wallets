@@ -676,7 +676,12 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   getParentPublicKey() {
     return this.withApp(async (app) => {
       const parentPath = getParentBIP32Path(this.bip32Path);
-      return (await app.getWalletPublicKey(parentPath)).publicKey;
+      if (await this.isLegacyApp()) {
+        return (await app.getWalletPublicKey(parentPath)).publicKey;
+      }
+      throw new Error(
+        `Method not supported for this version of Ledger app (${this.appVersion})`
+      );
     });
   }
 
@@ -693,7 +698,12 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    */
   run() {
     return this.withApp(async (app) => {
-      return app.getWalletPublicKey(this.bip32Path);
+      if (await this.isLegacyApp()) {
+        return app.getWalletPublicKey(this.bip32Path);
+      }
+      throw new Error(
+        `Method not supported for this version of Ledger app (${this.appVersion})`
+      );
     });
   }
 }
