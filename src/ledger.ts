@@ -214,7 +214,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     }
   }
 
-  setAppVersion() {
+  setAppVersion(): Promise<string> {
     return this.withTransport(async (transport) => {
       const response: AppAndVersion = await getAppAndVersion(transport);
       this.appVersion = response.version;
@@ -319,6 +319,17 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
  */
 export class LedgerBitcoinInteraction extends LedgerInteraction {
   /**
+   * Whether or not the interaction is supported in legacy versions
+   * of the Ledger App (<=v2.0.6)
+   */
+  isLegacySupported = true;
+  /**
+   * Whether or not the interaction is supported in non-legacy versions
+   * of the Ledger App (>=v2.1.0)
+   */
+  isV2Supported = false;
+
+  /**
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the bitcoin app (`ledger.app.bitcoin`).
    *
@@ -339,6 +350,35 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
       code: "ledger.app.bitcoin",
     });
     return messages;
+  }
+
+  /**
+   * Inheriting classes should set properties `this.isLegacySupported`
+   * and `this.isV2Supported` to indicate whether a given interaction
+   * has support for a given interaction. This method can then be called
+   * to check the version of the app being called and return whether or
+   * not the interaction is supported based on that version
+   */
+  async isSupported() {
+    if (!super.isSupported()) return false;
+    if (await this.isLegacyApp()) {
+      return this.isLegacySupported;
+    }
+    return this.isV2Supported;
+  }
+
+  /**
+   * Inheriting classes should call the super.run()
+   * as well as set the properties of support before calling their run
+   * in order to check support before calling the actual interaction run
+   */
+  async run() {
+    const isSupported = await this.isSupported();
+    if (!isSupported) {
+      throw new Error(
+        `Method not supported for this version of Ledger app (${this.appVersion})`
+      );
+    }
   }
 }
 
@@ -562,6 +602,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   bip32Path: string;
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
+  isV2Supported = false;
+  isLegacySupported = true;
+
   /**
    * Requires a valid BIP32 path to the node to export.
    *
@@ -571,7 +614,6 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   constructor({ bip32Path }) {
     super();
     this.bip32Path = bip32Path;
-    // this.bip32ValidationErrorMessage = undefined;
     const bip32PathError = validateBIP32Path(bip32Path);
     if (bip32PathError.length) {
       this.bip32ValidationErrorMessage = {
@@ -661,13 +703,21 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       let fp = getFingerprintFromPublicKey(pubkey);
       // If asked for a root XFP, zero pad it to length of 8.
       return root ? fingerprintToFixedLengthHex(fp) : fp.toString();
-    } else {
+    } else if (root) {
       return await this.getXfp();
+    } else {
+      throw new Error(
+        `Method not supported for this version of Ledger app (${this.appVersion})`
+      );
     }
   }
 
   // v2 App and above only
-  getXfp() {
+  async getXfp() {
+    if (await this.isLegacyApp()) {
+      return this.getFingerprint(true);
+    }
+
     return this.withApp(async (app) => {
       return await app.getMasterFingerprint();
     });
@@ -676,12 +726,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   getParentPublicKey() {
     return this.withApp(async (app) => {
       const parentPath = getParentBIP32Path(this.bip32Path);
-      if (await this.isLegacyApp()) {
-        return (await app.getWalletPublicKey(parentPath)).publicKey;
-      }
-      throw new Error(
-        `Method not supported for this version of Ledger app (${this.appVersion})`
-      );
+      return (await app.getWalletPublicKey(parentPath)).publicKey;
     });
   }
 
@@ -698,12 +743,11 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
    */
   run() {
     return this.withApp(async (app) => {
-      if (await this.isLegacyApp()) {
-        return app.getWalletPublicKey(this.bip32Path);
-      }
-      throw new Error(
-        `Method not supported for this version of Ledger app (${this.appVersion})`
-      );
+      await super.run();
+      // only supported by legacy app
+      const result = await app.getWalletPublicKey(this.bip32Path);
+      console.log("result:", result);
+      return result;
     });
   }
 }
@@ -721,6 +765,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
  */
 export class LedgerExportPublicKey extends LedgerExportHDNode {
   includeXFP: boolean;
+
+  isLegacySupported = true;
+  isV2Supported = false;
 
   /**
    * @param {string} bip32Path - the BIP32 path for the HD node
@@ -742,7 +789,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
       const result = await super.run();
       const publicKey = this.parsePublicKey((result || {}).publicKey);
       if (this.includeXFP) {
-        let rootFingerprint = await this.getFingerprint(true);
+        let rootFingerprint = await this.getXfp();
         return {
           rootFingerprint,
           publicKey,
@@ -784,6 +831,9 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   network: BitcoinNetwork;
   includeXFP: boolean;
 
+  isLegacySupported = true;
+  isV2Supported = true;
+
   /**
    * @param {string} bip32Path path
    * @param {string} network bitcoin network
@@ -823,7 +873,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
         );
 
         if (this.includeXFP) {
-          let rootFingerprint = await this.getFingerprint(true);
+          let rootFingerprint = await this.getXfp();
           return {
             rootFingerprint,
             xpub,
@@ -831,7 +881,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
         }
         return xpub;
       } else {
-        const rootFingerprint = await this.getFingerprint(true);
+        const rootFingerprint = await this.getXfp();
         const xpub = await this.withApp(async (app) => {
           return await app.getExtendedPubkey(this.bip32Path, true);
         });
@@ -895,6 +945,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   keyDetails?: KeyDerivation;
   returnSignatureArray?: boolean;
   pubkeys?: Buffer[];
+
+  isLegacySupported = true;
+  isV2Supported = false;
   /**
    * @param {object} options - options argument
    * @param {BitcoinNetwork} options.network - bitcoin network
@@ -1068,7 +1121,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    *
    * @returns {string[]|string} array of input signatures, one per input or PSBT in Base64
    */
-  run() {
+  async run() {
+    // will check app support and throw error if not supported
+    await super.run();
+
     return this.withApp(async (app, transport) => {
       try {
         // FIXME: Explain the rationale behind this choice.
@@ -1152,6 +1208,9 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
   message: string;
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
+  isLegacySupported = true;
+  isV2Supported = false;
+
   /**
    * @param {object} options - options argument
    * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
@@ -1207,7 +1266,9 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
    *
    * @return {object} {v, r, s}
    */
-  run() {
+  async run() {
+    // check app version support first
+    await super.run();
     return this.withApp(async (app, transport) => {
       try {
         // TODO: what would be an appropriate amount of time to wait for a

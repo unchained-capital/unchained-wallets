@@ -176,7 +176,7 @@ export class KeystoreInteraction {
    * supported.  See the Bowser documentation for more details:
    * https://github.com/lancedikson/bowser
    *
-   * @returns {boolean} whether this interaction is supported
+   * @returns {boolean | Promise<boolean>} whether this interaction is supported
    * @example
    * isSupported() {
    *   return this.environment.satisfies({
