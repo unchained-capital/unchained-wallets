@@ -356,8 +356,8 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * to check the version of the app being called and return whether or
    * not the interaction is supported based on that version
    */
-  async isSupported() {
-    if (!super.isSupported()) return false;
+  async isAppSupported() {
+    if (!this.isSupported()) return false;
     if (await this.isLegacyApp()) {
       return this.isLegacySupported;
     }
@@ -370,7 +370,7 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * in order to check support before calling the actual interaction run
    */
   async run() {
-    const isSupported = await this.isSupported();
+    const isSupported = await this.isAppSupported();
     if (!isSupported) {
       throw new Error(
         `Method not supported for this version of Ledger app (${this.appVersion})`
@@ -743,7 +743,6 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       await super.run();
       // only supported by legacy app
       const result = await app.getWalletPublicKey(this.bip32Path);
-      console.log("result:", result);
       return result;
     });
   }
