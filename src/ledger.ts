@@ -225,10 +225,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
   async isLegacyApp(): Promise<boolean> {
     const version = await this.setAppVersion();
     const [majorVersion, minorVersion] = version.split(".");
-    if (+majorVersion > 1 && +minorVersion >= 1) {
-      return false;
-    }
-    return true;
+    return Number(majorVersion) <= 1 || Number(minorVersion) < 1;
   }
 
   /**
@@ -873,7 +870,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
         );
 
         if (this.includeXFP) {
-          let rootFingerprint = await this.getXfp();
+          const rootFingerprint = await this.getXfp();
           return {
             rootFingerprint,
             xpub,
