@@ -244,8 +244,7 @@ export function ExportExtendedPublicKey({
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when exporting extended public keys.",
+        text: "This keystore is not supported when exporting extended public keys.",
       });
   }
 }
@@ -319,7 +318,7 @@ export function SignMultisigTransaction({
   bip32Paths,
   psbt,
   keyDetails,
-  returnSignatureArray= false,
+  returnSignatureArray = false,
 }) {
   switch (keystore) {
     case COLDCARD:
@@ -366,8 +365,7 @@ export function SignMultisigTransaction({
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when signing multisig transactions.",
+        text: "This keystore is not supported when signing multisig transactions.",
       });
   }
 }
@@ -445,8 +443,7 @@ export function ConfirmMultisigAddress({
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when confirming multisig addresses.",
+        text: "This keystore is not supported when confirming multisig addresses.",
       });
   }
 }
@@ -469,8 +466,7 @@ export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
-        text:
-          "This keystore is not supported when translating external spend configuration files.",
+        text: "This keystore is not supported when translating external spend configuration files.",
       });
   }
 }
