@@ -20,6 +20,8 @@
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.7.2",
     "@babel/preset-env": "^7.7.1",
+    "@commitlint/cli": "^17.4.3",
+    "@commitlint/config-conventional": "^17.4.3",
     "babel-plugin-transform-inline-environment-variables": "^0.4.3",
     "eslint": "^6.6.0",
     "eslint-plugin-import": "^2.18.2",
