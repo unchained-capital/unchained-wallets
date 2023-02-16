@@ -46,8 +46,9 @@
   },
   "scripts": {
     "compile-images": "node images/compile.js",
-    "check-types": "tsc",
-    "check-types:watch": "tsc --watch",
+    "build-types": "tsc -p tsconfig.json",
+    "build-types:watch": "tsc --watch",
+    "check-types": "tsc -p tsconfig.json --noEmit --emitDeclarationOnly false",
     "compile": "babel --extensions .ts,.js -d lib/ src/ && npm run compile-images",
     "compile:trezor-dev": "TREZOR_DEV=true babel --extensions .ts,.js --watch -d lib/ src/ && npm run compile-images",
     "compile:watch": "babel --watch --extensions .ts,.js -d lib/ src/ && compile-images",
