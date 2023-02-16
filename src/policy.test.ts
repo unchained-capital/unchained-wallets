@@ -2,11 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
+import { Braid, TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
 import {
   KeyOrigin,
   MutlisigWalletPolicy,
   validateMultisigPolicyTemplate,
+  getPolicyTemplateFromBraid,
 } from "./policy";
 
 describe("validateMultisigPolicyTemplate", () => {
@@ -56,7 +57,6 @@ describe("MultisigWalletPolicy", () => {
     const path2 = "m/48'/1'/100'/2'";
     const origins = [path1, path2].map((path) => {
       const node = TEST_FIXTURES.keys.open_source.nodes[path];
-      console.log("path:", path);
       return new KeyOrigin({
         xfp: node.rootFingerprint,
         xpub: node.xpub,
@@ -66,7 +66,7 @@ describe("MultisigWalletPolicy", () => {
     });
     const policy = new MutlisigWalletPolicy({
       name: "My Test",
-      policyTemplate: "wsh(sortedmulti(2,@0/**,@1/**))",
+      template: "wsh(sortedmulti(2,@0/**,@1/**))",
       keyOrigins: origins,
     });
 
@@ -86,5 +86,15 @@ describe("KeyOrigin", () => {
     expect(new KeyOrigin(options).toString()).toEqual(
       "[76223a6e/48'/1'/0'/2']tpubDE7NQymr4AFtewpAsWtnreyq9ghkzQBXpCZjWLFVRAvnbf7vya2eMTvT2fPapNqL8SuVvLQdbUbMfWLVDCZKnsEBqp6UK93QEzL8Ck23AwF"
     );
+  });
+});
+
+describe("getPolicyTemplateFromBraid", () => {
+  it("converts braids to valid policies", () => {
+    for (const multisig of TEST_FIXTURES.multisigs) {
+      const braid = Braid.fromData(multisig.braidDetails);
+      const template = getPolicyTemplateFromBraid(braid);
+      validateMultisigPolicyTemplate(template);
+    }
   });
 });

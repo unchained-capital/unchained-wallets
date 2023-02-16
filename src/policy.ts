@@ -1,4 +1,5 @@
 import {
+  Braid,
   validateBIP32Path,
   validateExtendedPublicKey,
   validateRootFingerprint,
@@ -37,18 +38,82 @@ export class KeyOrigin {
   // TODO: Needs a way to turn a serialized key origin to instance of class
 }
 
+export type MultisigScriptType = "sh" | "wsh" | "tr";
+
+/**
+ * Takes a Braid instance and translates it into a wallet policy template string
+ * @param {Braid} braid - instance of a braid object from unchained-bitcoin
+ * @returns valid policy template string
+ */
+export const getPolicyTemplateFromBraid = (braid: Braid) => {
+  let scriptType: MultisigScriptType | undefined;
+  let requiredSigners: number = Number(braid.requiredSigners);
+  let nested = false;
+  switch (braid.addressType) {
+    case "P2SH":
+      scriptType = "sh";
+      break;
+    case "P2WSH":
+      scriptType = "wsh";
+      break;
+    case "P2TR":
+      scriptType = "tr";
+      break;
+    case "P2SH-P2WSH":
+      scriptType = "wsh";
+      nested = true;
+      break;
+    default:
+      break;
+  }
+
+  if (!scriptType) {
+    throw new Error(`Unknown address type: ${braid.addressType}`);
+  }
+
+  const signersString = braid.extendedPublicKeys
+    .map((_, index) => `@${index}/**`)
+    .join(",");
+
+  // TODO: should this always assume sorted?
+  const policy = `${scriptType}(sortedmulti(${requiredSigners},${signersString}))`;
+  if (nested) return `sh(${policy})`;
+
+  return policy;
+};
+
+export const getKeyOriginsFromBraid = (braid: Braid): KeyOrigin[] => {
+  return braid.extendedPublicKeys.map(
+    (key): KeyOrigin =>
+      new KeyOrigin({
+        xfp: key.rootFingerprint,
+        xpub: key.base58String,
+        bip32Path: key.path,
+        network: braid.network,
+      })
+  );
+};
+
 export class MutlisigWalletPolicy {
   name: string;
-  policyTemplate: string;
+  template: string;
   keyOrigins: KeyOrigin[];
 
-  constructor({ name, policyTemplate, keyOrigins }) {
+  constructor({
+    name,
+    template,
+    keyOrigins,
+  }: {
+    name: string;
+    template: string;
+    keyOrigins: KeyOrigin[];
+  }) {
     this.name = name;
 
-    validateMultisigPolicyTemplate(policyTemplate);
-    this.policyTemplate = policyTemplate;
+    validateMultisigPolicyTemplate(template);
+    this.template = template;
 
-    const totalSignerCount = getTotalSignerCountFromTemplate(policyTemplate);
+    const totalSignerCount = getTotalSignerCountFromTemplate(template);
     if (totalSignerCount !== keyOrigins.length) {
       throw new Error(
         `Expected ${totalSignerCount} key origins but ${keyOrigins.length} were passed`
@@ -60,7 +125,7 @@ export class MutlisigWalletPolicy {
   toJSON() {
     return JSON.stringify({
       name: this.name,
-      policyTemplate: this.policyTemplate,
+      template: this.template,
       keyOrigins: this.keyOrigins,
     });
   }
@@ -68,7 +133,7 @@ export class MutlisigWalletPolicy {
   toLedgerPolicy() {
     return new WalletPolicy(
       this.name,
-      this.policyTemplate,
+      this.template,
       this.keyOrigins.map((ko) => ko.toString())
     );
   }
@@ -85,7 +150,11 @@ export const validateMultisigPolicyScriptType = (template) => {
   }
 
   if (!hasMatch)
-    throw new Error(`Only script types ${acceptedScripts.join(", ")} accepted`);
+    throw new Error(
+      `Invalid script type in template ${template}. Only script types ${acceptedScripts.join(
+        ", "
+      )} accepted`
+    );
 };
 
 export const validateMultisigPolicyKeys = (template) => {
