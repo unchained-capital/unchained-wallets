@@ -12,6 +12,7 @@ node_modules/
 coverage/
 .tox/
 .coverage
+.eslintcache
 
 # production
 build/
@@ -20,4 +21,4 @@ lib/
 # misc
 .DS_Store
 node_modules
-.vscode/
+.vscode
