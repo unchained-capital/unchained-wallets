@@ -35,6 +35,7 @@ import {
   fingerprintToFixedLengthHex,
   translatePSBT,
   addSignaturesToPSBT,
+  Braid,
 } from "unchained-bitcoin";
 
 import {
@@ -51,6 +52,11 @@ import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeT
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
 import { AppClient } from "./vendor/ledger-bitcoin";
 import { BitcoinNetwork, DeviceError, KeyDerivation, TxInput } from "./types";
+import {
+  MutlisigWalletPolicy,
+  getKeyOriginsFromBraid,
+  getPolicyTemplateFromBraid,
+} from "./policy";
 
 /**
  * Constant defining Ledger interactions.
@@ -369,13 +375,14 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * as well as set the properties of support before calling their run
    * in order to check support before calling the actual interaction run
    */
-  async run() {
+  async run(): Promise<unknown> {
     const isSupported = await this.isAppSupported();
     if (!isSupported) {
       throw new Error(
         `Method not supported for this version of Ledger app (${this.appVersion})`
       );
     }
+    return;
   }
 }
 
@@ -864,7 +871,7 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
           this.bip32Path,
           walletPublicKey.publicKey,
           walletPublicKey.chainCode,
-          +fingerprint,
+          Number(fingerprint),
           this.network
         );
 
@@ -1278,5 +1285,185 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
         transport.close();
       }
     });
+  }
+}
+
+interface RegistrationConstructorArguments {
+  name: string;
+  braid: Braid;
+}
+
+/**
+ * A base class for any interactions that need to interact with a registered wallet
+ * by providing a base constructor that will generate the key origins and the policy
+ * from a given braid as well as methods for registering and returning a policy hmac
+ */
+export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
+  walletPolicy: MutlisigWalletPolicy;
+  policyHmac?: Buffer;
+  policyId?: Buffer;
+
+  isLegacySupported = false;
+  isV2Supported = true;
+
+  constructor({ name, braid }: RegistrationConstructorArguments) {
+    super();
+    const keyOrigins = getKeyOriginsFromBraid(braid);
+    const template = getPolicyTemplateFromBraid(braid);
+    this.walletPolicy = new MutlisigWalletPolicy({
+      name,
+      keyOrigins,
+      template,
+    });
+  }
+
+  messages() {
+    const messages = super.messages();
+
+    if (!this.policyHmac) {
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.confirm.address",
+        version: ">=2.1.0",
+        text: `Your Ledger will ask you to register your wallet info first. This allows the device to derive an address for a verified quorum.`,
+        action: LEDGER_RIGHT_BUTTON,
+      });
+    }
+
+    return messages;
+  }
+
+  registerWallet(): Promise<Buffer> {
+    if (this.policyHmac) return Promise.resolve(this.policyHmac);
+    else {
+      return this.withApp(async (app: AppClient) => {
+        const policy = this.walletPolicy.toLedgerPolicy();
+        const [policyId, policyHmac] = await app.registerWallet(policy);
+        this.policyHmac = policyHmac;
+        this.policyId = policyId;
+        policyHmac;
+      });
+    }
+  }
+
+  async run(): Promise<unknown> {
+    await super.run();
+    return await this.registerWallet();
+  }
+}
+
+interface ConfirmAddressConstructorArguments
+  extends RegistrationConstructorArguments {
+  // the expected address to compare against
+  expected: string;
+  // whether or not to display the address to the user
+  display: boolean;
+  // the index
+  addressIndex: number;
+}
+
+/**
+ * Interaction for confirming an address on a ledger device. Requires a registered
+ * wallet to complete successfully. Only supported on Ledger v2.1.0 or above.
+ */
+export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistrationInteraction {
+  braidIndex: 0 | 1;
+  addressIndex: number;
+  expected?: string;
+
+  display = true;
+
+  constructor({
+    braid,
+    name,
+    addressIndex,
+    display,
+    expected,
+  }: ConfirmAddressConstructorArguments) {
+    super({ braid, name });
+
+    const braidIndex = Number(braid.index);
+    if (braidIndex !== 1 && braidIndex !== 0)
+      throw new Error(`Invalid braid index ${braidIndex}`);
+    this.braidIndex = braidIndex;
+
+    const index = Number(addressIndex);
+    if (index < 0) throw new Error(`Invalid address index ${index}`);
+    this.addressIndex = index;
+
+    if (display) {
+      this.display = display;
+    }
+
+    this.expected = expected;
+  }
+
+  /**
+   * Adds messages about BIP32 path warnings.
+   *
+   * @returns {module:interaction.Message[]} messages for this interaction
+   *
+   */
+  messages() {
+    const messages = super.messages();
+
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "ledger.confirm.address",
+      version: ">2.1.0",
+      text: `It can take a moment for the ledger to process the wallet and address data`,
+    });
+
+    if (this.display) {
+      messages.push(
+        {
+          state: ACTIVE,
+          level: INFO,
+          code: "ledger.confirm.address",
+          version: ">=2.1.0",
+          text: `First confirm that the wallet name the address is from is correct`,
+          action: LEDGER_RIGHT_BUTTON,
+        },
+        {
+          state: ACTIVE,
+          level: INFO,
+          code: "ledger.confirm.address",
+          version: ">=2.1.0",
+          text: `Then your Ledger will show the address across several screens. Verify this matches the address you are confirming.`,
+          action: LEDGER_RIGHT_BUTTON,
+        }
+      );
+    }
+    return messages;
+  }
+
+  getAddress(): Promise<string> {
+    return this.withApp(async (app: AppClient) => {
+      // make sure super.run() is run before this to confirm wallet registration
+      if (!this.policyHmac) {
+        throw new Error(
+          "Can't get wallet address without a wallet registration"
+        );
+      }
+      return await app.getWalletAddress(
+        this.walletPolicy.toLedgerPolicy(),
+        Buffer.from(this.policyHmac),
+        this.braidIndex,
+        this.addressIndex,
+        this.display
+      );
+    });
+  }
+
+  async run() {
+    try {
+      // run the app version support checks, register wallet if necessary
+      await super.run();
+      return await this.getAddress();
+    } finally {
+      super.closeTransport();
+    }
   }
 }

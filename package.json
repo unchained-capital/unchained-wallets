@@ -73,7 +73,7 @@
     "core-js": "^2.6.10",
     "punycode": "^2.1.1",
     "sha": "^3.0.0",
-    "unchained-bitcoin": "unchained-capital/unchained-bitcoin"
+    "unchained-bitcoin": "unchained-capital/unchained-bitcoin#ledger-v2"
   },
   "directories": {
     "lib": "lib"
