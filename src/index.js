@@ -25,6 +25,7 @@ import {
   LedgerSignMultisigTransaction,
   LedgerSignMessage,
   LedgerConfirmMultisigAddress,
+  LedgerRegisterWalletPolicy,
 } from "./ledger";
 import {
   TREZOR,
@@ -384,7 +385,7 @@ export function SignMultisigTransaction({
  *
  * `publicKey` optional, is the public key expected to be at `bip32Path`.
  *
- * **Supported keystores:** Trezor
+ * **Supported keystores:** Trezor, Ledger
  *
  * @param {Object} options - options argument
  * @param {KEYSTORES} options.keystore - keystore to use
@@ -392,6 +393,8 @@ export function SignMultisigTransaction({
  * @param {object} options.multisig - `Multisig` object representing the address
  * @param {string} options.bip32Path - the BIP32 path on this device containing a public key from the address
  * @param {string} options.publicKey - optional, the public key expected to be at the given BIP32 path
+ * @param {string} [options.addressIndex] - required if doing a ledger interaction, index on braid of the address to confirm
+ * @param {string} [options.policyHmac] - optional. for ledger if none is provided then a registration interaction will be performed
  * @return {module:interaction.KeystoreInteraction} keystore-specific interaction instance
  * @example
  * import {
@@ -435,6 +438,7 @@ export function ConfirmMultisigAddress({
   publicKey,
   name,
   addressIndex,
+  policyHmac,
 }) {
   switch (keystore) {
     case TREZOR:
@@ -444,7 +448,7 @@ export function ConfirmMultisigAddress({
         multisig,
         publicKey,
       });
-    case LEDGER:
+    case LEDGER: {
       // TODO: clean this up. The reason for this is that
       // we're expecting this malleable object `multisig` that
       // gets passed in but really these interactions should
@@ -456,11 +460,48 @@ export function ConfirmMultisigAddress({
         name,
         braid,
         addressIndex,
+        policyHmac,
       });
+    }
     default:
       return new UnsupportedInteraction({
         code: UNSUPPORTED,
         text: "This keystore is not supported when confirming multisig addresses.",
+      });
+  }
+}
+
+/**
+ * Return a class for registering a wallet policy.
+ * **Supported keystores:** Ledger
+ * @param {string} keystore - keystore to use
+ * @param {string} name - name of the wallet
+ * @param {Braid} braid - multisig wallet configuration. wallet can be deduced from braid
+ * @param {string} [policyHmac] - optionally pass in an existing policy hmac
+ * @param {boolean} [verify] - if a policyHmac is passed and verify is true
+ * then the registration will take place and the result compared
+ * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
+ * config to match the specified keystore/coordinator requirements
+ */
+export function RegisterWalletPolicy({
+  keystore,
+  name,
+  braid,
+  policyHmac,
+  verify,
+}) {
+  switch (keystore) {
+    case LEDGER:
+      return new LedgerRegisterWalletPolicy({
+        name,
+        braid,
+        policyHmac,
+        verify,
+      });
+    default:
+      return new UnsupportedInteraction({
+        code: "unsupported",
+        text: "This keystore is not supported when translating external spend configuration files.",
       });
   }
 }

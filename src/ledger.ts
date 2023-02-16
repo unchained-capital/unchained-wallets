@@ -36,6 +36,7 @@ import {
   translatePSBT,
   addSignaturesToPSBT,
   Braid,
+  validateHex,
 } from "unchained-bitcoin";
 
 import {
@@ -66,9 +67,10 @@ import {
  */
 export const LEDGER = "ledger";
 
+/* eslint-disable @typescript-eslint/no-var-requires */
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUSB = require("@ledgerhq/hw-transport-webusb").default;
-const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
+const LedgerBtc = require("@ledgerhq/hw-app-btc");
 
 /**
  * Constant representing the action of pushing the left button on a
@@ -289,6 +291,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
  *
  */
 export class LedgerDashboardInteraction extends LedgerInteraction {
+
   /**
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the Ledger dashboard, not the bitcoin app
@@ -321,11 +324,13 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
  * @extends {module:ledger.LedgerInteraction}
  */
 export class LedgerBitcoinInteraction extends LedgerInteraction {
+
   /**
    * Whether or not the interaction is supported in legacy versions
    * of the Ledger App (<=v2.0.6)
    */
   isLegacySupported = true;
+
   /**
    * Whether or not the interaction is supported in non-legacy versions
    * of the Ledger App (>=v2.1.0)
@@ -361,6 +366,7 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * has support for a given interaction. This method can then be called
    * to check the version of the app being called and return whether or
    * not the interaction is supported based on that version
+   * @returns {Promise<boolean>} if the current open app is supported
    */
   async isAppSupported() {
     if (!this.isSupported()) return false;
@@ -374,6 +380,7 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
    * Inheriting classes should call the super.run()
    * as well as set the properties of support before calling their run
    * in order to check support before calling the actual interaction run
+   * @returns {Promise} could return void or some value that the interaction is meant to provide
    */
   async run(): Promise<unknown> {
     const isSupported = await this.isAppSupported();
@@ -382,7 +389,7 @@ export class LedgerBitcoinInteraction extends LedgerInteraction {
         `Method not supported for this version of Ledger app (${this.appVersion})`
       );
     }
-    return;
+    return isSupported;
   }
 }
 
@@ -587,6 +594,7 @@ export interface LedgerDeviceError {
   text: string;
   code: string;
 }
+
 /**
  * Base class for interactions exporting information about an HD node
  * at a given BIP32 path.
@@ -604,9 +612,11 @@ export interface LedgerDeviceError {
  */
 class LedgerExportHDNode extends LedgerBitcoinInteraction {
   bip32Path: string;
+
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
   isV2Supported = false;
+
   isLegacySupported = true;
 
   /**
@@ -708,7 +718,7 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
       // If asked for a root XFP, zero pad it to length of 8.
       return root ? fingerprintToFixedLengthHex(fp) : fp.toString();
     } else if (root) {
-      return await this.getXfp();
+      return this.getXfp();
     } else {
       throw new Error(
         `Method not supported for this version of Ledger app (${this.appVersion})`
@@ -730,13 +740,15 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
   getParentPublicKey() {
     return this.withApp(async (app) => {
       const parentPath = getParentBIP32Path(this.bip32Path);
-      return (await app.getWalletPublicKey(parentPath)).publicKey;
+      const key = (await app.getWalletPublicKey(parentPath)).publicKey;
+      return key;
     });
   }
 
   getMultisigRootPublicKey() {
     return this.withApp(async (app) => {
-      return (await app.getWalletPublicKey()).publicKey; // Call getWalletPublicKey w no path to get BIP32_ROOT (m)
+      const key = (await app.getWalletPublicKey()).publicKey; // Call getWalletPublicKey w no path to get BIP32_ROOT (m)
+      return key;
     });
   }
 
@@ -770,6 +782,7 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
   includeXFP: boolean;
 
   isLegacySupported = true;
+
   isV2Supported = false;
 
   /**
@@ -832,9 +845,11 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
  */
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   network: BitcoinNetwork;
+
   includeXFP: boolean;
 
   isLegacySupported = true;
+
   isV2Supported = true;
 
   /**
@@ -886,12 +901,10 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
       } else {
         const rootFingerprint = await this.getXfp();
         const xpub = await this.withApp(async (app) => {
-          return await app.getExtendedPubkey(this.bip32Path, true);
+          return app.getExtendedPubkey(this.bip32Path, true);
         });
         return { xpub, rootFingerprint };
       }
-    } catch (e) {
-      console.error(e);
     } finally {
       await super.closeTransport();
     }
@@ -941,16 +954,25 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
  */
 export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   network: BitcoinNetwork;
+
   inputs: TxInput[];
+
   outputs: object[];
+
   bip32Paths: string[];
+
   psbt?: string;
+
   keyDetails?: KeyDerivation;
+
   returnSignatureArray?: boolean;
+
   pubkeys?: Buffer[];
 
   isLegacySupported = true;
+
   isV2Supported = false;
+
   /**
    * @param {object} options - options argument
    * @param {BitcoinNetwork} options.network - bitcoin network
@@ -1208,10 +1230,13 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
  */
 export class LedgerSignMessage extends LedgerBitcoinInteraction {
   bip32Path: string;
+
   message: string;
+
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
   isLegacySupported = true;
+
   isV2Supported = false;
 
   /**
@@ -1291,6 +1316,7 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 interface RegistrationConstructorArguments {
   name: string;
   braid: Braid;
+  policyHmac?: string;
 }
 
 /**
@@ -1300,16 +1326,25 @@ interface RegistrationConstructorArguments {
  */
 export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
   walletPolicy: MutlisigWalletPolicy;
+
   policyHmac?: Buffer;
+
   policyId?: Buffer;
 
   isLegacySupported = false;
+
   isV2Supported = true;
 
-  constructor({ name, braid }: RegistrationConstructorArguments) {
+  constructor({ name, braid, policyHmac }: RegistrationConstructorArguments) {
     super();
     const keyOrigins = getKeyOriginsFromBraid(braid);
     const template = getPolicyTemplateFromBraid(braid);
+    if (policyHmac) {
+      const error = validateHex(policyHmac);
+      if (error) throw new Error(`Invalid policyHmac`);
+      // TODO validate length
+      this.policyHmac = Buffer.from(policyHmac, "hex");
+    }
     this.walletPolicy = new MutlisigWalletPolicy({
       name,
       keyOrigins,
@@ -1334,22 +1369,54 @@ export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInt
     return messages;
   }
 
-  registerWallet(): Promise<Buffer> {
-    if (this.policyHmac) return Promise.resolve(this.policyHmac);
-    else {
-      return this.withApp(async (app: AppClient) => {
-        const policy = this.walletPolicy.toLedgerPolicy();
-        const [policyId, policyHmac] = await app.registerWallet(policy);
-        this.policyHmac = policyHmac;
-        this.policyId = policyId;
-        policyHmac;
-      });
-    }
+  registerWallet(verify = false): Promise<Buffer> {
+    if (this.policyHmac && !verify) return Promise.resolve(this.policyHmac);
+
+    // if we don't have a registered policy yet, then let's handle that
+    return this.withApp(async (app: AppClient) => {
+      const policy = this.walletPolicy.toLedgerPolicy();
+      const [policyId, policyHmac] = await app.registerWallet(policy);
+      const buff = Buffer.from(policyHmac);
+
+      if (
+        verify &&
+        this.policyHmac &&
+        this.policyHmac.toString("hex") !== buff.toString("hex")
+      ) {
+        console.error(
+          `Policy registrations did not match. Expected ${this.policyHmac.toString(
+            "hex"
+          )}; Actual: ${buff.toString("hex")}`
+        );
+      }
+
+      this.policyHmac = buff;
+      this.policyId = policyId;
+
+      return buff;
+    });
+  }
+}
+
+interface LedgerRegisterWalletPolicyArguments
+  extends RegistrationConstructorArguments {
+  verify?: boolean;
+}
+export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationInteraction {
+  verify: boolean;
+
+  constructor({
+    verify = false,
+    ...args
+  }: LedgerRegisterWalletPolicyArguments) {
+    super(args);
+    this.verify = verify;
   }
 
-  async run(): Promise<unknown> {
+  async run(): Promise<string> {
     await super.run();
-    return await this.registerWallet();
+    const policy = await this.registerWallet(this.verify);
+    return Buffer.from(policy).toString("hex");
   }
 }
 
@@ -1369,7 +1436,9 @@ interface ConfirmAddressConstructorArguments
  */
 export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistrationInteraction {
   braidIndex: 0 | 1;
+
   addressIndex: number;
+
   expected?: string;
 
   display = true;
@@ -1377,15 +1446,15 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
   constructor({
     braid,
     name,
+    policyHmac,
     addressIndex,
     display,
     expected,
   }: ConfirmAddressConstructorArguments) {
-    super({ braid, name });
+    super({ braid, name, policyHmac });
 
     const braidIndex = Number(braid.index);
-    if (braidIndex !== 1 && braidIndex !== 0)
-      throw new Error(`Invalid braid index ${braidIndex}`);
+    if (braidIndex !== 1 && braidIndex !== 0) throw new Error(`Invalid braid index ${braidIndex}`);
     this.braidIndex = braidIndex;
 
     const index = Number(addressIndex);
@@ -1441,7 +1510,8 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
 
   getAddress(): Promise<string> {
     return this.withApp(async (app: AppClient) => {
-      // make sure super.run() is run before this to confirm wallet registration
+      // make sure wallet is registered or has an hmac
+      // before calling this method
       if (!this.policyHmac) {
         throw new Error(
           "Can't get wallet address without a wallet registration"
@@ -1461,7 +1531,8 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
     try {
       // run the app version support checks, register wallet if necessary
       await super.run();
-      return await this.getAddress();
+      await this.registerWallet();
+      return this.getAddress();
     } finally {
       super.closeTransport();
     }
