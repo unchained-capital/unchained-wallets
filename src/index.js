@@ -1,5 +1,5 @@
 import { version } from "../package.json";
-import { UnsupportedInteraction } from "./interaction";
+import { UNSUPPORTED, UnsupportedInteraction } from "./interaction";
 import {
   COLDCARD,
   ColdcardExportPublicKey,
@@ -24,6 +24,7 @@ import {
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
   LedgerSignMessage,
+  LedgerConfirmMultisigAddress,
 } from "./ledger";
 import {
   TREZOR,
@@ -34,6 +35,7 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
+import { Braid } from "unchained-bitcoin";
 
 /**
  * Current unchained-wallets version.
@@ -431,6 +433,8 @@ export function ConfirmMultisigAddress({
   bip32Path,
   multisig,
   publicKey,
+  name,
+  addressIndex,
 }) {
   switch (keystore) {
     case TREZOR:
@@ -440,9 +444,22 @@ export function ConfirmMultisigAddress({
         multisig,
         publicKey,
       });
+    case LEDGER:
+      // TODO: clean this up. The reason for this is that
+      // we're expecting this malleable object `multisig` that
+      // gets passed in but really these interactions should
+      // just get a braid or something derived from it.
+      const braid = Braid.fromData(JSON.parse(multisig.braidDetails));
+      return new LedgerConfirmMultisigAddress({
+        expected: multisig.address,
+        // this is for the name of the wallet the address being confirmed is from
+        name,
+        braid,
+        addressIndex,
+      });
     default:
       return new UnsupportedInteraction({
-        code: "unsupported",
+        code: UNSUPPORTED,
         text: "This keystore is not supported when confirming multisig addresses.",
       });
   }
