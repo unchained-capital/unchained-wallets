@@ -10,6 +10,8 @@ import {
   LedgerExportExtendedPublicKey,
   LedgerSignMultisigTransaction,
   LedgerSignMessage,
+  LedgerRegisterWalletPolicy,
+  LedgerConfirmMultisigAddress,
 } from "./ledger";
 
 function itHasStandardMessages(interactionBuilder) {
@@ -165,7 +167,7 @@ describe("ledger", () => {
         //   interactionBuilder().parsePublicKey("");
         // }).toThrow(/unable to compress/i);
         expect(() => {
-          // @ts-expect-error
+          // @ts-expect-error for a test
           interactionBuilder().parsePublicKey(1);
         }).toThrow(/unable to compress/i);
         expect(console.error).toHaveBeenCalled();
@@ -270,13 +272,9 @@ describe("ledger", () => {
           //   second byte is length of signature in bytes (0x03)
           // The string length is however long the signature is minus these two starting bytes
           // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parseSignature(["3003foobar"])).toEqual([
-            "3003foobar01",
-          ]);
+          expect(interactionBuilder().parseSignature(["3003foobar"])).toEqual(["3003foobar01",]);
           // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parseSignature(["3003foob01"])).toEqual([
-            "3003foob0101",
-          ]);
+          expect(interactionBuilder().parseSignature(["3003foob01"])).toEqual(["3003foob0101",]);
           // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
           // we expect this to chop off the 01 and add it back
           expect(interactionBuilder().parseSignature(["3003foobar01"])).toEqual(
@@ -338,6 +336,146 @@ describe("ledger", () => {
           code: "ledger.bip32_path.path_error",
         })
       ).toBe(true);
+    });
+  });
+
+  function getMockedApp() {
+    const mockApp = { registerWallet: jest.fn(), getWalletAddress: jest.fn() };
+
+    jest.mock("./vendor/ledger-bitcoin", () =>
+      jest.fn().mockImplementation(() => mockApp)
+    );
+
+    const mockWithApp = jest.fn().mockImplementation((callback) => {
+      return callback(mockApp);
+    });
+    return [mockApp, mockWithApp];
+  }
+
+  function addInteractionMocks(interaction, mockWithApp) {
+    jest
+      .spyOn(interaction, "isAppSupported")
+      .mockReturnValue(Promise.resolve(true));
+    jest.spyOn(interaction, "withApp").mockImplementation(mockWithApp);
+    jest
+      .spyOn(interaction, "withTransport")
+      .mockImplementation(() => Promise.resolve(jest.fn));
+  }
+
+  describe("LedgerRegisterWalletPolicy", () => {
+    let mockApp, mockWithApp;
+
+    beforeEach(() => {
+      const [app, withApp] = getMockedApp();
+      mockWithApp = withApp;
+      mockApp = app;
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    function interactionBuilder(
+      policyHmac?: string,
+      verify?: boolean,
+      name = "satoshi's wallet",
+      braid = TEST_FIXTURES.braids[0]
+    ) {
+      const interaction = new LedgerRegisterWalletPolicy({
+        name,
+        braid,
+        policyHmac,
+        verify,
+      });
+      addInteractionMocks(interaction, mockWithApp);
+      return interaction;
+    }
+
+    it("returns existing policyHmac if exists and not verifying", async () => {
+      const interaction = interactionBuilder("deadbeef", false);
+      expect(await interaction.run()).toEqual("deadbeef");
+    });
+
+    it("registers braid/wallet with ledger app", async () => {
+      const interaction = interactionBuilder();
+      const expectedHmac = Buffer.from("deadbeef");
+      mockApp.registerWallet.mockReturnValue(
+        Promise.resolve([Buffer.from("id"), expectedHmac])
+      );
+      const result = await interaction.run();
+      expect(mockApp.registerWallet).toBeCalledWith(
+        interaction.walletPolicy.toLedgerPolicy()
+      );
+      expect(result).toEqual(expectedHmac.toString("hex"));
+    });
+
+    it("verifies against a registration mismatch", async () => {
+      console.error = jest.fn();
+      const interaction = interactionBuilder("beef", true);
+      const expectedHmac = Buffer.from("deadbeef");
+      mockApp.registerWallet.mockReturnValue(
+        Promise.resolve([Buffer.from("id"), expectedHmac])
+      );
+      const result = await interaction.run();
+      // returns the correct registration value but console errors
+      // that there was a mismatch
+      expect(console.error).toHaveBeenCalled();
+      expect(result).toEqual(expectedHmac.toString("hex"));
+    });
+  });
+
+  describe("LedgerConfirmMultisigAddress", () => {
+    let mockApp, mockWithApp;
+
+    beforeEach(() => {
+      const [app, withApp] = getMockedApp();
+      mockWithApp = withApp;
+      mockApp = app;
+
+      const expectedHmac = Buffer.from("deadbeef");
+      mockApp.registerWallet.mockReturnValue(
+        Promise.resolve([Buffer.from("id"), expectedHmac])
+      );
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    function interactionBuilder(
+      policyHmac?: string,
+      expected?: string,
+      name = "satoshi's wallet",
+      braid = TEST_FIXTURES.braids[0],
+      addressIndex = 0
+    ) {
+      const interaction = new LedgerConfirmMultisigAddress({
+        name,
+        braid,
+        policyHmac,
+        addressIndex,
+        expected,
+      });
+      addInteractionMocks(interaction, mockWithApp);
+      return interaction;
+    }
+
+    it("registers policy if none passed in and calls address method", async () => {
+      const interaction = interactionBuilder();
+      const expectedAddress = "payme";
+      mockApp.getWalletAddress.mockReturnValue(
+        Promise.resolve(expectedAddress)
+      );
+      const address = await interaction.run();
+      expect(mockApp.registerWallet).toHaveBeenCalled();
+      expect(mockApp.getWalletAddress).toHaveBeenCalledWith(
+        interaction.walletPolicy.toLedgerPolicy(),
+        interaction.policyHmac,
+        interaction.braidIndex,
+        interaction.addressIndex,
+        interaction.display
+      );
+      expect(address).toEqual(expectedAddress);
     });
   });
 });

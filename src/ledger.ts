@@ -291,7 +291,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
  *
  */
 export class LedgerDashboardInteraction extends LedgerInteraction {
-
   /**
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the Ledger dashboard, not the bitcoin app
@@ -324,7 +323,6 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
  * @extends {module:ledger.LedgerInteraction}
  */
 export class LedgerBitcoinInteraction extends LedgerInteraction {
-
   /**
    * Whether or not the interaction is supported in legacy versions
    * of the Ledger App (<=v2.0.6)
@@ -1407,25 +1405,31 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
 
   constructor({
     verify = false,
-    ...args
+    policyHmac,
+    name,
+    braid,
   }: LedgerRegisterWalletPolicyArguments) {
-    super(args);
+    super({ policyHmac, name, braid });
     this.verify = verify;
   }
 
   async run(): Promise<string> {
-    await super.run();
-    const policy = await this.registerWallet(this.verify);
-    return Buffer.from(policy).toString("hex");
+    try {
+      await super.run();
+      const policy = await this.registerWallet(this.verify);
+      return Buffer.from(policy).toString("hex");
+    } finally {
+      super.closeTransport();
+    }
   }
 }
 
 interface ConfirmAddressConstructorArguments
   extends RegistrationConstructorArguments {
   // the expected address to compare against
-  expected: string;
+  expected?: string;
   // whether or not to display the address to the user
-  display: boolean;
+  display?: boolean;
   // the index
   addressIndex: number;
 }
@@ -1454,7 +1458,9 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
     super({ braid, name, policyHmac });
 
     const braidIndex = Number(braid.index);
-    if (braidIndex !== 1 && braidIndex !== 0) throw new Error(`Invalid braid index ${braidIndex}`);
+    if (braidIndex !== 1 && braidIndex !== 0) {
+      throw new Error(`Invalid braid index ${braidIndex}`);
+    }
     this.braidIndex = braidIndex;
 
     const index = Number(addressIndex);
