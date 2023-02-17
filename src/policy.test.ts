@@ -9,6 +9,7 @@ import {
   validateMultisigPolicyTemplate,
   getPolicyTemplateFromBraid,
 } from "./policy";
+import { POLICY_FIXTURE } from "./fixtures";
 
 describe("validateMultisigPolicyTemplate", () => {
   it("throws error if script type is not supported", () => {
@@ -53,24 +54,7 @@ describe("validateMultisigPolicyTemplate", () => {
 
 describe("MultisigWalletPolicy", () => {
   it("can return a wallet policy", () => {
-    const path1 = "m/48'/1'/100'/1'";
-    const path2 = "m/48'/1'/100'/2'";
-    const origins = [path1, path2].map((path) => {
-      const node = TEST_FIXTURES.keys.open_source.nodes[path];
-      return new KeyOrigin({
-        xfp: node.rootFingerprint,
-        xpub: node.xpub,
-        network: TESTNET,
-        bip32Path: path,
-      });
-    });
-    const policy = new MutlisigWalletPolicy({
-      name: "My Test",
-      template: "wsh(sortedmulti(2,@0/**,@1/**))",
-      keyOrigins: origins,
-    });
-
-    expect(() => policy.toLedgerPolicy()).not.toThrow();
+    expect(() => POLICY_FIXTURE.policy.toLedgerPolicy()).not.toThrow();
   });
 });
 
