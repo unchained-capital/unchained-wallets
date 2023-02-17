@@ -54,7 +54,7 @@ import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
 import { AppClient } from "./vendor/ledger-bitcoin";
 import { BitcoinNetwork, DeviceError, KeyDerivation, TxInput } from "./types";
 import {
-  MutlisigWalletPolicy,
+  MultisigWalletPolicy,
   getKeyOriginsFromBraid,
   getPolicyTemplateFromBraid,
 } from "./policy";
@@ -1323,7 +1323,7 @@ interface RegistrationConstructorArguments {
  * from a given braid as well as methods for registering and returning a policy hmac
  */
 export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
-  walletPolicy: MutlisigWalletPolicy;
+  walletPolicy: MultisigWalletPolicy;
 
   policyHmac?: Buffer;
 
@@ -1343,7 +1343,7 @@ export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInt
       // TODO validate length
       this.policyHmac = Buffer.from(policyHmac, "hex");
     }
-    this.walletPolicy = new MutlisigWalletPolicy({
+    this.walletPolicy = new MultisigWalletPolicy({
       name,
       keyOrigins,
       template,

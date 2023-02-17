@@ -9,8 +9,11 @@ import { BitcoinNetwork } from "./types";
 
 export class KeyOrigin {
   xfp: string;
+
   bip32Path: string;
+
   xpub: string;
+
   network: BitcoinNetwork;
 
   constructor({ xfp, bip32Path, xpub, network }) {
@@ -25,6 +28,7 @@ export class KeyOrigin {
 
   /**
    * Returns a key origin information in descriptor format
+   * @returns {string} policy template string
    */
   toString() {
     let path = this.bip32Path;
@@ -43,11 +47,11 @@ export type MultisigScriptType = "sh" | "wsh" | "tr";
 /**
  * Takes a Braid instance and translates it into a wallet policy template string
  * @param {Braid} braid - instance of a braid object from unchained-bitcoin
- * @returns valid policy template string
+ * @returns {string} valid policy template string
  */
 export const getPolicyTemplateFromBraid = (braid: Braid) => {
-  let scriptType: MultisigScriptType | undefined;
-  let requiredSigners: number = Number(braid.requiredSigners);
+  let scriptType: MultisigScriptType;
+  let requiredSigners = Number(braid.requiredSigners);
   let nested = false;
   switch (braid.addressType) {
     case "P2SH":
@@ -64,11 +68,7 @@ export const getPolicyTemplateFromBraid = (braid: Braid) => {
       nested = true;
       break;
     default:
-      break;
-  }
-
-  if (!scriptType) {
-    throw new Error(`Unknown address type: ${braid.addressType}`);
+      throw new Error(`Unknown address type: ${braid.addressType}`);
   }
 
   const signersString = braid.extendedPublicKeys
@@ -94,9 +94,11 @@ export const getKeyOriginsFromBraid = (braid: Braid): KeyOrigin[] => {
   );
 };
 
-export class MutlisigWalletPolicy {
+export class MultisigWalletPolicy {
   name: string;
+
   template: string;
+
   keyOrigins: KeyOrigin[];
 
   constructor({
@@ -141,27 +143,18 @@ export class MutlisigWalletPolicy {
 
 export const validateMultisigPolicyScriptType = (template) => {
   const acceptedScripts = ["sh", "wsh"];
-  let hasMatch = false;
-  for (const script of acceptedScripts) {
-    if (template.match(`^${script}`)) {
-      hasMatch = true;
-      break;
-    }
-  }
+  let hasMatch = acceptedScripts.some((script) => template.startsWith(script));
 
-  if (!hasMatch)
-    throw new Error(
-      `Invalid script type in template ${template}. Only script types ${acceptedScripts.join(
-        ", "
-      )} accepted`
+  if (!hasMatch) throw new Error(
+      `Invalid script type in template ${template}. Only script types \
+${acceptedScripts.join(", ")} accepted`
     );
 };
 
 export const validateMultisigPolicyKeys = (template) => {
-  const requiredSigners = +template.match(/\d+/)[0];
+  const requiredSigners = Number(template.match(/\d+/)[0]);
 
-  if (!requiredSigners)
-    throw new Error(
+  if (!requiredSigners) throw new Error(
       "Expected to find a required number of signers from the quorum"
     );
 

@@ -5,7 +5,7 @@
 import { Braid, TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
 import {
   KeyOrigin,
-  MutlisigWalletPolicy,
+  MultisigWalletPolicy,
   validateMultisigPolicyTemplate,
   getPolicyTemplateFromBraid,
 } from "./policy";

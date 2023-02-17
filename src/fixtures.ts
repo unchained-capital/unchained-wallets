@@ -1,5 +1,5 @@
 import { TEST_FIXTURES, TESTNET } from "unchained-bitcoin";
-import { KeyOrigin, MutlisigWalletPolicy } from "./policy";
+import { KeyOrigin, MultisigWalletPolicy } from "./policy";
 
 const paths = ["m/48'/1'/100'/1'", "m/48'/1'/100'/2'"];
 const origins = paths.map((path) => {
@@ -15,7 +15,7 @@ const origins = paths.map((path) => {
 export const POLICY_FIXTURE = {
   paths,
   origins,
-  policy: new MutlisigWalletPolicy({
+  policy: new MultisigWalletPolicy({
     name: "My Test",
     template: "wsh(sortedmulti(2,@0/**,@1/**))",
     keyOrigins: origins,
