@@ -8,16 +8,13 @@ import { WalletPolicy } from "./vendor/ledger-bitcoin";
 import { BitcoinNetwork } from "./types";
 
 export class KeyOrigin {
-  xfp: string;
+  private xfp: string;
 
-  bip32Path: string;
+  private bip32Path: string;
 
-  xpub: string;
-
-  network: BitcoinNetwork;
+  private xpub: string;
 
   constructor({ xfp, bip32Path, xpub, network }) {
-    this.network = network;
     validateRootFingerprint(xfp);
     this.xfp = xfp;
     validateBIP32Path(bip32Path);
@@ -95,11 +92,11 @@ export const getKeyOriginsFromBraid = (braid: Braid): KeyOrigin[] => {
 };
 
 export class MultisigWalletPolicy {
-  name: string;
+  private name: string;
 
-  template: string;
+  private template: string;
 
-  keyOrigins: KeyOrigin[];
+  private keyOrigins: KeyOrigin[];
 
   constructor({
     name,
@@ -145,7 +142,8 @@ export const validateMultisigPolicyScriptType = (template) => {
   const acceptedScripts = ["sh", "wsh"];
   let hasMatch = acceptedScripts.some((script) => template.startsWith(script));
 
-  if (!hasMatch) throw new Error(
+  if (!hasMatch)
+    throw new Error(
       `Invalid script type in template ${template}. Only script types \
 ${acceptedScripts.join(", ")} accepted`
     );
@@ -154,7 +152,8 @@ ${acceptedScripts.join(", ")} accepted`
 export const validateMultisigPolicyKeys = (template) => {
   const requiredSigners = Number(template.match(/\d+/)[0]);
 
-  if (!requiredSigners) throw new Error(
+  if (!requiredSigners)
+    throw new Error(
       "Expected to find a required number of signers from the quorum"
     );
 

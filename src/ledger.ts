@@ -779,9 +779,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 export class LedgerExportPublicKey extends LedgerExportHDNode {
   includeXFP: boolean;
 
-  isLegacySupported = true;
+  readonly isLegacySupported = true;
 
-  isV2Supported = false;
+  readonly isV2Supported = false;
 
   /**
    * @param {string} bip32Path - the BIP32 path for the HD node
@@ -846,9 +846,9 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 
   includeXFP: boolean;
 
-  isLegacySupported = true;
+  readonly isLegacySupported = true;
 
-  isV2Supported = true;
+  readonly isV2Supported = true;
 
   /**
    * @param {string} bip32Path path
@@ -967,9 +967,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   pubkeys?: Buffer[];
 
-  isLegacySupported = true;
+  readonly isLegacySupported = true;
 
-  isV2Supported = false;
+  readonly isV2Supported = false;
 
   /**
    * @param {object} options - options argument
@@ -1233,9 +1233,9 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
-  isLegacySupported = true;
+  readonly isLegacySupported = true;
 
-  isV2Supported = false;
+  readonly isV2Supported = false;
 
   /**
    * @param {object} options - options argument
@@ -1329,9 +1329,9 @@ export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInt
 
   policyId?: Buffer;
 
-  isLegacySupported = false;
+  readonly isLegacySupported = false;
 
-  isV2Supported = true;
+  readonly isV2Supported = true;
 
   constructor({ name, braid, policyHmac }: RegistrationConstructorArguments) {
     super();
@@ -1401,7 +1401,7 @@ interface LedgerRegisterWalletPolicyArguments
   verify?: boolean;
 }
 export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationInteraction {
-  verify: boolean;
+  readonly verify: boolean;
 
   constructor({
     verify = false,
@@ -1443,9 +1443,9 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
 
   addressIndex: number;
 
-  expected?: string;
+  readonly expected?: string;
 
-  display = true;
+  readonly display = true;
 
   constructor({
     braid,
