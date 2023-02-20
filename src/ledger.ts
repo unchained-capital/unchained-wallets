@@ -70,7 +70,7 @@ export const LEDGER = "ledger";
 /* eslint-disable @typescript-eslint/no-var-requires */
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUSB = require("@ledgerhq/hw-transport-webusb").default;
-const LedgerBtc = require("@ledgerhq/hw-app-btc");
+const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
  * Constant representing the action of pushing the left button on a
