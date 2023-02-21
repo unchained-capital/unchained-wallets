@@ -924,7 +924,9 @@ interface LedgerSignMultisigTransactionArguments {
 
   psbt?: string;
 
-  keyDetails?: KeyDerivation;
+  // legacy type for key details. typescript
+  // across all libraries should make this more consistent
+  keyDetails?: { xfp: string; path: string };
 
   returnSignatureArray?: boolean;
 
@@ -985,7 +987,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   psbt?: string;
 
-  keyDetails?: KeyDerivation;
+  keyDetails?: { xfp: string; path: string };
 
   returnSignatureArray?: boolean;
 
@@ -1183,7 +1185,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       if (!this.v2Options || !Object.keys(this.v2Options)) {
         throw e;
       }
-
       const interaction = new LedgerV2SignMultisigTransaction(this.v2Options);
       return interaction.run();
     }
@@ -1599,10 +1600,10 @@ type PubKey = Buffer;
 // a Buffer with the corresponding signature.
 type SignatureBuffer = Buffer;
 // return type of ledger after signing
-type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
+export type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
 
 export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
-  private psbt: PsbtV2;
+  readonly psbt: PsbtV2;
 
   // optionally, a callback that will be called every time a signature is produced during
   //  * the signing process. The callback does not receive any argument, but can be used to track progress.
