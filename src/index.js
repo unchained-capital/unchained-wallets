@@ -19,6 +19,7 @@ import {
 } from "./hermit";
 import {
   LEDGER,
+  LEDGER_V2,
   LedgerGetMetadata,
   LedgerExportPublicKey,
   LedgerExportExtendedPublicKey,
@@ -26,6 +27,7 @@ import {
   LedgerSignMessage,
   LedgerConfirmMultisigAddress,
   LedgerRegisterWalletPolicy,
+  LedgerV2SignMultisigTransaction,
 } from "./ledger";
 import {
   TREZOR,
@@ -322,6 +324,10 @@ export function SignMultisigTransaction({
   psbt,
   keyDetails,
   returnSignatureArray = false,
+  name,
+  braid,
+  policyHmac,
+  progressCallback,
 }) {
   switch (keystore) {
     case COLDCARD:
@@ -354,6 +360,26 @@ export function SignMultisigTransaction({
         psbt,
         keyDetails,
         returnSignatureArray,
+        v2Options: {
+          name,
+          braid,
+          policyHmac,
+          psbt,
+          progressCallback,
+        },
+      });
+    case LEDGER_V2:
+      // if we can know for sure which version of the app
+      // we're going to be interacting with then we
+      // can return this interaction explicitly without
+      // waiting for catching failures and using fallbacks
+      // as in the above with v2Options
+      return new LedgerV2SignMultisigTransaction({
+        name,
+        braid,
+        policyHmac,
+        psbt,
+        progressCallback,
       });
     case TREZOR:
       return new TrezorSignMultisigTransaction({

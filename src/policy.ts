@@ -107,7 +107,19 @@ export class MultisigWalletPolicy {
     template: string;
     keyOrigins: KeyOrigin[];
   }) {
-    this.name = name;
+    // this is an unstated restriction from ledger
+    // if we don't check it here then registration will fail
+    // with an opaque error about invalid input data
+    // TODO: should this be left as full length and only
+    // abbreviated when translating to a ledger policy?
+    if (name.length > 64) {
+      console.warn(
+        `Wallet policy name too long. (${name.length}) greater than max of 64 chars.`
+      );
+      this.name = `${name.slice(0, 61)}...`;
+    } else {
+      this.name = name;
+    }
 
     validateMultisigPolicyTemplate(template);
     this.template = template;
