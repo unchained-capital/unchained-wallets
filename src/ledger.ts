@@ -913,6 +913,26 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 }
 
+interface LedgerSignMultisigTransactionArguments {
+  network: BitcoinNetwork;
+
+  inputs: TxInput[];
+
+  outputs: object[];
+
+  bip32Paths: string[];
+
+  psbt?: string;
+
+  keyDetails?: KeyDerivation;
+
+  returnSignatureArray?: boolean;
+
+  pubkeys?: Buffer[];
+
+  v2Options?: LedgerV2SignTxConstructorArguments;
+}
+
 /**
  * Returns a signature for a bitcoin transaction with inputs from one
  * or many multisig addresses.
@@ -983,10 +1003,10 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * @param {array<object>} [options.inputs] - inputs for the transaction
    * @param {array<object>} [options.outputs] - outputs for the transaction
    * @param {array<string>} [options.bip32Paths] - BIP32 paths
+   * @param {object} [options.v2Options] - arguments to try with a v2 app
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
    * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
-   * @param {object} [options.v2Options] - arguments to try with a v2 app
    */
   constructor({
     network,
@@ -997,7 +1017,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     keyDetails,
     returnSignatureArray = false,
     v2Options,
-  }) {
+  }: LedgerSignMultisigTransactionArguments) {
     super();
     this.network = network;
     if (!psbt || !keyDetails) {
@@ -1580,6 +1600,7 @@ type PubKey = Buffer;
 type SignatureBuffer = Buffer;
 // return type of ledger after signing
 type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
+
 export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
   private psbt: PsbtV2;
 
@@ -1601,12 +1622,15 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
     if (progressCallback) this.progressCallback = progressCallback;
 
     const psbtVersion = getPsbtVersionNumber(psbt);
-    if (psbtVersion === 0) {
-      this.psbt = PsbtV2.FromV0(psbt);
-    } else if (psbtVersion === 2) {
-      this.psbt = new PsbtV2(psbt);
-    } else {
-      throw new Error(`PSBT of unsupported version ${psbtVersion}`);
+    switch (psbtVersion) {
+      case 0:
+        this.psbt = PsbtV2.FromV0(psbt);
+        break;
+      case 2:
+        this.psbt = new PsbtV2(psbt);
+        break;
+      default:
+        throw new Error(`PSBT of unsupported version ${psbtVersion}`);
     }
   }
 

@@ -2,7 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { TEST_FIXTURES, ROOT_FINGERPRINT, TESTNET } from "unchained-bitcoin";
+import {
+  TEST_FIXTURES,
+  ROOT_FINGERPRINT,
+  TESTNET,
+  Braid,
+} from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, WARNING, ERROR } from "./interaction";
 import {
   LedgerGetMetadata,
@@ -286,8 +291,8 @@ describe("ledger", () => {
 
     const tx = TEST_FIXTURES.transactions[0];
     const keyDetails = {
-      xfp: ROOT_FINGERPRINT,
-      path: "m/45'/1'/100'",
+      fingerprint: ROOT_FINGERPRINT,
+      bip32Path: "m/45'/1'/100'",
     };
     function psbtInteractionBuilder() {
       return new LedgerSignMultisigTransaction({
@@ -446,7 +451,7 @@ describe("ledger", () => {
       policyHmac?: string,
       expected?: string,
       name = "satoshi's wallet",
-      braid = TEST_FIXTURES.braids[0],
+      braid = Braid.fromData(TEST_FIXTURES.braids[0]),
       addressIndex = 0
     ) {
       const interaction = new LedgerConfirmMultisigAddress({
