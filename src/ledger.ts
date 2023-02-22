@@ -283,7 +283,11 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    */
   closeTransport() {
     return this.withTransport(async (transport) => {
-      await transport.close();
+      try {
+        await transport.close();
+      } catch (err) {
+        console.error(err);
+      }
     });
   }
 }
