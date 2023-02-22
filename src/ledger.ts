@@ -37,6 +37,8 @@ import {
   addSignaturesToPSBT,
   Braid,
   validateHex,
+  getPsbtVersionNumber,
+  PsbtV2,
 } from "unchained-bitcoin";
 
 import {
@@ -67,10 +69,12 @@ import {
  */
 export const LEDGER = "ledger";
 
+export const LEDGER_V2 = "ledger_v2";
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
 const TransportWebUSB = require("@ledgerhq/hw-transport-webusb").default;
-const LedgerBtc = require("@ledgerhq/hw-app-btc");
+const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
 
 /**
  * Constant representing the action of pushing the left button on a
@@ -322,18 +326,18 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
  *
  * @extends {module:ledger.LedgerInteraction}
  */
-export class LedgerBitcoinInteraction extends LedgerInteraction {
+export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
   /**
    * Whether or not the interaction is supported in legacy versions
    * of the Ledger App (<=v2.0.6)
    */
-  isLegacySupported = true;
+  abstract isLegacySupported: boolean;
 
   /**
    * Whether or not the interaction is supported in non-legacy versions
    * of the Ledger App (>=v2.1.0)
    */
-  isV2Supported = false;
+  abstract isV2Supported: boolean;
 
   /**
    * Adds `pending` and `active` messages at the `info` level urging
@@ -909,6 +913,28 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   }
 }
 
+interface LedgerSignMultisigTransactionArguments {
+  network: BitcoinNetwork;
+
+  inputs: TxInput[];
+
+  outputs: object[];
+
+  bip32Paths: string[];
+
+  psbt?: string;
+
+  // legacy type for key details. typescript
+  // across all libraries should make this more consistent
+  keyDetails?: { xfp: string; path: string };
+
+  returnSignatureArray?: boolean;
+
+  pubkeys?: Buffer[];
+
+  v2Options?: LedgerV2SignTxConstructorArguments;
+}
+
 /**
  * Returns a signature for a bitcoin transaction with inputs from one
  * or many multisig addresses.
@@ -961,11 +987,13 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   psbt?: string;
 
-  keyDetails?: KeyDerivation;
+  keyDetails?: { xfp: string; path: string };
 
   returnSignatureArray?: boolean;
 
   pubkeys?: Buffer[];
+
+  v2Options?: LedgerV2SignTxConstructorArguments;
 
   readonly isLegacySupported = true;
 
@@ -977,6 +1005,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * @param {array<object>} [options.inputs] - inputs for the transaction
    * @param {array<object>} [options.outputs] - outputs for the transaction
    * @param {array<string>} [options.bip32Paths] - BIP32 paths
+   * @param {object} [options.v2Options] - arguments to try with a v2 app
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
    * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
@@ -989,7 +1018,8 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     psbt,
     keyDetails,
     returnSignatureArray = false,
-  }) {
+    v2Options,
+  }: LedgerSignMultisigTransactionArguments) {
     super();
     this.network = network;
     if (!psbt || !keyDetails) {
@@ -1006,6 +1036,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
       this.returnSignatureArray = returnSignatureArray;
     }
+    this.v2Options = v2Options;
   }
 
   /**
@@ -1146,7 +1177,17 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    */
   async run() {
     // will check app support and throw error if not supported
-    await super.run();
+    try {
+      await super.run();
+    } catch (e) {
+      // in order to support backwards compatibility, if it's not supported
+      // we'll try and run with v2 options instead
+      if (!this.v2Options || !Object.keys(this.v2Options)) {
+        throw e;
+      }
+      const interaction = new LedgerV2SignMultisigTransaction(this.v2Options);
+      return interaction.run();
+    }
 
     return this.withApp(async (app, transport) => {
       try {
@@ -1322,7 +1363,7 @@ interface RegistrationConstructorArguments {
  * by providing a base constructor that will generate the key origins and the policy
  * from a given braid as well as methods for registering and returning a policy hmac
  */
-export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
+export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
   walletPolicy: MultisigWalletPolicy;
 
   policyHmac?: Buffer;
@@ -1367,9 +1408,8 @@ export class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInt
     return messages;
   }
 
-  registerWallet(verify = false): Promise<Buffer> {
+  async registerWallet(verify = false): Promise<Buffer> {
     if (this.policyHmac && !verify) return Promise.resolve(this.policyHmac);
-
     // if we don't have a registered policy yet, then let's handle that
     return this.withApp(async (app: AppClient) => {
       const policy = this.walletPolicy.toLedgerPolicy();
@@ -1523,7 +1563,7 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
           "Can't get wallet address without a wallet registration"
         );
       }
-      return await app.getWalletAddress(
+      return app.getWalletAddress(
         this.walletPolicy.toLedgerPolicy(),
         Buffer.from(this.policyHmac),
         this.braidIndex,
@@ -1538,7 +1578,85 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
       // run the app version support checks, register wallet if necessary
       await super.run();
       await this.registerWallet();
-      return this.getAddress();
+      // TODO doesn't handle catching error where policy doesn't match well
+      return await this.getAddress();
+    } finally {
+      super.closeTransport();
+    }
+  }
+}
+
+interface LedgerV2SignTxConstructorArguments
+  extends RegistrationConstructorArguments {
+  psbt: string | Buffer;
+
+  progressCallback?: () => void;
+}
+
+type InputIndex = number;
+// a Buffer with either a 33-byte compressed pubkey or a 32-byte
+// x-only pubkey whose corresponding secret key was used to sign;
+type PubKey = Buffer;
+// a Buffer with the corresponding signature.
+type SignatureBuffer = Buffer;
+// return type of ledger after signing
+export type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
+
+export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
+  readonly psbt: PsbtV2;
+
+  // optionally, a callback that will be called every time a signature is produced during
+  //  * the signing process. The callback does not receive any argument, but can be used to track progress.
+  public progressCallback?: () => void;
+
+  private signatures: LedgerSignatures[] = [];
+
+  constructor({
+    psbt,
+    progressCallback,
+    name,
+    braid,
+    policyHmac,
+  }: LedgerV2SignTxConstructorArguments) {
+    super({ name, braid, policyHmac });
+
+    if (progressCallback) this.progressCallback = progressCallback;
+
+    const psbtVersion = getPsbtVersionNumber(psbt);
+    switch (psbtVersion) {
+      case 0:
+        this.psbt = PsbtV2.FromV0(psbt);
+        break;
+      case 2:
+        this.psbt = new PsbtV2(psbt);
+        break;
+      default:
+        throw new Error(`PSBT of unsupported version ${psbtVersion}`);
+    }
+  }
+
+  async signPsbt(): Promise<LedgerSignatures[]> {
+    return this.withApp(async (app: AppClient) => {
+      this.signatures = await app.signPsbt(
+        this.psbt,
+        this.walletPolicy.toLedgerPolicy(),
+        this.policyHmac || null,
+        this.progressCallback
+      );
+    });
+  }
+
+  get SIGNATURES() {
+    return this.signatures.map((sig) => Buffer.from(sig[2]).toString("hex"));
+  }
+
+  async run() {
+    try {
+      // run the app version support checks, register wallet if necessary
+      await super.run();
+      await this.registerWallet();
+      await this.signPsbt();
+      return this.SIGNATURES;
     } finally {
       super.closeTransport();
     }

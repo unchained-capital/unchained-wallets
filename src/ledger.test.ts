@@ -2,7 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { TEST_FIXTURES, ROOT_FINGERPRINT, TESTNET } from "unchained-bitcoin";
+import {
+  TEST_FIXTURES,
+  ROOT_FINGERPRINT,
+  TESTNET,
+  Braid,
+} from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, WARNING, ERROR } from "./interaction";
 import {
   LedgerGetMetadata,
@@ -12,6 +17,8 @@ import {
   LedgerSignMessage,
   LedgerRegisterWalletPolicy,
   LedgerConfirmMultisigAddress,
+  LedgerV2SignMultisigTransaction,
+  LedgerSignatures,
 } from "./ledger";
 
 function itHasStandardMessages(interactionBuilder) {
@@ -340,7 +347,11 @@ describe("ledger", () => {
   });
 
   function getMockedApp() {
-    const mockApp = { registerWallet: jest.fn(), getWalletAddress: jest.fn() };
+    const mockApp = {
+      registerWallet: jest.fn(),
+      getWalletAddress: jest.fn(),
+      signPsbt: jest.fn(),
+    };
 
     jest.mock("./vendor/ledger-bitcoin", () =>
       jest.fn().mockImplementation(() => mockApp)
@@ -446,7 +457,7 @@ describe("ledger", () => {
       policyHmac?: string,
       expected?: string,
       name = "satoshi's wallet",
-      braid = TEST_FIXTURES.braids[0],
+      braid = Braid.fromData(TEST_FIXTURES.braids[0]),
       addressIndex = 0
     ) {
       const interaction = new LedgerConfirmMultisigAddress({
@@ -476,6 +487,64 @@ describe("ledger", () => {
         interaction.display
       );
       expect(address).toEqual(expectedAddress);
+    });
+  });
+
+  describe("LedgerV2SignMultisigTransaction", () => {
+    let expectedSigs: LedgerSignatures[], mockApp, mockWithApp;
+
+    beforeEach(() => {
+      const [app, withApp] = getMockedApp();
+      mockWithApp = withApp;
+      mockApp = app;
+      expectedSigs = [
+        [
+          0,
+          Buffer.from(fixture.publicKeys[0], "hex"),
+          Buffer.from(fixture.signature[0], "hex"),
+        ],
+      ];
+      mockApp.signPsbt.mockReturnValue(Promise.resolve(expectedSigs));
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    const fixture = TEST_FIXTURES.transactions[0];
+    function interactionBuilder(
+      policyHmac = fixture.policyHmac,
+      name = fixture.walletName,
+      braid = Braid.fromData(fixture.braidDetails),
+      psbt = fixture.psbt,
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      progressCallback = () => {}
+    ) {
+      let interaction;
+      const options = {
+        name,
+        braid,
+        policyHmac,
+        psbt,
+        progressCallback,
+      };
+      interaction = new LedgerV2SignMultisigTransaction(options);
+      addInteractionMocks(interaction, mockWithApp);
+      return interaction;
+    }
+
+    it("signs psbt", async () => {
+      const interaction = interactionBuilder();
+      const sigs = await interaction.run();
+      expect(sigs).toStrictEqual([fixture.signature[0]]);
+      // confirming that the psbt used is version 2
+      expect(interaction.psbt.PSBT_GLOBAL_VERSION).toBe(2);
+      expect(mockApp.signPsbt).toHaveBeenCalledWith(
+        interaction.psbt,
+        interaction.walletPolicy.toLedgerPolicy(),
+        interaction.policyHmac,
+        interaction.progressCallback
+      );
     });
   });
 });
