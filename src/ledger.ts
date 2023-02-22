@@ -54,7 +54,7 @@ import { splitTransaction } from "@ledgerhq/hw-app-btc/lib/splitTransaction";
 import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
 import { AppClient } from "./vendor/ledger-bitcoin";
-import { BitcoinNetwork, DeviceError, KeyDerivation, TxInput } from "./types";
+import { BitcoinNetwork, DeviceError, TxInput } from "./types";
 import {
   MultisigWalletPolicy,
   getKeyOriginsFromBraid,
@@ -73,8 +73,9 @@ export const LEDGER_V2 = "ledger_v2";
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
-const TransportWebUSB = require("@ledgerhq/hw-transport-webusb").default;
-const LedgerBtc = require("@ledgerhq/hw-app-btc").default;
+
+import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import LedgerBtc from "@ledgerhq/hw-app-btc";
 
 /**
  * Constant representing the action of pushing the left button on a
