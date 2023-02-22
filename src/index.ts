@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { version } from "../package.json";
 import { UNSUPPORTED, UnsupportedInteraction } from "./interaction";
 import {
@@ -138,7 +140,6 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
       return new ColdcardExportPublicKey({
         network,
         bip32Path,
-        includeXFP,
       });
     case LEDGER:
       return new LedgerExportPublicKey({
@@ -222,13 +223,11 @@ export function ExportExtendedPublicKey({
       return new ColdcardExportExtendedPublicKey({
         bip32Path,
         network,
-        includeXFP,
       });
     case CUSTOM:
       return new CustomExportExtendedPublicKey({
         bip32Path,
         network,
-        includeXFP,
       });
     case HERMIT:
       return new HermitExportExtendedPublicKey({
