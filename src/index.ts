@@ -40,7 +40,6 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
-import { Braid } from "unchained-bitcoin";
 import { BraidDetails, MultisigWalletConfig } from "./types";
 import { braidDetailsToWalletConfig } from "./policy";
 
@@ -487,7 +486,7 @@ export function ConfirmMultisigAddress({
         expected: multisig.address,
         // this is for the name of the wallet the address being confirmed is from
         name,
-        braidIndex: braidDetails.index,
+        braidIndex: Number(braidDetails.index),
         addressIndex,
         policyHmac,
       });
@@ -587,3 +586,4 @@ export * from "./custom";
 export * from "./hermit";
 export * from "./ledger";
 export * from "./trezor";
+export * from "./policy";

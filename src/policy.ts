@@ -191,6 +191,7 @@ export const validateMultisigPolicyTemplate = (template) => {
   validateMultisigPolicyKeys(template);
 };
 
+// Mostly useful for dealing with test fixtures and objects from caravan
 export const braidDetailsToWalletConfig = (braidDetails: BraidDetails) => {
   return {
     network: braidDetails.network,
@@ -200,7 +201,7 @@ export const braidDetailsToWalletConfig = (braidDetails: BraidDetails) => {
       xfp: key.rootFingerprint,
     })),
     requiredSigners: braidDetails.requiredSigners,
-    name: `${braidDetails.requiredSigners}-of-${braidDetails.extendedPublicKeys.length} ${braidDetails.addressType} wallet`,
+    name: `${braidDetails.requiredSigners}-of-${braidDetails.extendedPublicKeys.length} ${braidDetails.addressType} ${braidDetails.network} wallet`,
     addressType: braidDetails.addressType,
   };
 };
