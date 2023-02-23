@@ -2,7 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { TEST_FIXTURES, ROOT_FINGERPRINT, TESTNET } from "unchained-bitcoin";
+import {
+  TEST_FIXTURES,
+  ROOT_FINGERPRINT,
+  TESTNET,
+  BraidDetails,
+} from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, WARNING, ERROR } from "./interaction";
 import {
   LedgerGetMetadata,
@@ -16,7 +21,6 @@ import {
   LedgerSignatures,
 } from "./ledger";
 import { braidDetailsToWalletConfig } from "./policy";
-import { BraidDetails } from "./types";
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {

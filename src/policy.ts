@@ -1,11 +1,15 @@
 import {
   ExtendedPublicKey,
+  P2SH,
+  P2SH_P2WSH,
+  P2WSH,
   validateBIP32Path,
   validateExtendedPublicKey,
   validateRootFingerprint,
+  BraidDetails,
 } from "unchained-bitcoin";
 import { WalletPolicy } from "./vendor/ledger-bitcoin";
-import { BraidDetails, MultisigWalletConfig } from "./types";
+import { MultisigWalletConfig } from "./types";
 
 export class KeyOrigin {
   private xfp: string;
@@ -53,16 +57,16 @@ export const getPolicyTemplateFromWalletConfig = (
   let requiredSigners = Number(walletConfig.requiredSigners);
   let nested = false;
   switch (walletConfig.addressType) {
-    case "P2SH":
+    case P2SH:
       scriptType = "sh";
       break;
-    case "P2WSH":
+    case P2WSH:
       scriptType = "wsh";
       break;
     case "P2TR":
       scriptType = "tr";
       break;
-    case "P2SH-P2WSH":
+    case P2SH_P2WSH:
       scriptType = "wsh";
       nested = true;
       break;

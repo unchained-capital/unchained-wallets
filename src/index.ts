@@ -40,9 +40,9 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
-import { BraidDetails, MultisigWalletConfig } from "./types";
+import { MultisigWalletConfig } from "./types";
 import { braidDetailsToWalletConfig } from "./policy";
-import { unsignedMultisigPSBT } from "unchained-bitcoin";
+import { unsignedMultisigPSBT, BraidDetails } from "unchained-bitcoin";
 
 /**
  * Current unchained-wallets version.

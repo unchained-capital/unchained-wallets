@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
+import { TESTNET, TEST_FIXTURES, BraidDetails } from "unchained-bitcoin";
 import {
   KeyOrigin,
   validateMultisigPolicyTemplate,
@@ -10,7 +10,6 @@ import {
   braidDetailsToWalletConfig,
 } from "./policy";
 import { POLICY_FIXTURE } from "./fixtures";
-import { BraidDetails } from "./types";
 
 describe("validateMultisigPolicyTemplate", () => {
   it("throws error if script type is not supported", () => {

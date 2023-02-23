@@ -1,18 +1,10 @@
+import { MultisigAddressType, BitcoinNetwork } from "unchained-bitcoin";
+
 export interface DeviceError extends Error {
   message: string;
 }
 
-// TODO: These are types that should be coming from unchained-bitcoin
-
-// this one COULD come from unchained-bitcoin except the relevant
-// file isn't typescript and so the conversions don't seem to work
-export type BitcoinNetwork = "mainnet" | "testnet" | "signet" | "regtest";
-
-export interface KeyDerivation {
-  bip32Path: string;
-  fingerprint: string;
-}
-
+// TODO: could this be in unchained-bitcoin?
 export interface TxInput {
   // this one is messy in the way it's used
   // and so we'll need to better define it as typescript
@@ -31,10 +23,6 @@ export interface WalletConfigKeyDerivation {
   xpub: string;
 }
 
-// P2TR not able to be used anywhere yet but technicall a valid multisig
-// address type.
-// TODO: should this be in unchained-bitcoin long term?
-export type MultisigAddressType = "P2SH" | "P2WSH" | "P2SH-P2WSH" | "P2TR";
 export interface MultisigWalletConfig {
   name: string;
   requiredSigners: number;
@@ -45,22 +33,4 @@ export interface MultisigWalletConfig {
   addressType: MultisigAddressType;
   extendedPublicKeys: WalletConfigKeyDerivation[];
   network: BitcoinNetwork;
-}
-
-export interface BraidDetails {
-  network: BitcoinNetwork;
-  addressType: MultisigAddressType;
-  extendedPublicKeys: {
-    path: string;
-    index: number;
-    depth: number;
-    chaincode: string;
-    pubkey: string;
-    parentFingerprint: number;
-    version: string;
-    rootFingerprint: string;
-    base58String: string;
-  }[];
-  requiredSigners: number;
-  index: number;
 }
