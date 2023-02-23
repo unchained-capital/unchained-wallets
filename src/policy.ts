@@ -1,4 +1,5 @@
 import {
+  ExtendedPublicKey,
   validateBIP32Path,
   validateExtendedPublicKey,
   validateRootFingerprint,
@@ -83,15 +84,16 @@ export const getPolicyTemplateFromWalletConfig = (
 export const getKeyOriginsFromWalletConfig = (
   walletConfig: MultisigWalletConfig
 ): KeyOrigin[] => {
-  return walletConfig.extendedPublicKeys.map(
-    (key): KeyOrigin =>
-      new KeyOrigin({
-        xfp: key.xfp,
-        xpub: key.xpub,
-        bip32Path: key.bip32Path,
-        network: walletConfig.network,
-      })
-  );
+  return walletConfig.extendedPublicKeys.map((key): KeyOrigin => {
+    const xpub = ExtendedPublicKey.fromBase58(key.xpub);
+    xpub.setNetwork(walletConfig.network);
+    return new KeyOrigin({
+      xfp: key.xfp,
+      xpub: xpub.toBase58(),
+      bip32Path: key.bip32Path,
+      network: walletConfig.network,
+    });
+  });
 };
 
 export class MultisigWalletPolicy {
