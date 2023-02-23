@@ -42,6 +42,7 @@ import {
 } from "./trezor";
 import { BraidDetails, MultisigWalletConfig } from "./types";
 import { braidDetailsToWalletConfig } from "./policy";
+import { unsignedMultisigPSBT } from "unchained-bitcoin";
 
 /**
  * Current unchained-wallets version.
@@ -353,22 +354,26 @@ export function SignMultisigTransaction({
         psbt,
         returnSignatureArray,
       });
-    case LEDGER:
+    case LEDGER: {
+      let _psbt = psbt;
+      if (!_psbt)
+        _psbt = unsignedMultisigPSBT(network, inputs, outputs).toBase64();
       return new LedgerSignMultisigTransaction({
         network,
         inputs,
         outputs,
         bip32Paths,
-        psbt,
+        psbt: _psbt,
         keyDetails,
         returnSignatureArray,
         v2Options: {
           ...walletConfig,
           policyHmac,
-          psbt,
+          psbt: _psbt,
           progressCallback,
         },
       });
+    }
     case LEDGER_V2:
       // if we can know for sure which version of the app
       // we're going to be interacting with then we
