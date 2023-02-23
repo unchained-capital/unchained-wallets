@@ -21,6 +21,7 @@ import {
   validateBIP32Path,
   getRelativeBIP32Path,
   convertExtendedPublicKey,
+  getMaskedDerivation,
 } from "unchained-bitcoin";
 import {
   IndirectKeystoreInteraction,
@@ -627,10 +628,7 @@ Format: ${this.addressType}
     // We need to loop over xpubs and output `Derivation: bip32path` and `xfp: xpub` for each
     let xpubs = this.extendedPublicKeys.map((xpub) => {
       // Mask the derivation to the appropriate depth if it is not known
-      const unknownBip32 = xpub.bip32Path.toLowerCase().includes("unknown");
-      const derivation = unknownBip32
-        ? `m${"/0".repeat(ExtendedPublicKey.fromBase58(xpub.xpub).depth)}`
-        : xpub.bip32Path;
+      const derivation = getMaskedDerivation(xpub);
       return `Derivation: ${derivation}\n${xpub.xfp}: ${xpub.xpub}`;
     });
     output += xpubs.join("\n");

@@ -1,11 +1,10 @@
 import {
-  Braid,
   validateBIP32Path,
   validateExtendedPublicKey,
   validateRootFingerprint,
 } from "unchained-bitcoin";
 import { WalletPolicy } from "./vendor/ledger-bitcoin";
-import { BitcoinNetwork } from "./types";
+import { BraidDetails, MultisigWalletConfig } from "./types";
 
 export class KeyOrigin {
   private xfp: string;
@@ -42,15 +41,17 @@ export class KeyOrigin {
 export type MultisigScriptType = "sh" | "wsh" | "tr";
 
 /**
- * Takes a Braid instance and translates it into a wallet policy template string
- * @param {Braid} braid - instance of a braid object from unchained-bitcoin
+ * Takes a wallet config and translates it into a wallet policy template string
+ * @param {MultisigWalletConfig} walletConfig - multisig wallet configuration object
  * @returns {string} valid policy template string
  */
-export const getPolicyTemplateFromBraid = (braid: Braid) => {
+export const getPolicyTemplateFromWalletConfig = (
+  walletConfig: MultisigWalletConfig
+) => {
   let scriptType: MultisigScriptType;
-  let requiredSigners = Number(braid.requiredSigners);
+  let requiredSigners = Number(walletConfig.requiredSigners);
   let nested = false;
-  switch (braid.addressType) {
+  switch (walletConfig.addressType) {
     case "P2SH":
       scriptType = "sh";
       break;
@@ -65,10 +66,10 @@ export const getPolicyTemplateFromBraid = (braid: Braid) => {
       nested = true;
       break;
     default:
-      throw new Error(`Unknown address type: ${braid.addressType}`);
+      throw new Error(`Unknown address type: ${walletConfig.addressType}`);
   }
 
-  const signersString = braid.extendedPublicKeys
+  const signersString = walletConfig.extendedPublicKeys
     .map((_, index) => `@${index}/**`)
     .join(",");
 
@@ -79,14 +80,16 @@ export const getPolicyTemplateFromBraid = (braid: Braid) => {
   return policy;
 };
 
-export const getKeyOriginsFromBraid = (braid: Braid): KeyOrigin[] => {
-  return braid.extendedPublicKeys.map(
+export const getKeyOriginsFromWalletConfig = (
+  walletConfig: MultisigWalletConfig
+): KeyOrigin[] => {
+  return walletConfig.extendedPublicKeys.map(
     (key): KeyOrigin =>
       new KeyOrigin({
-        xfp: key.rootFingerprint,
-        xpub: key.base58String,
-        bip32Path: key.path,
-        network: braid.network,
+        xfp: key.xfp,
+        xpub: key.xpub,
+        bip32Path: key.bip32Path,
+        network: walletConfig.network,
       })
   );
 };
@@ -186,4 +189,18 @@ export const getTotalSignerCountFromTemplate = (template) => {
 export const validateMultisigPolicyTemplate = (template) => {
   validateMultisigPolicyScriptType(template);
   validateMultisigPolicyKeys(template);
+};
+
+export const braidDetailsToWalletConfig = (braidDetails: BraidDetails) => {
+  return {
+    network: braidDetails.network,
+    extendedPublicKeys: braidDetails.extendedPublicKeys.map((key) => ({
+      xpub: key.base58String,
+      bip32Path: key.path,
+      xfp: key.rootFingerprint,
+    })),
+    requiredSigners: braidDetails.requiredSigners,
+    name: `${braidDetails.requiredSigners}-of-${braidDetails.extendedPublicKeys.length} ${braidDetails.addressType} wallet`,
+    addressType: braidDetails.addressType,
+  };
 };

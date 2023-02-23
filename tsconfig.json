@@ -21,8 +21,7 @@
     "outDir": "lib",
     "types": [
       "jest"
-    ],
-    "resolveJsonModule": true,
+    ]
   },
   "include": [
     "src"

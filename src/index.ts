@@ -41,6 +41,8 @@ import {
   TrezorSignMessage,
 } from "./trezor";
 import { Braid } from "unchained-bitcoin";
+import { BraidDetails, MultisigWalletConfig } from "./types";
+import { braidDetailsToWalletConfig } from "./policy";
 
 /**
  * Current unchained-wallets version.
@@ -84,7 +86,10 @@ export const INDIRECT_KEYSTORES = {
 export const KEYSTORES = {
   ...DIRECT_KEYSTORES,
   ...INDIRECT_KEYSTORES,
-};
+} as const;
+
+type KEYSTORE_KEYS = keyof typeof KEYSTORES;
+type KEYSTORE_TYPES = (typeof KEYSTORES)[KEYSTORE_KEYS];
 
 /**
  * Return an interaction class for obtaining metadata from the given
@@ -323,8 +328,7 @@ export function SignMultisigTransaction({
   psbt,
   keyDetails,
   returnSignatureArray = false,
-  name,
-  braid,
+  walletConfig,
   policyHmac,
   progressCallback,
 }) {
@@ -360,8 +364,7 @@ export function SignMultisigTransaction({
         keyDetails,
         returnSignatureArray,
         v2Options: {
-          name,
-          braid,
+          ...walletConfig,
           policyHmac,
           psbt,
           progressCallback,
@@ -374,8 +377,7 @@ export function SignMultisigTransaction({
       // waiting for catching failures and using fallbacks
       // as in the above with v2Options
       return new LedgerV2SignMultisigTransaction({
-        name,
-        braid,
+        ...walletConfig,
         policyHmac,
         psbt,
         progressCallback,
@@ -478,12 +480,14 @@ export function ConfirmMultisigAddress({
       // we're expecting this malleable object `multisig` that
       // gets passed in but really these interactions should
       // just get a braid or something derived from it.
-      const braid = Braid.fromData(JSON.parse(multisig.braidDetails));
+      const braidDetails: BraidDetails = JSON.parse(multisig.braidDetails);
+      const walletConfig = braidDetailsToWalletConfig(braidDetails);
       return new LedgerConfirmMultisigAddress({
+        ...walletConfig,
         expected: multisig.address,
         // this is for the name of the wallet the address being confirmed is from
         name,
-        braid,
+        braidIndex: braidDetails.index,
         addressIndex,
         policyHmac,
       });
@@ -508,18 +512,22 @@ export function ConfirmMultisigAddress({
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
+// TODO: superfluous with the ConfigAdapter?
+// This name sounds better, but ConfigAdapter can cover Coldcard too
 export function RegisterWalletPolicy({
   keystore,
-  name,
-  braid,
   policyHmac,
-  verify,
-}) {
+  verify = false,
+  ...walletConfig
+}: {
+  keystore: KEYSTORE_TYPES;
+  policyHmac?: string;
+  verify: boolean;
+} & MultisigWalletConfig) {
   switch (keystore) {
     case LEDGER:
       return new LedgerRegisterWalletPolicy({
-        name,
-        braid,
+        ...walletConfig,
         policyHmac,
         verify,
       });
@@ -540,12 +548,30 @@ export function RegisterWalletPolicy({
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
-export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
+export function ConfigAdapter({
+  KEYSTORE,
+  jsonConfig,
+  policyHmac,
+}: {
+  KEYSTORE: KEYSTORE_TYPES;
+  jsonConfig: string | MultisigWalletConfig;
+  policyHmac?: string;
+}) {
   switch (KEYSTORE) {
     case COLDCARD:
       return new ColdcardMultisigWalletConfig({
         jsonConfig,
       });
+    case LEDGER: {
+      let walletConfig: MultisigWalletConfig;
+      if (typeof jsonConfig === "string") {
+        walletConfig = JSON.parse(jsonConfig);
+      } else {
+        walletConfig = jsonConfig;
+      }
+
+      return new LedgerRegisterWalletPolicy({ ...walletConfig, policyHmac });
+    }
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
