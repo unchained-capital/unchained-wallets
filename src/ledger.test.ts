@@ -6,7 +6,7 @@ import {
   TEST_FIXTURES,
   ROOT_FINGERPRINT,
   TESTNET,
-  Braid,
+  BraidDetails,
 } from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, WARNING, ERROR } from "./interaction";
 import {
@@ -20,6 +20,7 @@ import {
   LedgerV2SignMultisigTransaction,
   LedgerSignatures,
 } from "./ledger";
+import { braidDetailsToWalletConfig } from "./policy";
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {
@@ -389,12 +390,12 @@ describe("ledger", () => {
     function interactionBuilder(
       policyHmac?: string,
       verify?: boolean,
-      name = "satoshi's wallet",
-      braid = TEST_FIXTURES.braids[0]
+      walletConfig = braidDetailsToWalletConfig(
+        TEST_FIXTURES.braids[0] as BraidDetails
+      )
     ) {
       const interaction = new LedgerRegisterWalletPolicy({
-        name,
-        braid,
+        ...walletConfig,
         policyHmac,
         verify,
       });
@@ -456,16 +457,18 @@ describe("ledger", () => {
     function interactionBuilder(
       policyHmac?: string,
       expected?: string,
-      name = "satoshi's wallet",
-      braid = Braid.fromData(TEST_FIXTURES.braids[0]),
+      walletConfig = braidDetailsToWalletConfig(
+        TEST_FIXTURES.braids[0] as BraidDetails
+      ),
+      braidIndex = Number(TEST_FIXTURES.braids[0].index),
       addressIndex = 0
     ) {
       const interaction = new LedgerConfirmMultisigAddress({
-        name,
-        braid,
         policyHmac,
         addressIndex,
+        braidIndex,
         expected,
+        ...walletConfig,
       });
       addInteractionMocks(interaction, mockWithApp);
       return interaction;
@@ -514,19 +517,17 @@ describe("ledger", () => {
     const fixture = TEST_FIXTURES.transactions[0];
     function interactionBuilder(
       policyHmac = fixture.policyHmac,
-      name = fixture.walletName,
-      braid = Braid.fromData(fixture.braidDetails),
+      walletConfig = braidDetailsToWalletConfig(fixture.braidDetails),
       psbt = fixture.psbt,
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       progressCallback = () => {}
     ) {
       let interaction;
       const options = {
-        name,
-        braid,
         policyHmac,
         psbt,
         progressCallback,
+        ...walletConfig,
       };
       interaction = new LedgerV2SignMultisigTransaction(options);
       addInteractionMocks(interaction, mockWithApp);

@@ -35,7 +35,7 @@ import {
   fingerprintToFixedLengthHex,
   translatePSBT,
   addSignaturesToPSBT,
-  Braid,
+  BitcoinNetwork,
   validateHex,
   getPsbtVersionNumber,
   PsbtV2,
@@ -53,12 +53,12 @@ import {
 import { splitTransaction } from "@ledgerhq/hw-app-btc/lib/splitTransaction";
 import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
-import { AppClient } from "./vendor/ledger-bitcoin";
-import { BitcoinNetwork, DeviceError, TxInput } from "./types";
+import { AppClient, PsbtV2 as LedgerPsbtV2 } from "./vendor/ledger-bitcoin";
+import { DeviceError, MultisigWalletConfig, TxInput } from "./types";
 import {
   MultisigWalletPolicy,
-  getKeyOriginsFromBraid,
-  getPolicyTemplateFromBraid,
+  getKeyOriginsFromWalletConfig,
+  getPolicyTemplateFromWalletConfig,
 } from "./policy";
 
 /**
@@ -1357,9 +1357,7 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
   }
 }
 
-interface RegistrationConstructorArguments {
-  name: string;
-  braid: Braid;
+interface RegistrationConstructorArguments extends MultisigWalletConfig {
   policyHmac?: string;
 }
 
@@ -1379,10 +1377,13 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
 
   readonly isV2Supported = true;
 
-  constructor({ name, braid, policyHmac }: RegistrationConstructorArguments) {
+  constructor({
+    policyHmac,
+    ...walletConfig
+  }: RegistrationConstructorArguments) {
     super();
-    const keyOrigins = getKeyOriginsFromBraid(braid);
-    const template = getPolicyTemplateFromBraid(braid);
+    const keyOrigins = getKeyOriginsFromWalletConfig(walletConfig);
+    const template = getPolicyTemplateFromWalletConfig(walletConfig);
     if (policyHmac) {
       const error = validateHex(policyHmac);
       if (error) throw new Error(`Invalid policyHmac`);
@@ -1390,7 +1391,7 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
       this.policyHmac = Buffer.from(policyHmac, "hex");
     }
     this.walletPolicy = new MultisigWalletPolicy({
-      name,
+      name: walletConfig.name,
       keyOrigins,
       template,
     });
@@ -1451,10 +1452,9 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
   constructor({
     verify = false,
     policyHmac,
-    name,
-    braid,
+    ...walletConfig
   }: LedgerRegisterWalletPolicyArguments) {
-    super({ policyHmac, name, braid });
+    super({ policyHmac, ...walletConfig });
     this.verify = verify;
   }
 
@@ -1477,6 +1477,7 @@ interface ConfirmAddressConstructorArguments
   display?: boolean;
   // the index
   addressIndex: number;
+  braidIndex: number;
 }
 
 /**
@@ -1493,19 +1494,19 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
   readonly display = true;
 
   constructor({
-    braid,
-    name,
     policyHmac,
     addressIndex,
     display,
     expected,
+    braidIndex,
+    ...walletConfig
   }: ConfirmAddressConstructorArguments) {
-    super({ braid, name, policyHmac });
+    super({ policyHmac, ...walletConfig });
 
-    const braidIndex = Number(braid.index);
     if (braidIndex !== 1 && braidIndex !== 0) {
       throw new Error(`Invalid braid index ${braidIndex}`);
     }
+
     this.braidIndex = braidIndex;
 
     const index = Number(addressIndex);
@@ -1619,11 +1620,10 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
   constructor({
     psbt,
     progressCallback,
-    name,
-    braid,
     policyHmac,
+    ...walletConfig
   }: LedgerV2SignTxConstructorArguments) {
-    super({ name, braid, policyHmac });
+    super({ policyHmac, ...walletConfig });
 
     if (progressCallback) this.progressCallback = progressCallback;
 
@@ -1643,7 +1643,8 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
   async signPsbt(): Promise<LedgerSignatures[]> {
     return this.withApp(async (app: AppClient) => {
       this.signatures = await app.signPsbt(
-        this.psbt,
+        // unchained-bitcoin mimics ledgers' methods
+        this.psbt as LedgerPsbtV2,
         this.walletPolicy.toLedgerPolicy(),
         this.policyHmac || null,
         this.progressCallback

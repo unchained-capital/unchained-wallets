@@ -53,9 +53,8 @@
     "compile:trezor-dev": "TREZOR_DEV=true babel --extensions .ts,.js --watch -d lib/ src/ && npm run compile-images",
     "compile:watch": "babel --watch --extensions .ts,.js -d lib/ src/ && compile-images",
     "prepublish": "npm run compile",
-    "pretest": "npm run check-types && npm run compile",
     "prepare": "npm run compile && husky install",
-    "test": "jest src",
+    "test": "npm run check-types && jest src",
     "testdebug": "node --inspect-brk node_modules/.bin/jest --runInBand lib",
     "docs": "./bin/build-docs.sh",
     "lint": "eslint src --ignore-pattern src/vendor"

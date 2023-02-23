@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { version } from "../package.json";
 import { UNSUPPORTED, UnsupportedInteraction } from "./interaction";
 import {
@@ -38,7 +40,9 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
-import { Braid } from "unchained-bitcoin";
+import { MultisigWalletConfig } from "./types";
+import { braidDetailsToWalletConfig } from "./policy";
+import { unsignedMultisigPSBT, BraidDetails } from "unchained-bitcoin";
 
 /**
  * Current unchained-wallets version.
@@ -82,7 +86,10 @@ export const INDIRECT_KEYSTORES = {
 export const KEYSTORES = {
   ...DIRECT_KEYSTORES,
   ...INDIRECT_KEYSTORES,
-};
+} as const;
+
+type KEYSTORE_KEYS = keyof typeof KEYSTORES;
+type KEYSTORE_TYPES = (typeof KEYSTORES)[KEYSTORE_KEYS];
 
 /**
  * Return an interaction class for obtaining metadata from the given
@@ -138,7 +145,6 @@ export function ExportPublicKey({ keystore, network, bip32Path, includeXFP }) {
       return new ColdcardExportPublicKey({
         network,
         bip32Path,
-        includeXFP,
       });
     case LEDGER:
       return new LedgerExportPublicKey({
@@ -222,13 +228,11 @@ export function ExportExtendedPublicKey({
       return new ColdcardExportExtendedPublicKey({
         bip32Path,
         network,
-        includeXFP,
       });
     case CUSTOM:
       return new CustomExportExtendedPublicKey({
         bip32Path,
         network,
-        includeXFP,
       });
     case HERMIT:
       return new HermitExportExtendedPublicKey({
@@ -324,8 +328,7 @@ export function SignMultisigTransaction({
   psbt,
   keyDetails,
   returnSignatureArray = false,
-  name,
-  braid,
+  walletConfig,
   policyHmac,
   progressCallback,
 }) {
@@ -351,23 +354,26 @@ export function SignMultisigTransaction({
         psbt,
         returnSignatureArray,
       });
-    case LEDGER:
+    case LEDGER: {
+      let _psbt = psbt;
+      if (!_psbt)
+        _psbt = unsignedMultisigPSBT(network, inputs, outputs).toBase64();
       return new LedgerSignMultisigTransaction({
         network,
         inputs,
         outputs,
         bip32Paths,
-        psbt,
+        psbt: _psbt,
         keyDetails,
         returnSignatureArray,
         v2Options: {
-          name,
-          braid,
+          ...walletConfig,
           policyHmac,
-          psbt,
+          psbt: _psbt,
           progressCallback,
         },
       });
+    }
     case LEDGER_V2:
       // if we can know for sure which version of the app
       // we're going to be interacting with then we
@@ -375,8 +381,7 @@ export function SignMultisigTransaction({
       // waiting for catching failures and using fallbacks
       // as in the above with v2Options
       return new LedgerV2SignMultisigTransaction({
-        name,
-        braid,
+        ...walletConfig,
         policyHmac,
         psbt,
         progressCallback,
@@ -479,12 +484,14 @@ export function ConfirmMultisigAddress({
       // we're expecting this malleable object `multisig` that
       // gets passed in but really these interactions should
       // just get a braid or something derived from it.
-      const braid = Braid.fromData(JSON.parse(multisig.braidDetails));
+      const braidDetails: BraidDetails = JSON.parse(multisig.braidDetails);
+      const walletConfig = braidDetailsToWalletConfig(braidDetails);
       return new LedgerConfirmMultisigAddress({
+        ...walletConfig,
         expected: multisig.address,
         // this is for the name of the wallet the address being confirmed is from
         name,
-        braid,
+        braidIndex: Number(braidDetails.index),
         addressIndex,
         policyHmac,
       });
@@ -509,18 +516,22 @@ export function ConfirmMultisigAddress({
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
+// TODO: superfluous with the ConfigAdapter?
+// This name sounds better, but ConfigAdapter can cover Coldcard too
 export function RegisterWalletPolicy({
   keystore,
-  name,
-  braid,
   policyHmac,
-  verify,
-}) {
+  verify = false,
+  ...walletConfig
+}: {
+  keystore: KEYSTORE_TYPES;
+  policyHmac?: string;
+  verify: boolean;
+} & MultisigWalletConfig) {
   switch (keystore) {
     case LEDGER:
       return new LedgerRegisterWalletPolicy({
-        name,
-        braid,
+        ...walletConfig,
         policyHmac,
         verify,
       });
@@ -541,12 +552,30 @@ export function RegisterWalletPolicy({
  * @returns {ColdcardMultisigWalletConfig|UnsupportedInteraction} - A class that can translate to shape of
  * config to match the specified keystore/coordinator requirements
  */
-export function ConfigAdapter({ KEYSTORE, jsonConfig }) {
+export function ConfigAdapter({
+  KEYSTORE,
+  jsonConfig,
+  policyHmac,
+}: {
+  KEYSTORE: KEYSTORE_TYPES;
+  jsonConfig: string | MultisigWalletConfig;
+  policyHmac?: string;
+}) {
   switch (KEYSTORE) {
     case COLDCARD:
       return new ColdcardMultisigWalletConfig({
         jsonConfig,
       });
+    case LEDGER: {
+      let walletConfig: MultisigWalletConfig;
+      if (typeof jsonConfig === "string") {
+        walletConfig = JSON.parse(jsonConfig);
+      } else {
+        walletConfig = jsonConfig;
+      }
+
+      return new LedgerRegisterWalletPolicy({ ...walletConfig, policyHmac });
+    }
     default:
       return new UnsupportedInteraction({
         code: "unsupported",
@@ -562,3 +591,4 @@ export * from "./custom";
 export * from "./hermit";
 export * from "./ledger";
 export * from "./trezor";
+export * from "./policy";

@@ -2,12 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { Braid, TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
+import { TESTNET, TEST_FIXTURES, BraidDetails } from "unchained-bitcoin";
 import {
   KeyOrigin,
-  MultisigWalletPolicy,
   validateMultisigPolicyTemplate,
-  getPolicyTemplateFromBraid,
+  getPolicyTemplateFromWalletConfig,
+  braidDetailsToWalletConfig,
 } from "./policy";
 import { POLICY_FIXTURE } from "./fixtures";
 
@@ -73,11 +73,13 @@ describe("KeyOrigin", () => {
   });
 });
 
-describe("getPolicyTemplateFromBraid", () => {
+describe("getPolicyTemplateFromWalletConfig", () => {
   it("converts braids to valid policies", () => {
     for (const multisig of TEST_FIXTURES.multisigs) {
-      const braid = Braid.fromData(multisig.braidDetails);
-      const template = getPolicyTemplateFromBraid(braid);
+      const walletConfig = braidDetailsToWalletConfig(
+        multisig.braidDetails as BraidDetails
+      );
+      const template = getPolicyTemplateFromWalletConfig(walletConfig);
       validateMultisigPolicyTemplate(template);
     }
   });
