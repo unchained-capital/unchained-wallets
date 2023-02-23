@@ -1644,7 +1644,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
     return this.withApp(async (app: AppClient) => {
       this.signatures = await app.signPsbt(
         // unchained-bitcoin mimics ledgers' methods
-        this.psbt as unknown as LedgerPsbtV2,
+        this.psbt as LedgerPsbtV2,
         this.walletPolicy.toLedgerPolicy(),
         this.policyHmac || null,
         this.progressCallback

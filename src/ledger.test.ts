@@ -391,7 +391,7 @@ describe("ledger", () => {
       policyHmac?: string,
       verify?: boolean,
       walletConfig = braidDetailsToWalletConfig(
-        TEST_FIXTURES.braids[0] as unknown as BraidDetails
+        TEST_FIXTURES.braids[0] as BraidDetails
       )
     ) {
       const interaction = new LedgerRegisterWalletPolicy({
@@ -458,7 +458,7 @@ describe("ledger", () => {
       policyHmac?: string,
       expected?: string,
       walletConfig = braidDetailsToWalletConfig(
-        TEST_FIXTURES.braids[0] as unknown as BraidDetails
+        TEST_FIXTURES.braids[0] as BraidDetails
       ),
       braidIndex = Number(TEST_FIXTURES.braids[0].index),
       addressIndex = 0

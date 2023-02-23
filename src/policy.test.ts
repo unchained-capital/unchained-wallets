@@ -77,7 +77,7 @@ describe("getPolicyTemplateFromWalletConfig", () => {
   it("converts braids to valid policies", () => {
     for (const multisig of TEST_FIXTURES.multisigs) {
       const walletConfig = braidDetailsToWalletConfig(
-        multisig.braidDetails as unknown as BraidDetails
+        multisig.braidDetails as BraidDetails
       );
       const template = getPolicyTemplateFromWalletConfig(walletConfig);
       validateMultisigPolicyTemplate(template);
