@@ -829,14 +829,13 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
         }
 
         return publicKey;
-      } else {
-        const publicKey = await this.getV2PublicKey();
-        if (this.includeXFP) {
-          let rootFingerprint = await this.getXfp();
-          return { rootFingerprint, publicKey };
-        }
-        return publicKey;
       }
+      const publicKey = await this.getV2PublicKey();
+      if (this.includeXFP) {
+        let rootFingerprint = await this.getXfp();
+        return { rootFingerprint, publicKey };
+      }
+      return publicKey;
     } finally {
       await super.closeTransport();
     }
