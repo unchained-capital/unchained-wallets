@@ -5,18 +5,23 @@
         "node": true,
         "jest/globals": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
     "globals": {
         "Atomics": "readonly",
         "SharedArrayBuffer": "readonly"
     },
+    "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 2018,
         "sourceType": "module"
     },
     "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
         "accessor-pairs": "error",
-        "array-bracket-newline": "error",
         "array-bracket-spacing": [
             "error",
             "never"
@@ -67,14 +72,17 @@
                 "allowKeywords": true
             }
         ],
-        "eol-last": "off",
+        "eol-last": 2,
         "eqeqeq": "off",
         "func-call-spacing": "error",
         "func-name-matching": "error",
         "func-names": "error",
         "func-style": [
             "error",
-            "declaration"
+            "declaration",
+            {
+                "allowArrowFunctions": true
+            }
         ],
         "function-paren-newline": "off",
         "generator-star-spacing": "error",
@@ -84,10 +92,6 @@
         "id-blacklist": "error",
         "id-length": "off",
         "id-match": "error",
-        "implicit-arrow-linebreak": [
-            "error",
-            "beside"
-        ],
         "indent": "off",
         "indent-legacy": "off",
         "init-declarations": "off",
@@ -99,7 +103,6 @@
             "error",
             "unix"
         ],
-        "lines-around-comment": "error",
         "lines-around-directive": "error",
         "lines-between-class-members": [
             "error",
@@ -194,7 +197,6 @@
         "no-restricted-properties": "error",
         "no-restricted-syntax": "error",
         "no-return-assign": "error",
-        "no-return-await": "error",
         "no-script-url": "error",
         "no-self-compare": "error",
         "no-sequences": "error",
@@ -225,7 +227,6 @@
         "no-warning-comments": "off",
         "no-whitespace-before-property": "error",
         "no-with": "error",
-        "nonblock-statement-body-position": "error",
         "object-curly-newline": "error",
         "object-curly-spacing": "off",
         "object-shorthand": "error",
@@ -299,5 +300,8 @@
             "never"
         ]
     },
-    "plugins": ["jest"]
+    "plugins": [
+        "jest",
+        "@typescript-eslint"
+    ]
 }

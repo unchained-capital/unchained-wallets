@@ -61,7 +61,6 @@ export class CustomInteraction extends IndirectKeystoreInteraction {}
  * // "m/45'/0'/0'"
  */
 export class CustomExportExtendedPublicKey extends CustomInteraction {
-
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network (needed for derivations)
@@ -177,7 +176,6 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
  *
  */
 export class CustomSignMultisigTransaction extends CustomInteraction {
-
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network

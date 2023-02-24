@@ -13,7 +13,7 @@
  */
 
 import Bowser from "bowser";
-import {signatureNoSighashType} from 'unchained-bitcoin';
+import { signatureNoSighashType } from "unchained-bitcoin";
 
 /**
  * Constant representing a keystore which is unsupported due to the
@@ -77,7 +77,6 @@ export const STATES = [PENDING, ACTIVE, UNSUPPORTED];
  *
  */
 export const LEVELS = [INFO, WARNING, ERROR];
-
 
 /**
  * Represents an image in a message returned by an interaction.
@@ -144,7 +143,7 @@ export const LEVELS = [INFO, WARNING, ERROR];
  *     messages.push({state: ACTIVE, level: INFO, text: `Interaction active: ${this.param}` code: "active"});
  *     return messages;
  *   }
- * 
+ *
  * }
  *
  * // usage
@@ -154,7 +153,6 @@ export const LEVELS = [INFO, WARNING, ERROR];
  *
  */
 export class KeystoreInteraction {
-
   /**
    * Base constructor.
    *
@@ -237,11 +235,11 @@ export class KeystoreInteraction {
    * dimensions.
    *
    * @param {object} options - options argument
-   * @param {string} options.state - must equal this keystore state
-   * @param {string} options.level - must equal this message level
-   * @param {string|regexp} options.code - code must match this regular expression
-   * @param {string|regexp} options.text - text must match this regular expression
-   * @param {string|regexp} options.version - version must match this regular expression
+   * @param {string} [options.state] - must equal this keystore state
+   * @param {string} [options.level] - must equal this message level
+   * @param {string|regexp} [options.code] - code must match this regular expression
+   * @param {string|regexp} [options.text] - text must match this regular expression
+   * @param {string|regexp} [options.version] - version must match this regular expression
    * @returns {module:interaction.Message[]} matching `Message` objects
    * @example
    * import {PENDING, ACTIVE} from "unchained-bitcoin";
@@ -258,7 +256,7 @@ export class KeystoreInteraction {
    * interaction.messagesFor({version: /^2/}).forEach(msg => console.log(msg));
    *   { code: "device.active", state: "active", level: "warning", text: "Your device will warn you about...", version: "2.x"}
    */
-  messagesFor({state, level, code, text, version}) {
+  messagesFor({ state, level, code, text, version }) {
     return this.messages().filter((message) => {
       if (state && message.state !== state) {
         return false;
@@ -266,13 +264,13 @@ export class KeystoreInteraction {
       if (level && message.level !== level) {
         return false;
       }
-      if (code && !(message.code || '').match(code)) {
+      if (code && !(message.code || "").match(code)) {
         return false;
       }
-      if (text && !(message.text || '').match(text)) {
+      if (text && !(message.text || "").match(text)) {
         return false;
       }
-      if (version && !(message.version || '').match(version)) {
+      if (version && !(message.version || "").match(version)) {
         return false;
       }
       return true;
@@ -283,35 +281,37 @@ export class KeystoreInteraction {
    * Return whether there are any messages matching the given options.
    *
    * @param {object} options - options argument
-   * @param {string} options.state - must equal this keystore state
-   * @param {string} options.level - must equal this message level
-   * @param {string|regexp} options.code - code must match this regular expression
-   * @param {string|regexp} options.text - text must match this regular expression
-   * @param {string|regexp} options.version - version must match this regular expression
+   * @param {string} [options.state] - must equal this keystore state
+   * @param {string} [options.level] - must equal this message level
+   * @param {string|regexp} [options.code] - code must match this regular expression
+   * @param {string|regexp} [options.text] - text must match this regular expression
+   * @param {string|regexp} [options.version] - version must match this regular expression
    * @returns {boolean} - whether any messages match the given filters
    */
-  hasMessagesFor({state, level, code, text, version}) {
-    return this.messagesFor({
-      state,
-      level,
-      code,
-      text,
-      version,
-    }).length > 0;
+  hasMessagesFor({ state, level, code, text, version }) {
+    return (
+      this.messagesFor({
+        state,
+        level,
+        code,
+        text,
+        version,
+      }).length > 0
+    );
   }
 
   /**
    * Return the first message matching the given options (or `null` if none is found).
    *
    * @param {object} options - options argument
-   * @param {string} options.state - must equal this keystore state
-   * @param {string} options.level - must equal this message level
-   * @param {string|regexp} options.code - code must match this regular expression
-   * @param {string|regexp} options.text - text must match this regular expression
-   * @param {string|regexp} options.version - version must match this regular expression
+   * @param {string} [options.state] - must equal this keystore state
+   * @param {string} [options.level] - must equal this message level
+   * @param {string|regexp} [options.code] - code must match this regular expression
+   * @param {string|regexp} [options.text] - text must match this regular expression
+   * @param {string|regexp} [options.version] - version must match this regular expression
    * @returns {module:interaction.Message|null} the first matching `Message` object (or `null` if none is found)
    */
-  messageFor({state, level, code, text, version}) {
+  messageFor({ state, level, code, text, version }) {
     const messages = this.messagesFor({
       state,
       level,
@@ -337,7 +337,7 @@ export class KeystoreInteraction {
    * @param {string|regexp} options.version - version must match this regular expression
    * @returns {string|null} the text of the first matching message (or `null` if none is found)
    */
-  messageTextFor({state, level, code, text, version}) {
+  messageTextFor({ state, level, code, text, version }) {
     const message = this.messageFor({
       state,
       level,
@@ -345,9 +345,8 @@ export class KeystoreInteraction {
       text,
       version,
     });
-    return (message ? message.text : null);
+    return message ? message.text : null;
   }
-
 }
 
 /**
@@ -368,7 +367,6 @@ export class KeystoreInteraction {
  *
  */
 export class UnsupportedInteraction extends KeystoreInteraction {
-
   /**
    * Accepts parameters to describe what is unsupported and why.
    *
@@ -379,7 +377,7 @@ export class UnsupportedInteraction extends KeystoreInteraction {
    * @param {string} options.code - the code of the error message
    * @constructor
    */
-  constructor({text, code}) {
+  constructor({ text, code }) {
     super();
     this.text = text;
     this.code = code;
@@ -443,7 +441,6 @@ export class UnsupportedInteraction extends KeystoreInteraction {
   parse() {
     throw new Error(this.text);
   }
-
 }
 
 /**
@@ -477,7 +474,6 @@ export class UnsupportedInteraction extends KeystoreInteraction {
  *
  */
 export class DirectKeystoreInteraction extends KeystoreInteraction {
-
   /**
    * Sets the `this.direct` property to `true`.  This property can be
    * utilized when introspecting on interaction classes..
@@ -511,7 +507,9 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
    *
    */
   request() {
-    throw new Error("This interaction is direct and does not support a `request` method.");
+    throw new Error(
+      "This interaction is direct and does not support a `request` method."
+    );
   }
 
   /**
@@ -522,7 +520,9 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
    *
    */
   parse() {
-    throw new Error("This interaction is direct and does not support a `parse` method.");
+    throw new Error(
+      "This interaction is direct and does not support a `parse` method."
+    );
   }
 
   signatureFormatter(inputSignature, format) {
@@ -530,17 +530,20 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
     // but NOT for P2SH ... This function should always return the signature with SIGHASH byte appended.
     // While we don't anticipate Trezor making firmware changes to include SIGHASH bytes with signatures,
     // We'll go ahead and make sure that we're not double adding the SIGHASH byte in case they do in the future.
-    const signatureWithSigHashByte = `${signatureNoSighashType(inputSignature)}01`;
-    return format === "buffer" ? Buffer.from(signatureWithSigHashByte, "hex") : signatureWithSigHashByte;
+    const signatureWithSigHashByte = `${signatureNoSighashType(
+      inputSignature
+    )}01`;
+    return format === "buffer"
+      ? Buffer.from(signatureWithSigHashByte, "hex")
+      : signatureWithSigHashByte;
   }
 
-  parseSignature(transactionSignature, format="hex") {
-    return (transactionSignature || []).map(inputSignature => this.signatureFormatter(inputSignature, format));
+  parseSignature(transactionSignature, format = "hex") {
+    return (transactionSignature || []).map((inputSignature) =>
+      this.signatureFormatter(inputSignature, format)
+    );
   }
-
-
 }
-
 
 /**
  * Base class for indirect keystore interactions.
@@ -581,7 +584,6 @@ export class DirectKeystoreInteraction extends KeystoreInteraction {
  *
  */
 export class IndirectKeystoreInteraction extends KeystoreInteraction {
-
   /**
    * Sets the `this.indirect` property to `true`.  This property can
    * be utilized when introspecting on interaction classes.
@@ -637,7 +639,8 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    *
    */
   async run() {
-    throw new Error("This interaction is indirect and does not support a `run` method.");
+    throw new Error(
+      "This interaction is indirect and does not support a `run` method."
+    );
   }
-
 }

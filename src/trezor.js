@@ -61,6 +61,7 @@ import { MULTISIG_ROOT } from "./index";
  */
 export const TREZOR = "trezor";
 
+// eslint-disable-next-line
 const TrezorConnect = require("@trezor/connect-web").default;
 
 const ADDRESS_SCRIPT_TYPES = {
@@ -713,9 +714,9 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
-   * @param {UTXO[]} options.inputs - inputs for the transaction
-   * @param {TransactionOutput[]} options.outputs - outputs for the transaction
-   * @param {string[]} options.bip32Paths - BIP32 paths on this device to sign with, one per each input
+   * @param {UTXO[]} [options.inputs] - inputs for the transaction
+   * @param {TransactionOutput[]} [options.outputs] - outputs for the transaction
+   * @param {string[]} [options.bip32Paths] - BIP32 paths on this device to sign with, one per each input
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
    * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
