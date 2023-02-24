@@ -21,13 +21,14 @@
     "outDir": "lib",
     "types": [
       "jest"
-    ]
+    ],
+    "skipLibCheck": true,
   },
   "include": [
-    "src"
+    "src/"
   ],
   "exclude": [
-    "node_modules",
+    "node_modules/",
     "src/vendor/**/__tests__"
   ]
 }

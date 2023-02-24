@@ -618,14 +618,14 @@ export interface LedgerDeviceError {
  * const node = await interaction.run();
  * console.log(node);
  */
-class LedgerExportHDNode extends LedgerBitcoinInteraction {
+abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
   bip32Path: string;
 
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
-  readonly isV2Supported = false;
+  abstract isV2Supported: boolean;
 
-  readonly isLegacySupported = true;
+  abstract isLegacySupported: boolean;
 
   /**
    * Requires a valid BIP32 path to the node to export.
