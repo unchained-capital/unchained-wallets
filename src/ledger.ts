@@ -39,6 +39,7 @@ import {
   validateHex,
   getPsbtVersionNumber,
   PsbtV2,
+  ExtendedPublicKey,
 } from "unchained-bitcoin";
 
 import {
@@ -801,6 +802,13 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
     this.includeXFP = includeXFP;
   }
 
+  getV2PublicKey() {
+    return this.withApp(async (app) => {
+      const xpub = await app.getExtendedPubkey(this.bip32Path, true);
+      return ExtendedPublicKey.fromBase58(xpub).pubkey;
+    });
+  }
+
   /**
    * Parses out and compresses the public key from the response of
    * `LedgerExportHDNode`.
@@ -809,17 +817,26 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
    */
   async run() {
     try {
-      const result = await super.run();
-      const publicKey = this.parsePublicKey((result || {}).publicKey);
-      if (this.includeXFP) {
-        let rootFingerprint = await this.getXfp();
-        return {
-          rootFingerprint,
-          publicKey,
-        };
-      }
+      if (await this.isLegacyApp()) {
+        const result = await super.run();
+        const publicKey = this.parsePublicKey((result || {}).publicKey);
+        if (this.includeXFP) {
+          let rootFingerprint = await this.getXfp();
+          return {
+            rootFingerprint,
+            publicKey,
+          };
+        }
 
-      return publicKey;
+        return publicKey;
+      } else {
+        const publicKey = await this.getV2PublicKey();
+        if (this.includeXFP) {
+          let rootFingerprint = await this.getXfp();
+          return { rootFingerprint, publicKey };
+        }
+        return publicKey;
+      }
     } finally {
       await super.closeTransport();
     }
@@ -1390,8 +1407,15 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
       // TODO validate length
       this.policyHmac = Buffer.from(policyHmac, "hex");
     }
+
+    // should never happen. need this to make ts happy
+    // in a not fully typescript world
+    if (!walletConfig.name || !walletConfig.uuid) {
+      throw new Error("wallet policy requires name");
+    }
+
     this.walletPolicy = new MultisigWalletPolicy({
-      name: walletConfig.name,
+      name: walletConfig.name || walletConfig.uuid,
       keyOrigins,
       template,
     });
