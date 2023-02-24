@@ -40,9 +40,13 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
-import { MultisigWalletConfig } from "./types";
+import { MultisigWalletConfig, TxInput } from "./types";
 import { braidDetailsToWalletConfig } from "./policy";
-import { unsignedMultisigPSBT, BraidDetails } from "unchained-bitcoin";
+import {
+  unsignedMultisigPSBT,
+  BraidDetails,
+  BitcoinNetwork,
+} from "unchained-bitcoin";
 
 /**
  * Current unchained-wallets version.
@@ -89,7 +93,7 @@ export const KEYSTORES = {
 } as const;
 
 type KEYSTORE_KEYS = keyof typeof KEYSTORES;
-type KEYSTORE_TYPES = (typeof KEYSTORES)[KEYSTORE_KEYS];
+export type KEYSTORE_TYPES = (typeof KEYSTORES)[KEYSTORE_KEYS];
 
 /**
  * Return an interaction class for obtaining metadata from the given
@@ -319,6 +323,19 @@ export function ExportExtendedPublicKey({
  * // ["ababab...", // 1 per input]
  *
  */
+interface SignMultisigTransactionArgs {
+  keystore: KEYSTORE_TYPES;
+  network: BitcoinNetwork;
+  inputs?: TxInput[];
+  outputs?: object[];
+  bip32Paths?: string[];
+  psbt: string;
+  keyDetails: { xfp: string; path: string };
+  returnSignatureArray: boolean;
+  walletConfig: MultisigWalletConfig;
+  policyHmac?: string;
+  progressCallback?: () => void;
+}
 export function SignMultisigTransaction({
   keystore,
   network,
@@ -331,7 +348,7 @@ export function SignMultisigTransaction({
   walletConfig,
   policyHmac,
   progressCallback,
-}) {
+}: SignMultisigTransactionArgs) {
   switch (keystore) {
     case COLDCARD:
       return new ColdcardSignMultisigTransaction({

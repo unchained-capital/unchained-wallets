@@ -938,11 +938,11 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
 interface LedgerSignMultisigTransactionArguments {
   network: BitcoinNetwork;
 
-  inputs: TxInput[];
+  inputs?: TxInput[];
 
-  outputs: object[];
+  outputs?: object[];
 
-  bip32Paths: string[];
+  bip32Paths?: string[];
 
   psbt?: string;
 
@@ -1024,9 +1024,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
   /**
    * @param {object} options - options argument
    * @param {BitcoinNetwork} options.network - bitcoin network
-   * @param {array<object>} [options.inputs] - inputs for the transaction
-   * @param {array<object>} [options.outputs] - outputs for the transaction
-   * @param {array<string>} [options.bip32Paths] - BIP32 paths
+   * @param {array<object>} options.inputs - inputs for the transaction
+   * @param {array<object>} options.outputs - outputs for the transaction
+   * @param {array<string>} options.bip32Paths - BIP32 paths
    * @param {object} [options.v2Options] - arguments to try with a v2 app
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
@@ -1034,9 +1034,9 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    */
   constructor({
     network,
-    inputs,
-    outputs,
-    bip32Paths,
+    inputs = [],
+    outputs = [],
+    bip32Paths = [],
     psbt,
     keyDetails,
     returnSignatureArray = false,
