@@ -123,7 +123,8 @@ const TREZOR_BLOCKBOOK_URL =
 const TREZOR_DEV =
   env_variables.TREZOR_DEV || env_variables.REACT_APP_TREZOR_DEV;
 try {
-  if (TREZOR_DEV) TrezorConnect.init({
+  if (TREZOR_DEV)
+    TrezorConnect.init({
       connectSrc: TREZOR_CONNECT_URL,
       lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
       manifest: {
@@ -131,7 +132,8 @@ try {
         appUrl: "https://github.com/unchained-capital/unchained-wallets",
       },
     });
-  else TrezorConnect.manifest({
+  else
+    TrezorConnect.manifest({
       email: "help@unchained-capital.com",
       appUrl: "https://github.com/unchained-capital/unchained-wallets",
     });
@@ -211,7 +213,6 @@ try {
  * console.log(result); // someValue from payload
  */
 export class TrezorInteraction extends DirectKeystoreInteraction {
-
   /**
    * Trezor interactions require knowing the bitcoin network they are
    * for.
@@ -362,7 +363,6 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
  * }
  */
 export class TrezorGetMetadata extends TrezorInteraction {
-
   /**
    * This class doesn't actually require a `network`.
    *
@@ -472,7 +472,6 @@ export class TrezorGetMetadata extends TrezorInteraction {
  *
  */
 export class TrezorExportHDNode extends TrezorInteraction {
-
   /**
    * Requires a BIP32 path to the node to export as well as which network.
    *
@@ -712,13 +711,12 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
  * @extends {module:trezor.TrezorInteraction}
  */
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
-
   /**
    * @param {object} options - options argument
    * @param {string} options.network - bitcoin network
-   * @param {UTXO[]} options.inputs - inputs for the transaction
-   * @param {TransactionOutput[]} options.outputs - outputs for the transaction
-   * @param {string[]} options.bip32Paths - BIP32 paths on this device to sign with, one per each input
+   * @param {UTXO[]} [options.inputs] - inputs for the transaction
+   * @param {TransactionOutput[]} [options.outputs] - outputs for the transaction
+   * @param {string[]} [options.bip32Paths] - BIP32 paths on this device to sign with, one per each input
    * @param {string} [options.psbt] - PSBT string encoded in base64
    * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
    * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
@@ -816,7 +814,8 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
     return [
       TrezorConnect.signTransaction,
       {
-        inputs: this.inputs.map((input, inputIndex) => trezorInput(input, this.bip32Paths[inputIndex])
+        inputs: this.inputs.map((input, inputIndex) =>
+          trezorInput(input, this.bip32Paths[inputIndex])
         ),
         outputs: this.outputs.map((output) => trezorOutput(output)),
         coin: this.trezorCoin,
@@ -869,7 +868,6 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
  * await interaction.run();
  */
 export class TrezorConfirmMultisigAddress extends TrezorInteraction {
-
   /**
    * Most of the information required to confirm a multisig address
    * lives in the `Multisig` object from `unchained-bitcoin`.
@@ -977,7 +975,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
               crossChain: true,
               multisig: {
                 m: multisigRequiredSigners(this.multisig),
-                pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)
+                pubkeys: multisigPublicKeys(this.multisig).map((publicKey) =>
+                  trezorPublicKey(publicKey)
                 ),
               },
               scriptType:
@@ -997,7 +996,8 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
           crossChain: true,
           multisig: {
             m: multisigRequiredSigners(this.multisig),
-            pubkeys: multisigPublicKeys(this.multisig).map((publicKey) => trezorPublicKey(publicKey)
+            pubkeys: multisigPublicKeys(this.multisig).map((publicKey) =>
+              trezorPublicKey(publicKey)
             ),
           },
           scriptType: ADDRESS_SCRIPT_TYPES[multisigAddressType(this.multisig)],
@@ -1028,7 +1028,6 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  * @extends {module:trezor.TrezorInteraction}
  */
 export class TrezorSignMessage extends TrezorInteraction {
-
   /**
    * @param {object} options - option argument
    * @param {string} option.network - network

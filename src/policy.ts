@@ -7,6 +7,7 @@ import {
   validateExtendedPublicKey,
   validateRootFingerprint,
   BraidDetails,
+  getMaskedDerivation,
 } from "unchained-bitcoin";
 import { WalletPolicy } from "./vendor/ledger-bitcoin";
 import { MultisigWalletConfig } from "./types";
@@ -54,7 +55,7 @@ export const getPolicyTemplateFromWalletConfig = (
   walletConfig: MultisigWalletConfig
 ) => {
   let scriptType: MultisigScriptType;
-  let requiredSigners = Number(walletConfig.requiredSigners);
+  let requiredSigners = Number(walletConfig.quorum.requiredSigners);
   let nested = false;
   switch (walletConfig.addressType) {
     case P2SH:
@@ -94,7 +95,8 @@ export const getKeyOriginsFromWalletConfig = (
     return new KeyOrigin({
       xfp: key.xfp,
       xpub: xpub.toBase58(),
-      bip32Path: key.bip32Path,
+      // makes sure to support case where derivation is "unknown" and we want to mask it
+      bip32Path: getMaskedDerivation(key),
       network: walletConfig.network,
     });
   });
@@ -206,7 +208,10 @@ export const braidDetailsToWalletConfig = (braidDetails: BraidDetails) => {
       bip32Path: key.path,
       xfp: key.rootFingerprint,
     })),
-    requiredSigners: braidDetails.requiredSigners,
+    quorum: {
+      requiredSigners: braidDetails.requiredSigners,
+      totalSigners: braidDetails.extendedPublicKeys.length,
+    },
     name: `${braidDetails.requiredSigners}-of-${braidDetails.extendedPublicKeys.length} ${braidDetails.addressType} ${braidDetails.network} wallet`,
     addressType: braidDetails.addressType,
   };

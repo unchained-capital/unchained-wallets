@@ -280,9 +280,13 @@ describe("ledger", () => {
           //   second byte is length of signature in bytes (0x03)
           // The string length is however long the signature is minus these two starting bytes
           // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parseSignature(["3003foobar"])).toEqual(["3003foobar01",]);
+          expect(interactionBuilder().parseSignature(["3003foobar"])).toEqual([
+            "3003foobar01",
+          ]);
           // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parseSignature(["3003foob01"])).toEqual(["3003foob0101",]);
+          expect(interactionBuilder().parseSignature(["3003foob01"])).toEqual([
+            "3003foob0101",
+          ]);
           // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
           // we expect this to chop off the 01 and add it back
           expect(interactionBuilder().parseSignature(["3003foobar01"])).toEqual(
@@ -391,7 +395,7 @@ describe("ledger", () => {
       policyHmac?: string,
       verify?: boolean,
       walletConfig = braidDetailsToWalletConfig(
-        TEST_FIXTURES.braids[0] as BraidDetails
+        (<unknown>TEST_FIXTURES.braids[0]) as BraidDetails
       )
     ) {
       const interaction = new LedgerRegisterWalletPolicy({
@@ -458,7 +462,7 @@ describe("ledger", () => {
       policyHmac?: string,
       expected?: string,
       walletConfig = braidDetailsToWalletConfig(
-        TEST_FIXTURES.braids[0] as BraidDetails
+        (<unknown>TEST_FIXTURES.braids[0]) as BraidDetails
       ),
       braidIndex = Number(TEST_FIXTURES.braids[0].index),
       addressIndex = 0
@@ -529,7 +533,10 @@ describe("ledger", () => {
         progressCallback,
         ...walletConfig,
       };
-      interaction = new LedgerV2SignMultisigTransaction(options);
+      interaction = new LedgerV2SignMultisigTransaction({
+        ...options,
+        returnSignatureArray: true,
+      });
       addInteractionMocks(interaction, mockWithApp);
       return interaction;
     }

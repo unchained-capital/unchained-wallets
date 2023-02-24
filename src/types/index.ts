@@ -24,12 +24,15 @@ export interface WalletConfigKeyDerivation {
 }
 
 export interface MultisigWalletConfig {
-  name: string;
-  requiredSigners: number;
-  // shouldn't be necessary as it can be
-  // inferred from the extendedPublicKeys
-  // but still exists in most cases
-  totalSigners?: number;
+  name?: string;
+  uuid?: string;
+  quorum: {
+    requiredSigners: number;
+    // shouldn't be necessary as it can be
+    // inferred from the extendedPublicKeys
+    // but still exists in most cases
+    totalSigners?: number;
+  };
   addressType: MultisigAddressType;
   extendedPublicKeys: WalletConfigKeyDerivation[];
   network: BitcoinNetwork;
