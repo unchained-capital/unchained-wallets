@@ -7,6 +7,7 @@ import {
   validateExtendedPublicKey,
   validateRootFingerprint,
   BraidDetails,
+  getMaskedDerivation,
 } from "unchained-bitcoin";
 import { WalletPolicy } from "./vendor/ledger-bitcoin";
 import { MultisigWalletConfig } from "./types";
@@ -94,7 +95,8 @@ export const getKeyOriginsFromWalletConfig = (
     return new KeyOrigin({
       xfp: key.xfp,
       xpub: xpub.toBase58(),
-      bip32Path: key.bip32Path,
+      // makes sure to support case where derivation is "unknown" and we want to mask it
+      bip32Path: getMaskedDerivation(key),
       network: walletConfig.network,
     });
   });
