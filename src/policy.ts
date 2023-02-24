@@ -54,7 +54,7 @@ export const getPolicyTemplateFromWalletConfig = (
   walletConfig: MultisigWalletConfig
 ) => {
   let scriptType: MultisigScriptType;
-  let requiredSigners = Number(walletConfig.requiredSigners);
+  let requiredSigners = Number(walletConfig.quorum.requiredSigners);
   let nested = false;
   switch (walletConfig.addressType) {
     case P2SH:
@@ -206,7 +206,10 @@ export const braidDetailsToWalletConfig = (braidDetails: BraidDetails) => {
       bip32Path: key.path,
       xfp: key.rootFingerprint,
     })),
-    requiredSigners: braidDetails.requiredSigners,
+    quorum: {
+      requiredSigners: braidDetails.requiredSigners,
+      totalSigners: braidDetails.extendedPublicKeys.length,
+    },
     name: `${braidDetails.requiredSigners}-of-${braidDetails.extendedPublicKeys.length} ${braidDetails.addressType} ${braidDetails.network} wallet`,
     addressType: braidDetails.addressType,
   };
