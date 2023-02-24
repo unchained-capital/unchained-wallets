@@ -623,9 +623,9 @@ class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   bip32ValidationErrorMessage?: LedgerDeviceError;
 
-  isV2Supported = false;
+  readonly isV2Supported = false;
 
-  isLegacySupported = true;
+  readonly isLegacySupported = true;
 
   /**
    * Requires a valid BIP32 path to the node to export.
@@ -1683,9 +1683,12 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
 
   async signPsbt(): Promise<LedgerSignatures[]> {
     return this.withApp(async (app: AppClient) => {
+      const ledgerPsbt = new LedgerPsbtV2();
+      ledgerPsbt.deserialize(
+        Buffer.from(this.psbt.serialize("base64"), "base64")
+      );
       this.signatures = await app.signPsbt(
-        // unchained-bitcoin mimics ledgers' methods
-        (<unknown>this.psbt) as LedgerPsbtV2,
+        ledgerPsbt,
         this.walletPolicy.toLedgerPolicy(),
         this.policyHmac || null,
         this.progressCallback

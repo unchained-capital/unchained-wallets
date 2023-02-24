@@ -21,7 +21,7 @@ describe("BCUREncoder", () => {
 });
 
 describe("BCURDecoder", () => {
-  let decoder, decodeMock;
+  let decodeMock, decoder;
 
   beforeEach(() => {
     decoder = new BCURDecoder();
