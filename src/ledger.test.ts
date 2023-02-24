@@ -533,7 +533,10 @@ describe("ledger", () => {
         progressCallback,
         ...walletConfig,
       };
-      interaction = new LedgerV2SignMultisigTransaction(options);
+      interaction = new LedgerV2SignMultisigTransaction({
+        ...options,
+        returnSignatureArray: true,
+      });
       addInteractionMocks(interaction, mockWithApp);
       return interaction;
     }

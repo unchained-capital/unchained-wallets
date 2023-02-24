@@ -1390,6 +1390,8 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
 
   policyId?: Buffer;
 
+  readonly network: BitcoinNetwork;
+
   readonly isLegacySupported = false;
 
   readonly isV2Supported = true;
@@ -1407,6 +1409,8 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
       // TODO validate length
       this.policyHmac = Buffer.from(policyHmac, "hex");
     }
+
+    this.network = walletConfig.network;
 
     // making typescript happy and dealing
     // with possible weird inconsistencies in configs
@@ -1624,6 +1628,7 @@ interface LedgerV2SignTxConstructorArguments
   psbt: string | Buffer;
 
   progressCallback?: () => void;
+  returnSignatureArray?: boolean;
 }
 
 type InputIndex = number;
@@ -1636,23 +1641,33 @@ type SignatureBuffer = Buffer;
 export type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
 
 export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
-  readonly psbt: PsbtV2;
+  private psbt: PsbtV2;
+
+  private returnSignatureArray: boolean;
+
+  private signatures: LedgerSignatures[] = [];
 
   // optionally, a callback that will be called every time a signature is produced during
   //  * the signing process. The callback does not receive any argument, but can be used to track progress.
   public progressCallback?: () => void;
 
-  private signatures: LedgerSignatures[] = [];
+  // keeping this until we have a way to add signatures to psbtv2 directly
+  // this will store the the PSBT that was was passed in via args
+  private unsignedPsbt: string;
 
   constructor({
     psbt,
     progressCallback,
     policyHmac,
+    returnSignatureArray = false,
     ...walletConfig
   }: LedgerV2SignTxConstructorArguments) {
     super({ policyHmac, ...walletConfig });
 
     if (progressCallback) this.progressCallback = progressCallback;
+    this.returnSignatureArray = returnSignatureArray;
+
+    this.unsignedPsbt = Buffer.isBuffer(psbt) ? psbt.toString("base64") : psbt;
 
     const psbtVersion = getPsbtVersionNumber(psbt);
     switch (psbtVersion) {
@@ -1671,7 +1686,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
     return this.withApp(async (app: AppClient) => {
       this.signatures = await app.signPsbt(
         // unchained-bitcoin mimics ledgers' methods
-        this.psbt as LedgerPsbtV2,
+        (<unknown>this.psbt) as LedgerPsbtV2,
         this.walletPolicy.toLedgerPolicy(),
         this.policyHmac || null,
         this.progressCallback
@@ -1683,13 +1698,25 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
     return this.signatures.map((sig) => Buffer.from(sig[2]).toString("hex"));
   }
 
+  get SIGNED_PSTBT() {
+    return addSignaturesToPSBT(
+      this.network,
+      this.unsignedPsbt,
+      // array of pubkeys as buffers
+      this.signatures.map((sig) => Buffer.from(sig[1])),
+      // array of sigs as buffers
+      this.signatures.map((sig) => Buffer.from(sig[2]))
+    );
+  }
+
   async run() {
     try {
       // run the app version support checks, register wallet if necessary
       await super.run();
       await this.registerWallet();
       await this.signPsbt();
-      return this.SIGNATURES;
+      if (this.returnSignatureArray) return this.SIGNATURES;
+      return this.SIGNED_PSTBT;
     } finally {
       super.closeTransport();
     }
