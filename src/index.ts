@@ -331,7 +331,7 @@ interface SignMultisigTransactionArgs {
   bip32Paths?: string[];
   psbt: string;
   keyDetails: { xfp: string; path: string };
-  returnSignatureArray: boolean;
+  returnSignatureArray?: boolean;
   walletConfig: MultisigWalletConfig;
   policyHmac?: string;
   progressCallback?: () => void;

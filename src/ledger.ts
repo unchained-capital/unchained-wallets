@@ -1408,14 +1408,17 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
       this.policyHmac = Buffer.from(policyHmac, "hex");
     }
 
-    // should never happen. need this to make ts happy
-    // in a not fully typescript world
-    if (!walletConfig.name || !walletConfig.uuid) {
+    // making typescript happy and dealing
+    // with possible weird inconsistencies in configs
+    let name;
+    if (!walletConfig.name && !walletConfig.uuid) {
       throw new Error("wallet policy requires name");
+    } else {
+      name = walletConfig.name || walletConfig.uuid;
     }
 
     this.walletPolicy = new MultisigWalletPolicy({
-      name: walletConfig.name || walletConfig.uuid,
+      name,
       keyOrigins,
       template,
     });
