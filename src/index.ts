@@ -388,6 +388,7 @@ export function SignMultisigTransaction({
           policyHmac,
           psbt: _psbt,
           progressCallback,
+          returnSignatureArray,
         },
       });
     }
@@ -402,6 +403,7 @@ export function SignMultisigTransaction({
         policyHmac,
         psbt,
         progressCallback,
+        returnSignatureArray,
       });
     case TREZOR:
       return new TrezorSignMultisigTransaction({
