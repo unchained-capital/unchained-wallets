@@ -1375,6 +1375,7 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
 interface RegistrationConstructorArguments extends MultisigWalletConfig {
   policyHmac?: string;
+  returnXfp?: boolean;
 }
 
 /**
@@ -1395,8 +1396,11 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
 
   readonly isV2Supported = true;
 
+  readonly returnXfp;
+
   constructor({
     policyHmac,
+    returnXfp = false,
     ...walletConfig
   }: RegistrationConstructorArguments) {
     super();
@@ -1410,6 +1414,8 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
     }
 
     this.network = walletConfig.network;
+
+    this.returnXfp = returnXfp;
 
     // making typescript happy and dealing
     // with possible weird inconsistencies in configs
@@ -1444,8 +1450,15 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
     return messages;
   }
 
+  async getXfp(): Promise<string> {
+    return this.withApp(async (app: AppClient) => {
+      return app.getMasterFingerprint();
+    });
+  }
+
   async registerWallet(verify = false): Promise<Buffer> {
     if (this.policyHmac && !verify) return Promise.resolve(this.policyHmac);
+
     // if we don't have a registered policy yet, then let's handle that
     return this.withApp(async (app: AppClient) => {
       const policy = this.walletPolicy.toLedgerPolicy();
@@ -1482,17 +1495,27 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
   constructor({
     verify = false,
     policyHmac,
+    returnXfp,
     ...walletConfig
   }: LedgerRegisterWalletPolicyArguments) {
-    super({ policyHmac, ...walletConfig });
+    super({ policyHmac, returnXfp, ...walletConfig });
     this.verify = verify;
   }
 
-  async run(): Promise<string> {
+  async run(): Promise<string | { xfp: string; policyHmac: string }> {
     try {
       await super.run();
       const policy = await this.registerWallet(this.verify);
-      return Buffer.from(policy).toString("hex");
+      const policyHex = Buffer.from(policy).toString("hex");
+      if (this.returnXfp) {
+        const xfp = await this.getXfp();
+        console.log("xfp:", xfp);
+        return {
+          xfp,
+          policyHmac: policyHex,
+        };
+      }
+      return policyHex;
     } finally {
       super.closeTransport();
     }

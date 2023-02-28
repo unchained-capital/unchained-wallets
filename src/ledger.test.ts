@@ -356,6 +356,7 @@ describe("ledger", () => {
       registerWallet: jest.fn(),
       getWalletAddress: jest.fn(),
       signPsbt: jest.fn(),
+      getMasterFingerprint: jest.fn(),
     };
 
     jest.mock("./vendor/ledger-bitcoin", () =>
@@ -394,12 +395,14 @@ describe("ledger", () => {
     function interactionBuilder(
       policyHmac?: string,
       verify?: boolean,
+      returnXfp = false,
       walletConfig = braidDetailsToWalletConfig(
         (<unknown>TEST_FIXTURES.braids[0]) as BraidDetails
       )
     ) {
       const interaction = new LedgerRegisterWalletPolicy({
         ...walletConfig,
+        returnXfp,
         policyHmac,
         verify,
       });
@@ -437,6 +440,23 @@ describe("ledger", () => {
       // that there was a mismatch
       expect(console.error).toHaveBeenCalled();
       expect(result).toEqual(expectedHmac.toString("hex"));
+    });
+
+    it("can return xfp with hmac", async () => {
+      const expectedHmac = "deadbeef";
+      const expectedXfp = "1234567";
+      const interaction = interactionBuilder(expectedHmac, false, true);
+      mockApp.registerWallet.mockReturnValue(
+        Promise.resolve([Buffer.from("id"), expectedHmac])
+      );
+      mockApp.getMasterFingerprint.mockReturnValue(
+        Promise.resolve(expectedXfp)
+      );
+      const result = await interaction.run();
+      if (typeof result === "string")
+        throw new Error("expected object with xfp");
+      expect(result.xfp).toEqual(expectedXfp);
+      expect(result.policyHmac).toEqual(expectedHmac);
     });
   });
 
