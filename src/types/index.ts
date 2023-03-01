@@ -23,6 +23,17 @@ export interface WalletConfigKeyDerivation {
   xpub: string;
 }
 
+// should be a 32 byte hex string
+export type PolicyHmac = string;
+// should be an 8 byte hex string
+export type RootFingerprint = string;
+// a map of xfps to their corresponding hmac of the wallet policy
+// that contains this map
+export interface LedgerPolicyHmacs {
+  xfp: string;
+  policyHmac: PolicyHmac;
+}
+
 export interface MultisigWalletConfig {
   name?: string;
   uuid?: string;
@@ -36,4 +47,10 @@ export interface MultisigWalletConfig {
   addressType: MultisigAddressType;
   extendedPublicKeys: WalletConfigKeyDerivation[];
   network: BitcoinNetwork;
+  // list of policy hmacs registering the policy of the
+  // wallet for which this is a configuration for.
+  // this is optional and can have no values or up to
+  // n total hmacs, where n is the total number of
+  // signers in the quorum (equal to extendedPublicKeys.length)
+  ledgerPolicyHmacs?: LedgerPolicyHmacs[];
 }
