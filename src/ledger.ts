@@ -1671,7 +1671,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
     const psbtVersion = getPsbtVersionNumber(psbt);
     switch (psbtVersion) {
       case 0:
-        this.psbt = PsbtV2.FromV0(psbt);
+        this.psbt = PsbtV2.FromV0(psbt, true);
         break;
       case 2:
         this.psbt = new PsbtV2(psbt);
