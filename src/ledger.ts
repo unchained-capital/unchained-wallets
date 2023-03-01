@@ -1509,7 +1509,6 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
       const policyHex = Buffer.from(policy).toString("hex");
       if (this.returnXfp) {
         const xfp = await this.getXfp();
-        console.log("xfp:", xfp);
         return {
           xfp,
           policyHmac: policyHex,
