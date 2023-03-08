@@ -1375,7 +1375,6 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
 interface RegistrationConstructorArguments extends MultisigWalletConfig {
   policyHmac?: string;
-  returnXfp?: boolean;
 }
 
 /**
@@ -1386,7 +1385,7 @@ interface RegistrationConstructorArguments extends MultisigWalletConfig {
 export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerBitcoinInteraction {
   walletPolicy: MultisigWalletPolicy;
 
-  policyHmac?: Buffer;
+  private policyHmac?: Buffer;
 
   policyId?: Buffer;
 
@@ -1396,11 +1395,8 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
 
   readonly isV2Supported = true;
 
-  readonly returnXfp;
-
   constructor({
     policyHmac,
-    returnXfp = false,
     ...walletConfig
   }: RegistrationConstructorArguments) {
     super();
@@ -1414,8 +1410,6 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
     }
 
     this.network = walletConfig.network;
-
-    this.returnXfp = returnXfp;
 
     // making typescript happy and dealing
     // with possible weird inconsistencies in configs
@@ -1448,6 +1442,15 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
     }
 
     return messages;
+  }
+
+  get POLICY_HMAC() {
+    if (this.policyHmac) return this.policyHmac?.toString("hex");
+    return "";
+  }
+
+  set POLICY_HMAC(policyHmac: string) {
+    this.policyHmac = Buffer.from(policyHmac, "hex");
   }
 
   async getXfp(): Promise<string> {
@@ -1495,28 +1498,19 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
   constructor({
     verify = false,
     policyHmac,
-    returnXfp,
     ...walletConfig
   }: LedgerRegisterWalletPolicyArguments) {
-    super({ policyHmac, returnXfp, ...walletConfig });
+    super({ policyHmac, ...walletConfig });
     this.verify = verify;
   }
 
-  async run(): Promise<string | { xfp: string; policyHmac: string }> {
+  async run(): Promise<string> {
     try {
       await super.run();
       const policy = await this.registerWallet(this.verify);
-      const policyHex = Buffer.from(policy).toString("hex");
-      if (this.returnXfp) {
-        const xfp = await this.getXfp();
-        return {
-          xfp,
-          policyHmac: policyHex,
-        };
-      }
-      return policyHex;
+      return Buffer.from(policy).toString("hex");
     } finally {
-      super.closeTransport();
+      await super.closeTransport();
     }
   }
 }
@@ -1616,14 +1610,14 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
     return this.withApp(async (app: AppClient) => {
       // make sure wallet is registered or has an hmac
       // before calling this method
-      if (!this.policyHmac) {
+      if (!this.POLICY_HMAC) {
         throw new Error(
           "Can't get wallet address without a wallet registration"
         );
       }
       return app.getWalletAddress(
         this.walletPolicy.toLedgerPolicy(),
-        Buffer.from(this.policyHmac),
+        Buffer.from(this.POLICY_HMAC, "hex"),
         this.braidIndex,
         this.addressIndex,
         this.display
@@ -1639,7 +1633,7 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
       // TODO doesn't handle catching error where policy doesn't match well
       return await this.getAddress();
     } finally {
-      super.closeTransport();
+      await super.closeTransport();
     }
   }
 }
@@ -1712,7 +1706,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
       this.signatures = await app.signPsbt(
         ledgerPsbt,
         this.walletPolicy.toLedgerPolicy(),
-        this.policyHmac || null,
+        Buffer.from(this.POLICY_HMAC, "hex") || null,
         this.progressCallback
       );
     });
@@ -1742,7 +1736,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
       if (this.returnSignatureArray) return this.SIGNATURES;
       return this.SIGNED_PSTBT;
     } finally {
-      super.closeTransport();
+      await super.closeTransport();
     }
   }
 }
