@@ -323,7 +323,7 @@ export function ExportExtendedPublicKey({
  * // ["ababab...", // 1 per input]
  *
  */
-interface SignMultisigTransactionArgs {
+export interface SignMultisigTransactionArgs {
   keystore: KEYSTORE_TYPES;
   network: BitcoinNetwork;
   inputs?: TxInput[];
