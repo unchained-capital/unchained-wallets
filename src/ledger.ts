@@ -1072,7 +1072,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       state: ACTIVE,
       level: WARNING,
       code: "ledger.sign.delay",
-      text: `Your Ledger device may take up to several minutes to process a transaction with many inputs.`,
+      text: `Note: this process may take several minutes to complete`,
       preProcessingTime: this.preProcessingTime(),
       postProcessingTime: this.postProcessingTime(),
     });
@@ -1435,7 +1435,7 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
       level: INFO,
       code: "ledger.register",
       version: ">=2.1.0",
-      text: "You must confirm wallet details on device before performing certain actions such as signing.",
+      text: "New Ledger functionality requires registering wallet details on device before signing a transaction.",
     });
 
     return messages;
