@@ -1430,16 +1430,13 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
   messages() {
     const messages = super.messages();
 
-    if (!this.policyHmac) {
-      messages.push({
-        state: ACTIVE,
-        level: INFO,
-        code: "ledger.confirm.address",
-        version: ">=2.1.0",
-        text: `Your Ledger will ask you to register your wallet info first. This allows the device to derive an address for a verified quorum.`,
-        action: LEDGER_RIGHT_BUTTON,
-      });
-    }
+    messages.push({
+      state: PENDING,
+      level: INFO,
+      code: "ledger.register",
+      version: ">=2.1.0",
+      text: "You must confirm wallet details on device before performing certain actions such as signing.",
+    });
 
     return messages;
   }
@@ -1502,6 +1499,39 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
   }: LedgerRegisterWalletPolicyArguments) {
     super({ policyHmac, ...walletConfig });
     this.verify = verify;
+  }
+
+  messages() {
+    const messages = super.messages();
+
+    if (!this.POLICY_HMAC || this.verify) {
+      messages.push({
+        state: ACTIVE,
+        level: INFO,
+        code: "ledger.register",
+        version: ">=2.1.0",
+        text: "Confirm each detail about your wallet policy: name, policy, and signing key details",
+        messages: [
+          {
+            text: "Your ledger will first ask you to confirm the wallet name",
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: "Next you will have to approve the policy, e.g. sh(sortedmulti(2,@0/**,@1/**,@2/**))",
+            action: LEDGER_RIGHT_BUTTON,
+          },
+          {
+            text: "Then you can approve the data you've seen",
+            action: LEDGER_BOTH_BUTTONS,
+          },
+          {
+            text: "Finally, approve the key info for each key (root fingerprint, bip32 path, and xpub)",
+            action: LEDGER_RIGHT_BUTTON,
+          },
+        ],
+      });
+    }
+    return messages;
   }
 
   async run(): Promise<string> {
@@ -1590,7 +1620,7 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
           level: INFO,
           code: "ledger.confirm.address",
           version: ">=2.1.0",
-          text: `First confirm that the wallet name the address is from is correct`,
+          text: `Confirm that the wallet name the address is from is correct`,
           action: LEDGER_RIGHT_BUTTON,
         },
         {
