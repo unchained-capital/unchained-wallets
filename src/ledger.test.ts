@@ -463,16 +463,14 @@ describe("ledger", () => {
       policyHmac?: string,
       expected?: string,
       walletConfig = braidDetailsToWalletConfig(
-        (<unknown>TEST_FIXTURES.braids[0]) as BraidDetails
+        (<unknown>TEST_FIXTURES.multisigs[0].braidDetails) as BraidDetails
       ),
-      braidIndex = Number(TEST_FIXTURES.braids[0].index),
-      addressIndex = 0
+      bip32Path = TEST_FIXTURES.multisigs[0].bip32Path
     ) {
       const interaction = new LedgerConfirmMultisigAddress({
         policyHmac,
-        addressIndex,
-        braidIndex,
         expected,
+        bip32Path,
         ...walletConfig,
       });
       addInteractionMocks(interaction, mockWithApp);
