@@ -1551,9 +1551,7 @@ interface ConfirmAddressConstructorArguments
   expected?: string;
   // whether or not to display the address to the user
   display?: boolean;
-  // the index
-  addressIndex: number;
-  braidIndex: number;
+  bip32Path: string;
 }
 
 /**
@@ -1571,13 +1569,21 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
 
   constructor({
     policyHmac,
-    addressIndex,
+    // addressIndex,
     display,
     expected,
-    braidIndex,
+    bip32Path,
+    // braidIndex,
     ...walletConfig
   }: ConfirmAddressConstructorArguments) {
     super({ policyHmac, ...walletConfig });
+
+    // Get braid and address indexes from the bip32 path This should
+    // always be the final 2 elements in the path.
+    const [braidIndex, addressIndex] = bip32Path
+      .split("/")
+      .slice(-2)
+      .map((index) => Number(index));
 
     if (braidIndex !== 1 && braidIndex !== 0) {
       throw new Error(`Invalid braid index ${braidIndex}`);
@@ -1585,9 +1591,9 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
 
     this.braidIndex = braidIndex;
 
-    const index = Number(addressIndex);
-    if (index < 0) throw new Error(`Invalid address index ${index}`);
-    this.addressIndex = index;
+    if (addressIndex < 0)
+      throw new Error(`Invalid address index ${addressIndex}`);
+    this.addressIndex = addressIndex;
 
     if (display) {
       this.display = display;

@@ -487,8 +487,8 @@ export function ConfirmMultisigAddress({
   multisig,
   publicKey,
   name,
-  addressIndex,
   policyHmac,
+  walletConfig,
 }) {
   switch (keystore) {
     case TREZOR:
@@ -504,14 +504,14 @@ export function ConfirmMultisigAddress({
       // gets passed in but really these interactions should
       // just get a braid or something derived from it.
       const braidDetails: BraidDetails = JSON.parse(multisig.braidDetails);
-      const walletConfig = braidDetailsToWalletConfig(braidDetails);
+      const _walletConfig =
+        walletConfig || braidDetailsToWalletConfig(braidDetails);
       return new LedgerConfirmMultisigAddress({
-        ...walletConfig,
-        expected: multisig.address,
         // this is for the name of the wallet the address being confirmed is from
         name,
-        braidIndex: Number(braidDetails.index),
-        addressIndex,
+        ..._walletConfig,
+        expected: multisig.address,
+        bip32Path,
         policyHmac,
       });
     }
