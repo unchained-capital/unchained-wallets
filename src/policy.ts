@@ -159,6 +159,19 @@ export class MultisigWalletPolicy {
       this.keyOrigins.map((ko) => ko.toString())
     );
   }
+
+  get keys() {
+    return this.keyOrigins.map((ko) => ko.toString());
+  }
+
+  static FromWalletConfig(config: MultisigWalletConfig): MultisigWalletPolicy {
+    const template = getPolicyTemplateFromWalletConfig(config);
+    const keyOrigins = getKeyOriginsFromWalletConfig(config);
+    const name = config.name || config.uuid;
+    if (!name) throw new Error("Policy template requires a name");
+
+    return new this({ name, template, keyOrigins });
+  }
 }
 
 export const validateMultisigPolicyScriptType = (template) => {
