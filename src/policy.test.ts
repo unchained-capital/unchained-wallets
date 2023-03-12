@@ -8,8 +8,10 @@ import {
   validateMultisigPolicyTemplate,
   getPolicyTemplateFromWalletConfig,
   braidDetailsToWalletConfig,
+  MultisigWalletPolicy,
 } from "./policy";
 import { POLICY_FIXTURE } from "./fixtures";
+import { MultisigWalletConfig } from "./types";
 
 describe("validateMultisigPolicyTemplate", () => {
   it("throws error if script type is not supported", () => {
@@ -56,6 +58,42 @@ describe("MultisigWalletPolicy", () => {
   it("can return a wallet policy", () => {
     expect(() => POLICY_FIXTURE.policy.toLedgerPolicy()).not.toThrow();
   });
+
+  const cases = TEST_FIXTURES.multisigs.map((multisig) => ({
+    ...multisig.braidDetails,
+    name: multisig.description,
+    extendedPublicKeys: multisig.braidDetails.extendedPublicKeys.map((key) => ({
+      xpub: key.base58String,
+      bip32Path: key.path,
+      xfp: key.rootFingerprint,
+    })),
+    quorum: { requiredSigners: multisig.braidDetails.requiredSigners },
+  }));
+
+  test.each(cases)(
+    `can convert to a policy from wallet config $case.name`,
+    (vect) => {
+      expect(() =>
+        MultisigWalletPolicy.FromWalletConfig(
+          (<unknown>vect) as MultisigWalletConfig
+        )
+      ).not.toThrow();
+    }
+  );
+
+  test.each(cases)(
+    `can return serialized list of key origins $case.name`,
+    (vect) => {
+      const policy = MultisigWalletPolicy.FromWalletConfig(
+        (<unknown>vect) as MultisigWalletConfig
+      );
+      expect(policy.keys).toHaveLength(vect.extendedPublicKeys.length);
+      for (const key of vect.extendedPublicKeys) {
+        const ko = new KeyOrigin({ ...key, network: vect.network });
+        expect(policy.keys.includes(ko.toString())).toBeTruthy();
+      }
+    }
+  );
 });
 
 describe("KeyOrigin", () => {
