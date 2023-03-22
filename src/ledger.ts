@@ -150,6 +150,8 @@ export interface AppAndVersion {
 export class LedgerInteraction extends DirectKeystoreInteraction {
   appVersion?: string;
 
+  appName?: string;
+
   /**
    * Adds `pending` messages at the `info` level about ensuring the
    * device is plugged in (`device.connect`) and unlocked
@@ -232,6 +234,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
     return this.withTransport(async (transport) => {
       const response: AppAndVersion = await getAppAndVersion(transport);
       this.appVersion = response.version;
+      this.appName = response.name;
       return this.appVersion;
     });
   }
@@ -239,6 +242,9 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
   async isLegacyApp(): Promise<boolean> {
     const version = await this.setAppVersion();
     const [majorVersion, minorVersion] = version.split(".");
+    // if the name includes "Legacy" then it is legacy app
+    if (this.appName && Boolean(this.appName.includes("Legacy"))) return true;
+    // otherwise check version number. <=2.1.0 is legacy
     return Number(majorVersion) <= 1 || Number(minorVersion) < 1;
   }
 
