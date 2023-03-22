@@ -54,7 +54,7 @@ import {
 import { splitTransaction } from "@ledgerhq/hw-app-btc/lib/splitTransaction";
 import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeTransaction";
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
-import { AppClient, PsbtV2 as LedgerPsbtV2 } from "./vendor/ledger-bitcoin";
+import { AppClient, PsbtV2 as LedgerPsbtV2 } from "ledger-bitcoin";
 import { DeviceError, MultisigWalletConfig, TxInput } from "./types";
 import {
   MultisigWalletPolicy,
@@ -1229,7 +1229,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
           segwit: this.anySegwitInputs(),
           transactionVersion: 1, // tx version
         });
-
         // If we were passed a PSBT initially, we want to return a PSBT with partial signatures
         // rather than the normal array of signatures.
         if (this.psbt && !this.returnSignatureArray && this.pubkeys) {
@@ -1694,8 +1693,10 @@ type InputIndex = number;
 type PubKey = Buffer;
 // a Buffer with the corresponding signature.
 type SignatureBuffer = Buffer;
+
+type LedgerSignature = { pubkey: PubKey; signature: SignatureBuffer };
 // return type of ledger after signing
-export type LedgerSignatures = [InputIndex, PubKey, SignatureBuffer];
+export type LedgerSignatures = [InputIndex, LedgerSignature];
 
 export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
   private psbt: PsbtV2;
@@ -1755,7 +1756,9 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
   }
 
   get SIGNATURES() {
-    return this.signatures.map((sig) => Buffer.from(sig[2]).toString("hex"));
+    return this.signatures.map((sig) =>
+      Buffer.from(sig[1].signature).toString("hex")
+    );
   }
 
   get SIGNED_PSTBT() {
@@ -1763,9 +1766,9 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
       this.network,
       this.unsignedPsbt,
       // array of pubkeys as buffers
-      this.signatures.map((sig) => Buffer.from(sig[1])),
+      this.signatures.map((sig) => Buffer.from(sig[1].pubkey)),
       // array of sigs as buffers
-      this.signatures.map((sig) => Buffer.from(sig[2]))
+      this.signatures.map((sig) => Buffer.from(sig[1].signature))
     );
   }
 

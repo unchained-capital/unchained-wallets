@@ -359,7 +359,7 @@ describe("ledger", () => {
       getMasterFingerprint: jest.fn(),
     };
 
-    jest.mock("./vendor/ledger-bitcoin", () =>
+    jest.mock("ledger-bitcoin", () =>
       jest.fn().mockImplementation(() => mockApp)
     );
 
@@ -506,8 +506,10 @@ describe("ledger", () => {
       expectedSigs = [
         [
           0,
-          Buffer.from(fixture.publicKeys[0], "hex"),
-          Buffer.from(fixture.signature[0], "hex"),
+          {
+            pubkey: Buffer.from(fixture.publicKeys[0], "hex"),
+            signature: Buffer.from(fixture.signature[0], "hex"),
+          },
         ],
       ];
       mockApp.signPsbt.mockReturnValue(Promise.resolve(expectedSigs));
