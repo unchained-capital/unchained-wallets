@@ -9,7 +9,7 @@ import {
   BraidDetails,
   getMaskedDerivation,
 } from "unchained-bitcoin";
-import { WalletPolicy } from "./vendor/ledger-bitcoin";
+import { WalletPolicy } from "ledger-bitcoin";
 import { MultisigWalletConfig } from "./types";
 
 export class KeyOrigin {
