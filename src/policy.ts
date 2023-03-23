@@ -103,7 +103,7 @@ export const getKeyOriginsFromWalletConfig = (
 };
 
 export class MultisigWalletPolicy {
-  private name: string;
+  readonly name: string;
 
   private template: string;
 
@@ -127,10 +127,12 @@ export class MultisigWalletPolicy {
       console.warn(
         `Wallet policy name too long. (${name.length}) greater than max of 64 chars.`
       );
-      this.name = `${name.slice(0, 61)}...`;
+      this.name = `${name.slice(0, 61)}...`.trim();
     } else {
       this.name = name;
     }
+
+    this.name = this.name.trim();
 
     validateMultisigPolicyTemplate(template);
     this.template = template;
