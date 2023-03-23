@@ -94,6 +94,13 @@ describe("MultisigWalletPolicy", () => {
       }
     }
   );
+
+  it("trims wallet name with trailing space", () => {
+    const config = (<unknown>cases[0]) as MultisigWalletConfig;
+    config.name += " ";
+    const policy = MultisigWalletPolicy.FromWalletConfig(config);
+    expect(policy.name).toEqual(config.name?.trim());
+  });
 });
 
 describe("KeyOrigin", () => {
