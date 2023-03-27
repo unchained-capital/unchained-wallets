@@ -20,11 +20,18 @@ export class KeyOrigin {
   private xpub: string;
 
   constructor({ xfp, bip32Path, xpub, network }) {
+    // throws an error if not valid
     validateRootFingerprint(xfp);
     this.xfp = xfp;
-    validateBIP32Path(bip32Path);
+
+    // returns error string or empty string if valid
+    const pathError = validateBIP32Path(bip32Path);
+    if (pathError) throw new Error(pathError);
     this.bip32Path = bip32Path;
-    validateExtendedPublicKey(xpub, network);
+
+    // returns error string or empty string if valid
+    const xpubError = validateExtendedPublicKey(xpub, network);
+    if (xpubError) throw new Error(xpubError);
     this.xpub = xpub;
   }
 
