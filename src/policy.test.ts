@@ -55,10 +55,6 @@ describe("validateMultisigPolicyTemplate", () => {
 });
 
 describe("MultisigWalletPolicy", () => {
-  it("can return a wallet policy", () => {
-    expect(() => POLICY_FIXTURE.policy.toLedgerPolicy()).not.toThrow();
-  });
-
   const cases = TEST_FIXTURES.multisigs.map((multisig) => ({
     ...multisig.braidDetails,
     name: multisig.description,
@@ -69,6 +65,16 @@ describe("MultisigWalletPolicy", () => {
     })),
     quorum: { requiredSigners: multisig.braidDetails.requiredSigners },
   }));
+
+  let testCase;
+
+  beforeEach(() => {
+    testCase = (<unknown>cases[0]) as MultisigWalletConfig;
+  });
+
+  it("can return a wallet policy", () => {
+    expect(() => POLICY_FIXTURE.policy.toLedgerPolicy()).not.toThrow();
+  });
 
   test.each(cases)(
     `can convert to a policy from wallet config $case.name`,
@@ -96,10 +102,24 @@ describe("MultisigWalletPolicy", () => {
   );
 
   it("trims wallet name with trailing space", () => {
-    const config = (<unknown>cases[0]) as MultisigWalletConfig;
-    config.name += " ";
-    const policy = MultisigWalletPolicy.FromWalletConfig(config);
-    expect(policy.name).toEqual(config.name?.trim());
+    testCase.name += " ";
+    const policy = MultisigWalletPolicy.FromWalletConfig(testCase);
+    expect(policy.name).toEqual(testCase.name?.trim());
+  });
+
+  it("always returns the same policy", () => {
+    const original = { ...testCase };
+    const reversed = {
+      ...testCase,
+      extendedPublicKeys: [
+        testCase.extendedPublicKeys[1],
+        testCase.extendedPublicKeys[0],
+      ],
+    };
+
+    expect(MultisigWalletPolicy.FromWalletConfig(original).keys).toEqual(
+      MultisigWalletPolicy.FromWalletConfig(reversed).keys
+    );
   });
 });
 
