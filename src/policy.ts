@@ -13,11 +13,11 @@ import { WalletPolicy } from "ledger-bitcoin";
 import { MultisigWalletConfig } from "./types";
 
 export class KeyOrigin {
-  private xfp: string;
+  readonly xfp: string;
 
-  private bip32Path: string;
+  readonly bip32Path: string;
 
-  private xpub: string;
+  readonly xpub: string;
 
   constructor({ xfp, bip32Path, xpub, network }) {
     // throws an error if not valid
@@ -86,7 +86,6 @@ export const getPolicyTemplateFromWalletConfig = (
     .map((_, index) => `@${index}/**`)
     .join(",");
 
-  // TODO: should this always assume sorted?
   const policy = `${scriptType}(sortedmulti(${requiredSigners},${signersString}))`;
   if (nested) return `sh(${policy})`;
 
@@ -150,7 +149,10 @@ export class MultisigWalletPolicy {
         `Expected ${totalSignerCount} key origins but ${keyOrigins.length} were passed`
       );
     }
-    this.keyOrigins = keyOrigins;
+
+    // sort key origins consistently no matter the order they are passed into the constructor
+    // so that the preimage for registrations is not malleable
+    this.keyOrigins = keyOrigins.sort((a, b) => a.xpub.localeCompare(b.xpub));
   }
 
   toJSON() {
@@ -162,11 +164,7 @@ export class MultisigWalletPolicy {
   }
 
   toLedgerPolicy() {
-    return new WalletPolicy(
-      this.name,
-      this.template,
-      this.keyOrigins.map((ko) => ko.toString())
-    );
+    return new WalletPolicy(this.name, this.template, this.keys);
   }
 
   get keys() {
