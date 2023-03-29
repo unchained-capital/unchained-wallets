@@ -1405,8 +1405,6 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
     ...walletConfig
   }: RegistrationConstructorArguments) {
     super();
-    const keyOrigins = getKeyOriginsFromWalletConfig(walletConfig);
-    const template = getPolicyTemplateFromWalletConfig(walletConfig);
     if (policyHmac) {
       const error = validateHex(policyHmac);
       if (error) throw new Error(`Invalid policyHmac`);
@@ -1416,20 +1414,7 @@ export abstract class LedgerBitcoinV2WithRegistrationInteraction extends LedgerB
 
     this.network = walletConfig.network;
 
-    // making typescript happy and dealing
-    // with possible weird inconsistencies in configs
-    let name;
-    if (!walletConfig.name && !walletConfig.uuid) {
-      throw new Error("wallet policy requires name");
-    } else {
-      name = walletConfig.name || walletConfig.uuid;
-    }
-
-    this.walletPolicy = new MultisigWalletPolicy({
-      name,
-      keyOrigins,
-      template,
-    });
+    this.walletPolicy = MultisigWalletPolicy.FromWalletConfig(walletConfig);
   }
 
   messages() {

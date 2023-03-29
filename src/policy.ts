@@ -174,7 +174,8 @@ export class MultisigWalletPolicy {
   static FromWalletConfig(config: MultisigWalletConfig): MultisigWalletPolicy {
     const template = getPolicyTemplateFromWalletConfig(config);
     const keyOrigins = getKeyOriginsFromWalletConfig(config);
-    const name = config.name || config.uuid;
+    // prefer uuid to name because it's less likely to change
+    const name = config.uuid || config.name;
     if (!name) throw new Error("Policy template requires a name");
 
     return new this({ name, template, keyOrigins });
