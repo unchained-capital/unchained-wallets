@@ -107,6 +107,12 @@ describe("MultisigWalletPolicy", () => {
     expect(policy.name).toEqual(testCase.name?.trim());
   });
 
+  it("prefers uuid over name when generating from wallet config", () => {
+    testCase.uuid = "123uuid";
+    const policy = MultisigWalletPolicy.FromWalletConfig(testCase);
+    expect(policy.name).toEqual(testCase.uuid);
+  });
+
   it("always returns the same policy", () => {
     const original = { ...testCase };
     const reversed = {
