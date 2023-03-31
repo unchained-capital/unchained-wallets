@@ -347,3 +347,34 @@ If you are fixing a bug or adding a feature, please first check the [GitHub issu
 To contribute, create a pull request (PR) on GitHub against the [Unchained Capital fork of unchained-wallets](https://github.com/unchained-capital/unchained-wallets).
 
 Before you submit your PR, make sure to update and run the test suite!
+
+#### Commit linting
+
+Commits in this repository are automatically linted using [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0-beta.2/#summary) rules. This helps with code clarity, autogenerating a useful changelog, and changing semantic release versions to account for breaking changes.
+
+The following prefixes will generate version bumps:
+
+- `fix:` - Generates a `patch` increment in the lib version.
+- `feat:` - Generates a `minor` increment in the lib version.
+- `feat!:`, `fix!:`, and `refactor!:` (note the `!`) - Generates a `major` increment.
+-
+
+Commit prefixes can also include [scopes](https://github.com/conventional-changelog/commitlint#what-is-commitlint) to specify the area of change.
+
+This example combines both the bang and scopes:
+
+```plaintext
+feat(ledger)!: add registration support
+```
+
+Note that commit messages are expected to be lowercase, although scopes can have different casing, and upper-case characters (eg `PR`) can show up so long as they don't start the commit message.
+
+Any commit not prepended with one of the valid prefixes will be rejected when you try to commit your code.
+
+#### Make your commits legible
+
+These prepended commits will then be used to auto-construct a useful changelog associated changes with releases. This means your commits should not only follow the above rules, but also be **legible and informative**!
+
+#### Commits and releases
+
+When a branch is merged into master, its commits are read, and their commitlint prefixes parsed, to determine the semver significance of the change (no change, patch, minor, master), and to generate a new changelog file. A script then bumps the library version accordingly, and auto-updates the `CHANGELOG.md` file based on commit messages. This new versioning commit is pushed to master immediately after building the package to our Nexus registry.
