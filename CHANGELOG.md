@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.0...unchained-wallets-v0.5.1) (2023-03-31)
+
+
+### Bug Fixes
+
+* **dependencies:** bump uc-bitocin dependency ([cfa65ba](https://github.com/unchained-capital/unchained-wallets/commit/cfa65ba5443f711eb925bdf2779a78235b5e84e5))
+
 ## [0.5.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.4.1...unchained-wallets-v0.5.0) (2023-03-31)
 
 
