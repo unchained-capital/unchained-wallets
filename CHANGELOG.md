@@ -1,6 +1,21 @@
 # Changelog
+
+## [0.5.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.4.1...unchained-wallets-v0.5.0) (2023-03-31)
+
+
+### Features
+
+* **policy:** order key origins when instantiating wallet policy ([80afda2](https://github.com/unchained-capital/unchained-wallets/commit/80afda2e8f9f89994e399386f5c89cb5aaab3727))
+* **policy:** prefer uuid over name from wallet config ([95a9fd5](https://github.com/unchained-capital/unchained-wallets/commit/95a9fd55633cd7bac49c498c999bbb12ebda005f))
+
+
+### Bug Fixes
+
+* update readme with instructions on how to develop and use locally ([9098e67](https://github.com/unchained-capital/unchained-wallets/commit/9098e671d4d62a63e8bb16680792fda4df93b1dc))
+
+## Changelog
 ## Version 0.1.0
-# Changed
+## Changed
 * Using webusb for ledger interactions rather than u2f
 * not requiring verification for public key export
 * updating ledger dependencies
