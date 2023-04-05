@@ -72,8 +72,7 @@ export const LEDGER = "ledger";
 
 export const LEDGER_V2 = "ledger_v2";
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
+import TransportU2F from "@ledgerhq/hw-transport-u2f";
 
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerBtc from "@ledgerhq/hw-app-btc";

@@ -610,4 +610,7 @@ export * from "./custom";
 export * from "./hermit";
 export * from "./ledger";
 export * from "./trezor";
-export * from "./policy";
+import * as MultisigWallet from "./policy";
+
+const MultisigWalletPolicy = MultisigWallet.MultisigWalletPolicy;
+export { braidDetailsToWalletConfig, MultisigWalletPolicy };
