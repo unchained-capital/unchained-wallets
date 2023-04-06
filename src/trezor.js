@@ -61,8 +61,7 @@ import { MULTISIG_ROOT } from "./index";
  */
 export const TREZOR = "trezor";
 
-// eslint-disable-next-line
-const TrezorConnect = require("@trezor/connect-web").default;
+import TrezorConnect from "@trezor/connect-web";
 
 const ADDRESS_SCRIPT_TYPES = {
   [P2SH]: "SPENDMULTISIG",
