@@ -6,14 +6,10 @@ import {
   MAINNET,
   ROOT_FINGERPRINT,
   TEST_FIXTURES,
-  PSBT_MAGIC_B64, networkData,
+  PSBT_MAGIC_B64,
+  networkData,
 } from "unchained-bitcoin";
-import {
-  PENDING,
-  ACTIVE,
-  INFO,
-  ERROR,
-} from "./interaction";
+import { PENDING, ACTIVE, INFO, ERROR } from "./interaction";
 
 import {
   trezorCoin,
@@ -26,55 +22,57 @@ import {
   TrezorConfirmMultisigAddress,
   TrezorSignMessage,
 } from "./trezor";
-import {ECPair, payments} from "bitcoinjs-lib";
+import { ECPair, payments } from "bitcoinjs-lib";
 
-const TrezorConnect = require("@trezor/connect-web").default;
+import TrezorConnect from "@trezor/connect-web";
 
 function itHasStandardMessages(interactionBuilder) {
   it("has a message about ensuring your device is plugged in", () => {
-    expect(interactionBuilder().hasMessagesFor({
-      state: PENDING,
-      level: INFO,
-      code: "device.connect",
-      text: "plugged in",
-    })).toBe(true);
+    expect(
+      interactionBuilder().hasMessagesFor({
+        state: PENDING,
+        level: INFO,
+        code: "device.connect",
+        text: "plugged in",
+      })
+    ).toBe(true);
   });
 
   it("has a message about the TrezorConnect popup and enabling popups", () => {
-    expect(interactionBuilder().hasMessagesFor({
-      state: ACTIVE,
-      level: INFO,
-      code: "trezor.connect.generic",
-      text: "enabled popups",
-    })).toBe(true);
+    expect(
+      interactionBuilder().hasMessagesFor({
+        state: ACTIVE,
+        level: INFO,
+        code: "trezor.connect.generic",
+        text: "enabled popups",
+      })
+    ).toBe(true);
   });
 }
 
 function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
-
   it("throws an error on an unsuccessful request", async () => {
     const interaction = interactionBuilder();
-    interaction.connectParams = () => ([
+    interaction.connectParams = () => [
       () => ({
         success: false,
-        payload: {error: "foobar"},
-      }), {},
-    ]);
+        payload: { error: "foobar" },
+      }),
+      {},
+    ];
     try {
       await interaction.run();
     } catch (e) {
       expect(e.message).toMatch(/foobar/i);
     }
   });
-
 }
 
-
-describe('trezor', () => {
-
-  describe('TrezorInteraction', () => {
-
-    function interactionBuilder() { return new TrezorInteraction({network: MAINNET}); }
+describe("trezor", () => {
+  describe("TrezorInteraction", () => {
+    function interactionBuilder() {
+      return new TrezorInteraction({ network: MAINNET });
+    }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -86,12 +84,12 @@ describe('trezor', () => {
         expect(e.message).toMatch(/subclass of TrezorInteraction/i);
       }
     });
-
   });
 
   describe("TrezorGetMetadata", () => {
-
-    function interactionBuilder() { return new TrezorGetMetadata({network: MAINNET}); }
+    function interactionBuilder() {
+      return new TrezorGetMetadata({ network: MAINNET });
+    }
 
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -126,7 +124,8 @@ describe('trezor', () => {
           revision: "ef8...862d7",
           unfinished_backup: null,
           vendor: "bitcointrezor.com",
-        })).toEqual({
+        })
+      ).toEqual({
         spec: "Model 1 v.1.6.3 w/PIN",
         model: "Model 1",
         version: {
@@ -147,11 +146,9 @@ describe('trezor', () => {
       expect(method).toEqual(TrezorConnect.getFeatures);
       expect(params).toEqual({});
     });
-
   });
 
   describe("TrezorExportHDNode", () => {
-
     const bip32Path = "m/45'/0'/0'/0'";
 
     function interactionBuilder() {
@@ -164,29 +161,33 @@ describe('trezor', () => {
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-    it('constructor adds error message on invalid bip32path', () => {
+    it("constructor adds error message on invalid bip32path", () => {
       const interaction = new TrezorExportHDNode({
-        bip32Path: 'm/foo',
+        bip32Path: "m/foo",
         network: MAINNET,
       });
-      expect(interaction.hasMessagesFor({
-        state: PENDING,
-        level: ERROR,
-        code: "trezor.bip32_path.path_error",
-      })).toBe(true);
-    })
+      expect(
+        interaction.hasMessagesFor({
+          state: PENDING,
+          level: ERROR,
+          code: "trezor.bip32_path.path_error",
+        })
+      ).toBe(true);
+    });
 
-    it('adds error message on bip32path <depth3', () => {
+    it("adds error message on bip32path <depth3", () => {
       const interaction = new TrezorExportHDNode({
-        bip32Path: 'm/45',
+        bip32Path: "m/45",
         network: MAINNET,
       });
-      expect(interaction.hasMessagesFor({
-        state: PENDING,
-        level: ERROR,
-        code: "trezor.bip32_path.minimum",
-      })).toBe(true);
-    })
+      expect(
+        interaction.hasMessagesFor({
+          state: PENDING,
+          level: ERROR,
+          code: "trezor.bip32_path.minimum",
+        })
+      ).toBe(true);
+    });
 
     it("uses TrezorConnect.getPublicKey", () => {
       const interaction = interactionBuilder();
@@ -196,11 +197,9 @@ describe('trezor', () => {
       expect(params.coin).toEqual(trezorCoin(MAINNET));
       expect(params.crossChain).toBe(true);
     });
-
   });
 
   describe("TrezorExportPublicKey", () => {
-
     const bip32Path = "m/45'/0'/0'/0'";
 
     function interactionBuilder() {
@@ -214,7 +213,9 @@ describe('trezor', () => {
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
     it("parses out the public key from the response payload", () => {
-      expect(interactionBuilder().parsePayload({publicKey: "foobar"})).toEqual("foobar");
+      expect(
+        interactionBuilder().parsePayload({ publicKey: "foobar" })
+      ).toEqual("foobar");
     });
 
     it("uses TrezorConnect.getPublicKey", () => {
@@ -225,11 +226,9 @@ describe('trezor', () => {
       expect(params.coin).toEqual(trezorCoin(MAINNET));
       expect(params.crossChain).toBe(true);
     });
-
   });
 
   describe("TrezorExportExtendedPublicKey", () => {
-
     const bip32Path = "m/45'/0'/0'/0'";
 
     function interactionBuilder() {
@@ -243,7 +242,9 @@ describe('trezor', () => {
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
     it("parses out the extended public key from the response payload", () => {
-      expect(interactionBuilder().parsePayload({xpub: "foobar"})).toEqual("foobar");
+      expect(interactionBuilder().parsePayload({ xpub: "foobar" })).toEqual(
+        "foobar"
+      );
     });
 
     it("uses TrezorConnect.getPublicKey", () => {
@@ -254,16 +255,14 @@ describe('trezor', () => {
       expect(params.coin).toEqual(trezorCoin(MAINNET));
       expect(params.crossChain).toBe(true);
     });
-
   });
 
   describe("TrezorSignMultisigTransaction", () => {
-
     TEST_FIXTURES.transactions.forEach((fixture) => {
-
       describe(`signing for a transaction which ${fixture.description}`, () => {
-
-        function interactionBuilder() { return new TrezorSignMultisigTransaction(fixture); }
+        function interactionBuilder() {
+          return new TrezorSignMultisigTransaction(fixture);
+        }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -274,12 +273,18 @@ describe('trezor', () => {
           //   second byte is length of signature in bytes (0x03)
           // The string length is however long the signature is minus these two starting bytes
           // plain signature without SIGHASH (foobar is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parsePayload({signatures: ["3003foobar"]})).toEqual(["3003foobar01"]);
+          expect(
+            interactionBuilder().parsePayload({ signatures: ["3003foobar"] })
+          ).toEqual(["3003foobar01"]);
           // signature actually ends in 0x01 (foob01 is 3 bytes, string length = 6, which is 3 bytes)
-          expect(interactionBuilder().parsePayload({signatures: ["3003foob01"]})).toEqual(["3003foob0101"]);
+          expect(
+            interactionBuilder().parsePayload({ signatures: ["3003foob01"] })
+          ).toEqual(["3003foob0101"]);
           // signature with sighash already included (foobar is 3 bytes, string length = 8, which is 4 bytes) ...
           // we expect this to chop off the 01 and add it back
-          expect(interactionBuilder().parsePayload({signatures: ["3003foobar01"]})).toEqual(["3003foobar01"]);
+          expect(
+            interactionBuilder().parsePayload({ signatures: ["3003foobar01"] })
+          ).toEqual(["3003foobar01"]);
         });
 
         it("uses TrezorConnect.signTransaction", () => {
@@ -291,9 +296,7 @@ describe('trezor', () => {
           expect(params.outputs.length).toEqual(fixture.outputs.length);
           // FIXME check inputs & output details
         });
-
       });
-
     });
 
     function psbtInteractionBuilder(tx, keyDetails, returnSignatureArray) {
@@ -321,7 +324,9 @@ describe('trezor', () => {
       expect(params.inputs.length).toEqual(tx.inputs.length);
       expect(params.outputs.length).toEqual(tx.outputs.length);
 
-      expect(interaction.parsePayload({signatures: tx.signature})).toContain(PSBT_MAGIC_B64)
+      expect(interaction.parsePayload({ signatures: tx.signature })).toContain(
+        PSBT_MAGIC_B64
+      );
     });
 
     it("uses TrezorConnect.signTransaction via PSBT for mainnet P2SH tx", () => {
@@ -336,18 +341,21 @@ describe('trezor', () => {
       expect(params.coin).toEqual(trezorCoin(tx.network));
       expect(params.inputs.length).toEqual(tx.inputs.length);
       expect(params.outputs.length).toEqual(tx.outputs.length);
-      expect(interaction.parsePayload({signatures: ["3003foobar01"]})).toEqual(["3003foobar01"]);
+      expect(
+        interaction.parsePayload({ signatures: ["3003foobar01"] })
+      ).toEqual(["3003foobar01"]);
     });
-
   });
 
   describe("TrezorConfirmMultisigAddress", () => {
     let TMP_FIXTURES = JSON.parse(JSON.stringify(TEST_FIXTURES));
 
     TMP_FIXTURES.multisigs.forEach((fixture) => {
-      Reflect.deleteProperty(fixture, 'publicKey');
+      Reflect.deleteProperty(fixture, "publicKey");
       describe(`displaying a ${fixture.description}`, () => {
-        function interactionBuilder() { return new TrezorConfirmMultisigAddress(fixture); }
+        function interactionBuilder() {
+          return new TrezorConfirmMultisigAddress(fixture);
+        }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -363,16 +371,14 @@ describe('trezor', () => {
           expect(params.crossChain).toBe(true);
           // FIXME check multisig details
         });
-
       });
-
     });
 
     TEST_FIXTURES.multisigs.forEach((fixture) => {
-
       describe(`displaying a ${fixture.description}`, () => {
-
-        function interactionBuilder() { return new TrezorConfirmMultisigAddress(fixture); }
+        function interactionBuilder() {
+          return new TrezorConfirmMultisigAddress(fixture);
+        }
 
         itHasStandardMessages(interactionBuilder);
         itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
@@ -384,7 +390,7 @@ describe('trezor', () => {
           expect(params.bundle[0].path).toEqual(fixture.bip32Path);
           expect(params.bundle[0].showOnTrezor).toBe(false);
           expect(params.bundle[0].coin).toEqual(trezorCoin(fixture.network));
-          expect(params.bundle[0].crossChain).toBe(true);          
+          expect(params.bundle[0].crossChain).toBe(true);
           expect(params.bundle[1].path).toEqual(fixture.bip32Path);
           expect(params.bundle[1].address).toEqual(fixture.address);
           expect(params.bundle[1].showOnTrezor).toBe(true);
@@ -399,9 +405,8 @@ describe('trezor', () => {
       TEST_FIXTURES.multisigs.forEach((fixture) => {
         it("passes through payload if payload address matches addresses for the public key", () => {
           function createAddress(publicKey, network) {
-            const keyPair = ECPair.fromPublicKey(
-              Buffer.from(publicKey, 'hex'));
-            const {address} = payments.p2pkh({
+            const keyPair = ECPair.fromPublicKey(Buffer.from(publicKey, "hex"));
+            const { address } = payments.p2pkh({
               pubkey: keyPair.publicKey,
               network: networkData(network),
             });
@@ -410,13 +415,16 @@ describe('trezor', () => {
 
           const interaction = new TrezorConfirmMultisigAddress(fixture);
           const address = createAddress(fixture.publicKey, fixture.network);
-          const payload = [{address}, {address}]
+          const payload = [{ address }, { address }];
           const result = interaction.parsePayload(payload);
           expect(result).toEqual(payload);
         });
         it("errors if payload has no matching address", () => {
           const interaction = new TrezorConfirmMultisigAddress(fixture);
-          const payload = [{address: "not matching"}, {address: "not matching"}]
+          const payload = [
+            { address: "not matching" },
+            { address: "not matching" },
+          ];
           expect(() => {
             interaction.parsePayload(payload);
           }).toThrow("Wrong public key specified");
@@ -425,10 +433,10 @@ describe('trezor', () => {
 
       it("passes through payload if there's no public key", () => {
         const fixture = TEST_FIXTURES.multisigs[0];
-        const fixtureCopy = {...fixture}
-        Reflect.deleteProperty(fixtureCopy, 'publicKey');
+        const fixtureCopy = { ...fixture };
+        Reflect.deleteProperty(fixtureCopy, "publicKey");
         const interaction = new TrezorConfirmMultisigAddress(fixtureCopy);
-        const payload = []
+        const payload = [];
         const result = interaction.parsePayload(payload);
         expect(result).toEqual(payload);
       });
@@ -449,17 +457,19 @@ describe('trezor', () => {
     itHasStandardMessages(interactionBuilder);
     itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder);
 
-    it('constructor adds error message on invalid bip32path', () => {
+    it("constructor adds error message on invalid bip32path", () => {
       const interaction = new TrezorSignMessage({
-        bip32Path: 'm/foo',
+        bip32Path: "m/foo",
         network: MAINNET,
       });
-      expect(interaction.hasMessagesFor({
-        state: PENDING,
-        level: ERROR,
-        code: "trezor.bip32_path.path_error",
-      })).toBe(true);
-    })
+      expect(
+        interaction.hasMessagesFor({
+          state: PENDING,
+          level: ERROR,
+          code: "trezor.bip32_path.path_error",
+        })
+      ).toBe(true);
+    });
 
     it("uses TrezorConnect.signMessage", () => {
       const interaction = interactionBuilder();
@@ -469,7 +479,6 @@ describe('trezor', () => {
     });
   });
 });
-
 
 //     describe("Test interactions.", () => {
 //         describe("Test public key export interactions.", () => {

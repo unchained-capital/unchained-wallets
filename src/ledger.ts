@@ -56,11 +56,7 @@ import { serializeTransactionOutputs } from "@ledgerhq/hw-app-btc/lib/serializeT
 import { getAppAndVersion } from "@ledgerhq/hw-app-btc/lib/getAppAndVersion";
 import { AppClient, PsbtV2 as LedgerPsbtV2 } from "ledger-bitcoin";
 import { DeviceError, MultisigWalletConfig, TxInput } from "./types";
-import {
-  MultisigWalletPolicy,
-  getKeyOriginsFromWalletConfig,
-  getPolicyTemplateFromWalletConfig,
-} from "./policy";
+import { MultisigWalletPolicy } from "./policy";
 
 /**
  * Constant defining Ledger interactions.
@@ -72,9 +68,7 @@ export const LEDGER = "ledger";
 
 export const LEDGER_V2 = "ledger_v2";
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-const TransportU2F = require("@ledgerhq/hw-transport-u2f").default;
-
+import TransportU2F from "@ledgerhq/hw-transport-u2f";
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
 import LedgerBtc from "@ledgerhq/hw-app-btc";
 
