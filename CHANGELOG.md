@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.1...unchained-wallets-v0.5.2) (2023-04-11)
+
+
+### Bug Fixes
+
+* change old cjs require to esm imports ([4361e47](https://github.com/unchained-capital/unchained-wallets/commit/4361e47887e5dc807a8e881fcb9b7d437ea4fe5b))
+
 ## [0.5.1](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.0...unchained-wallets-v0.5.1) (2023-03-31)
 
 
