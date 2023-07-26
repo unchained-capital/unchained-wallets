@@ -12,8 +12,7 @@ following keystores into JavaScript applications:
 Full API documentation can be found at
 [unchained-wallets](https://unchained-capital.github.io/unchained-wallets).
 
-This library was built and is maintained by [Unchained
-Capital](https://www.unchained-capital.com).
+This library was built and is maintained by [Unchained](https://www.unchained.com).
 
 ## Installation
 
@@ -340,11 +339,11 @@ of the configurations as well as management of the type declarations can be alte
 
 ### Contributing
 
-Unchained Capital welcomes bug reports, new features, and better documentation for this library.
+Unchained welcomes bug reports, new features, and better documentation for this library.
 
 If you are fixing a bug or adding a feature, please first check the [GitHub issues page](https://github.com/unchained-capital/unchained-wallets/issues) to see if there is any existing discussion about it.
 
-To contribute, create a pull request (PR) on GitHub against the [Unchained Capital fork of unchained-wallets](https://github.com/unchained-capital/unchained-wallets).
+To contribute, create a pull request (PR) on GitHub against the [Unchained fork of unchained-wallets](https://github.com/unchained-capital/unchained-wallets).
 
 Before you submit your PR, make sure to update and run the test suite!
 
