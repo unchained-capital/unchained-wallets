@@ -74,7 +74,7 @@
     "ledger-bitcoin": "^0.2.0",
     "punycode": "^2.1.1",
     "sha": "^3.0.0",
-    "unchained-bitcoin": "^0.4.1"
+    "unchained-bitcoin": "^0.6.0"
   },
   "directories": {
     "lib": "lib"
