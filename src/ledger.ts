@@ -1680,17 +1680,16 @@ export type LedgerSignatures = [InputIndex, LedgerSignature];
 export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistrationInteraction {
   private psbt: PsbtV2;
 
-  private returnSignatureArray: boolean;
+  // Initialize a ledgerPsbt for use with app.signPsbt. There were issues with
+  // testing the signPsbt operation using toHaveBeenCalledWith because there was
+  // no way to reference the original ledgerPsbt object.
+  private ledgerPsbt = new LedgerPsbtV2();
 
-  private signatures: LedgerSignatures[] = [];
+  private returnSignatureArray: boolean;
 
   // optionally, a callback that will be called every time a signature is produced during
   //  * the signing process. The callback does not receive any argument, but can be used to track progress.
   public progressCallback?: () => void;
-
-  // keeping this until we have a way to add signatures to psbtv2 directly
-  // this will store the the PSBT that was was passed in via args
-  private unsignedPsbt: string;
 
   constructor({
     psbt,
@@ -1703,8 +1702,6 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
 
     if (progressCallback) this.progressCallback = progressCallback;
     this.returnSignatureArray = returnSignatureArray;
-
-    this.unsignedPsbt = Buffer.isBuffer(psbt) ? psbt.toString("base64") : psbt;
 
     const psbtVersion = getPsbtVersionNumber(psbt);
     switch (psbtVersion) {
@@ -1721,34 +1718,36 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
 
   async signPsbt(): Promise<LedgerSignatures[]> {
     return this.withApp(async (app: AppClient) => {
-      const ledgerPsbt = new LedgerPsbtV2();
-      ledgerPsbt.deserialize(
+      this.ledgerPsbt.deserialize(
         Buffer.from(this.psbt.serialize("base64"), "base64")
       );
-      this.signatures = await app.signPsbt(
-        ledgerPsbt,
+      const signatures = await app.signPsbt(
+        this.ledgerPsbt,
         this.walletPolicy.toLedgerPolicy(),
         Buffer.from(this.POLICY_HMAC, "hex") || null,
         this.progressCallback
       );
+
+      for (const [index, sigPair] of signatures) {
+        this.psbt.addPartialSig(index, sigPair.pubkey, sigPair.signature);
+      }
     });
   }
 
+  // There could be multiple publkey-signature pairs per each input in a psbt.
+  // This function returns only the signatures as a flat list.
   get SIGNATURES() {
-    return this.signatures.map((sig) =>
-      Buffer.from(sig[1].signature).toString("hex")
-    );
-  }
-
-  get SIGNED_PSTBT() {
-    return addSignaturesToPSBT(
-      this.network,
-      this.unsignedPsbt,
-      // array of pubkeys as buffers
-      this.signatures.map((sig) => Buffer.from(sig[1].pubkey)),
-      // array of sigs as buffers
-      this.signatures.map((sig) => Buffer.from(sig[1].signature))
-    );
+    let signatures: string[] = [];
+    for (const indexSigPairs of this.psbt.PSBT_IN_PARTIAL_SIG) {
+      if (indexSigPairs.length) {
+        // A pair shouldn't have been added if it doesn't have a value. Assume
+        // it is a string.
+        signatures = signatures.concat(
+          indexSigPairs.map((sigPair) => sigPair.value as string)
+        );
+      }
+    }
+    return signatures;
   }
 
   async run() {
@@ -1758,7 +1757,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
       await this.registerWallet();
       await this.signPsbt();
       if (this.returnSignatureArray) return this.SIGNATURES;
-      return this.SIGNED_PSTBT;
+      return this.psbt.serialize("base64");
     } finally {
       await super.closeTransport();
     }

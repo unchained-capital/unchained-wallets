@@ -527,7 +527,7 @@ describe("ledger", () => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       progressCallback = () => {}
     ) {
-      let interaction;
+      let interaction: LedgerV2SignMultisigTransaction;
       const options = {
         policyHmac,
         psbt,
@@ -547,11 +547,11 @@ describe("ledger", () => {
       const sigs = await interaction.run();
       expect(sigs).toStrictEqual([fixture.signature[0]]);
       // confirming that the psbt used is version 2
-      expect(interaction.psbt.PSBT_GLOBAL_VERSION).toBe(2);
+      expect((interaction as any).psbt.PSBT_GLOBAL_VERSION).toBe(2);
       expect(mockApp.signPsbt).toHaveBeenCalledWith(
-        interaction.psbt,
+        (interaction as any).ledgerPsbt,
         interaction.walletPolicy.toLedgerPolicy(),
-        interaction.policyHmac,
+        (interaction as any).policyHmac,
         interaction.progressCallback
       );
     });
