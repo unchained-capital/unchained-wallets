@@ -1739,7 +1739,7 @@ export class LedgerV2SignMultisigTransaction extends LedgerBitcoinV2WithRegistra
   get SIGNATURES() {
     let signatures: string[] = [];
     for (const indexSigPairs of this.psbt.PSBT_IN_PARTIAL_SIG) {
-      if (indexSigPairs.length) {
+      if (Array.isArray(indexSigPairs) && indexSigPairs.length) {
         // A pair shouldn't have been added if it doesn't have a value. Assume
         // it is a string.
         signatures = signatures.concat(
