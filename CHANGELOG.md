@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.2...unchained-wallets-v0.5.3) (2023-09-08)
+
+
+### Bug Fixes
+
+* update packages audit and uc-bitcoin ([3ba84c8](https://github.com/unchained-capital/unchained-wallets/commit/3ba84c87366921ec769fff7a3daee03208eeefbb))
+
 ## [0.5.2](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.1...unchained-wallets-v0.5.2) (2023-04-11)
 
 
