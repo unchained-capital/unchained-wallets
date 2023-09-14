@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.3...unchained-wallets-v0.6.0) (2023-09-14)
+
+
+### Features
+
+* trezor service dev URLs default to browser host. dont assume local ([3d7ffb3](https://github.com/unchained-capital/unchained-wallets/commit/3d7ffb36d5eba3577856b8ca1f071eac8be6b5ed))
+
 ## [0.5.3](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.2...unchained-wallets-v0.5.3) (2023-09-08)
 
 
