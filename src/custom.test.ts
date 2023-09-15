@@ -13,7 +13,7 @@ import { customFixtures } from "./fixtures/custom.fixtures";
 const { multisigs, transactions } = TEST_FIXTURES;
 
 describe("CustomExportExtendedPublicKey", () => {
-  function interactionBuilder({ bip32Path, network }) {
+  function interactionBuilder({ bip32Path = "", network = "" }) {
     return new CustomExportExtendedPublicKey({
       bip32Path,
       network,
@@ -158,7 +158,13 @@ describe("CustomExportExtendedPublicKey", () => {
 describe("CustomSignMultisigTransaction", () => {
   const testMultisig = multisigs[0];
   const testTx = transactions[0];
-  function interactionBuilder({ network, inputs, outputs, bip32Paths, psbt }) {
+  function interactionBuilder({
+    network = "",
+    inputs = "",
+    outputs = "",
+    bip32Paths = "",
+    psbt = "",
+  }) {
     return new CustomSignMultisigTransaction({
       network,
       inputs,

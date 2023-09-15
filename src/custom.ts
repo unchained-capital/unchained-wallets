@@ -25,6 +25,7 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
+import { BitcoinNetwork } from "unchained-bitcoin";
 
 export const CUSTOM = "custom";
 
@@ -66,6 +67,12 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
    * @param {string} options.network - bitcoin network (needed for derivations)
    * @param {string} options.bip32Path - bip32Path to interrogate
    */
+  network: BitcoinNetwork;
+
+  bip32Path: string;
+
+  validationErrorMessages: any[];
+
   constructor({ network, bip32Path }) {
     super();
     if ([MAINNET, TESTNET].find((net) => net === network)) {
@@ -135,7 +142,7 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
         validateRootFingerprint(data.rootFingerprint);
         rootFingerprint = data.rootFingerprint;
       }
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(
         `Root fingerprint validation error: ${e.message.toLowerCase()}.`
       );
@@ -176,14 +183,16 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
  *
  */
 export class CustomSignMultisigTransaction extends CustomInteraction {
-  /**
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network
-   * @param {array<object>} options.inputs - inputs for the transaction
-   * @param {array<object>} options.outputs - outputs for the transaction
-   * @param {array<string>} options.bip32Paths - BIP32 paths
-   * @param {object} [options.psbt] - PSBT of the transaction to sign, included or generated from the other options
-   */
+  network: BitcoinNetwork;
+
+  inputs: any;
+
+  outputs: any;
+
+  bip32Paths: any;
+
+  psbt: any;
+
   constructor({ network, inputs, outputs, bip32Paths, psbt }) {
     super();
     this.network = network;
