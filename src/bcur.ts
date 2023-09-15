@@ -27,17 +27,20 @@ import { encodeUR, smartDecodeUR } from "./vendor/bcur";
  * const encoder = BCUREncoder(hexString);
  * console.log(encoder.parts())
  * // [ "ur:...", "ur:...", ... ]
- * 
+ *
  *
  */
 export class BCUREncoder {
+  hexString: string;
+
+  fragmentCapacity: number;
 
   /**
    * Create a new encoder.
    *
    * @param {string} hexString a hex string to encode
    * @param {int} fragmentCapacity passed to internal bcur implementation
-   * 
+   *
    */
   constructor(hexString, fragmentCapacity = 200) {
     this.hexString = hexString;
@@ -48,12 +51,11 @@ export class BCUREncoder {
    * Return all UR parts.
    *
    * @returns {string[]} array of BC UR strings
-   * 
+   *
    */
   parts() {
     return encodeUR(this.hexString, this.fragmentCapacity);
   }
-
 }
 
 /**
@@ -84,16 +86,20 @@ export class BCUREncoder {
  *
  *   // Data can be passed back to the calling application
  *   console.log(decoder.data()); // "deadbeef"
- *   
+ *
  * } else {
  *
  *   // Errors can be passed back to the calling application
  *   console.log(decoder.errorMessage());
  * }
- * 
- * 
+ *
+ *
  */
 export class BCURDecoder {
+  // TODO: type these
+  error: any;
+
+  summary: any;
 
   constructor() {
     this.reset();
@@ -112,7 +118,7 @@ export class BCURDecoder {
       current: 0,
       length: 0,
       workloads: [],
-      result: '',
+      result: "",
     };
     this.error = null;
   }
@@ -127,12 +133,11 @@ export class BCURDecoder {
    */
   receivePart(part) {
     try {
-      const workloads = this.summary.workloads.includes(part) ? this.summary.workloads : [
-        ...this.summary.workloads,
-        part,
-      ];
+      const workloads = this.summary.workloads.includes(part)
+        ? this.summary.workloads
+        : [...this.summary.workloads, part];
       this.summary = smartDecodeUR(workloads);
-    } catch(e) {
+    } catch (e) {
       this.error = e;
     }
   }
@@ -155,12 +160,12 @@ export class BCURDecoder {
    * ...
    * console.log(decoder.progress())
    * // { totalParts: 10, partsReceived: 3 }
-   * 
+   *
    */
   progress() {
     const totalParts = this.summary.length;
     const partsReceived = this.summary.current;
-    return {totalParts, partsReceived};
+    return { totalParts, partsReceived };
   }
 
   /**
@@ -210,5 +215,4 @@ export class BCURDecoder {
       return null;
     }
   }
-
 }
