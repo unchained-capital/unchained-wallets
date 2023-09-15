@@ -62,7 +62,7 @@ function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
     ];
     try {
       await interaction.run();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toMatch(/foobar/i);
     }
   });
@@ -80,7 +80,7 @@ describe("trezor", () => {
     it("sets the default method to throw an error", async () => {
       try {
         await interactionBuilder().run();
-      } catch (e) {
+      } catch (e: any) {
         expect(e.message).toMatch(/subclass of TrezorInteraction/i);
       }
     });
@@ -88,7 +88,7 @@ describe("trezor", () => {
 
   describe("TrezorGetMetadata", () => {
     function interactionBuilder() {
-      return new TrezorGetMetadata({ network: MAINNET });
+      return new TrezorGetMetadata();
     }
 
     itHasStandardMessages(interactionBuilder);
@@ -144,7 +144,7 @@ describe("trezor", () => {
       const interaction = interactionBuilder();
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getFeatures);
-      expect(params).toEqual({});
+      expect(params as any).toEqual({});
     });
   });
 
@@ -193,9 +193,9 @@ describe("trezor", () => {
       const interaction = interactionBuilder();
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
-      expect(params.path).toEqual(bip32Path);
-      expect(params.coin).toEqual(trezorCoin(MAINNET));
-      expect(params.crossChain).toBe(true);
+      expect((params as any).path).toEqual(bip32Path);
+      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).crossChain).toBe(true);
     });
   });
 
@@ -222,9 +222,9 @@ describe("trezor", () => {
       const interaction = interactionBuilder();
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
-      expect(params.path).toEqual(bip32Path);
-      expect(params.coin).toEqual(trezorCoin(MAINNET));
-      expect(params.crossChain).toBe(true);
+      expect((params as any).path).toEqual(bip32Path);
+      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).crossChain).toBe(true);
     });
   });
 
@@ -251,9 +251,9 @@ describe("trezor", () => {
       const interaction = interactionBuilder();
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
-      expect(params.path).toEqual(bip32Path);
-      expect(params.coin).toEqual(trezorCoin(MAINNET));
-      expect(params.crossChain).toBe(true);
+      expect((params as any).path).toEqual(bip32Path);
+      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).crossChain).toBe(true);
     });
   });
 
@@ -291,9 +291,11 @@ describe("trezor", () => {
           const interaction = interactionBuilder();
           const [method, params] = interaction.connectParams();
           expect(method).toEqual(TrezorConnect.signTransaction);
-          expect(params.coin).toEqual(trezorCoin(fixture.network));
-          expect(params.inputs.length).toEqual(fixture.inputs.length);
-          expect(params.outputs.length).toEqual(fixture.outputs.length);
+          expect((params as any).coin).toEqual(trezorCoin(fixture.network));
+          expect((params as any).inputs.length).toEqual(fixture.inputs.length);
+          expect((params as any).outputs.length).toEqual(
+            fixture.outputs.length
+          );
           // FIXME check inputs & output details
         });
       });
@@ -320,9 +322,9 @@ describe("trezor", () => {
       const interaction = psbtInteractionBuilder(tx, keyDetails, false);
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.signTransaction);
-      expect(params.coin).toEqual(trezorCoin(tx.network));
-      expect(params.inputs.length).toEqual(tx.inputs.length);
-      expect(params.outputs.length).toEqual(tx.outputs.length);
+      expect((params as any).coin).toEqual(trezorCoin(tx.network));
+      expect((params as any).inputs.length).toEqual(tx.inputs.length);
+      expect((params as any).outputs.length).toEqual(tx.outputs.length);
 
       expect(interaction.parsePayload({ signatures: tx.signature })).toContain(
         PSBT_MAGIC_B64
@@ -338,9 +340,9 @@ describe("trezor", () => {
       const interaction = psbtInteractionBuilder(tx, keyDetails, true);
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.signTransaction);
-      expect(params.coin).toEqual(trezorCoin(tx.network));
-      expect(params.inputs.length).toEqual(tx.inputs.length);
-      expect(params.outputs.length).toEqual(tx.outputs.length);
+      expect((params as any).coin).toEqual(trezorCoin(tx.network));
+      expect((params as any).inputs.length).toEqual(tx.inputs.length);
+      expect((params as any).outputs.length).toEqual(tx.outputs.length);
       expect(
         interaction.parsePayload({ signatures: ["3003foobar01"] })
       ).toEqual(["3003foobar01"]);
@@ -364,11 +366,11 @@ describe("trezor", () => {
           const interaction = interactionBuilder();
           const [method, params] = interaction.connectParams();
           expect(method).toEqual(TrezorConnect.getAddress);
-          expect(params.path).toEqual(fixture.bip32Path);
-          expect(params.address).toEqual(fixture.address);
-          expect(params.showOnTrezor).toBe(true);
-          expect(params.coin).toEqual(trezorCoin(fixture.network));
-          expect(params.crossChain).toBe(true);
+          expect((params as any).path).toEqual(fixture.bip32Path);
+          expect((params as any).address).toEqual(fixture.address);
+          expect((params as any).showOnTrezor).toBe(true);
+          expect((params as any).coin).toEqual(trezorCoin(fixture.network));
+          expect((params as any).crossChain).toBe(true);
           // FIXME check multisig details
         });
       });
@@ -387,15 +389,19 @@ describe("trezor", () => {
           const interaction = interactionBuilder();
           const [method, params] = interaction.connectParams();
           expect(method).toEqual(TrezorConnect.getAddress);
-          expect(params.bundle[0].path).toEqual(fixture.bip32Path);
-          expect(params.bundle[0].showOnTrezor).toBe(false);
-          expect(params.bundle[0].coin).toEqual(trezorCoin(fixture.network));
-          expect(params.bundle[0].crossChain).toBe(true);
-          expect(params.bundle[1].path).toEqual(fixture.bip32Path);
-          expect(params.bundle[1].address).toEqual(fixture.address);
-          expect(params.bundle[1].showOnTrezor).toBe(true);
-          expect(params.bundle[1].coin).toEqual(trezorCoin(fixture.network));
-          expect(params.bundle[1].crossChain).toBe(true);
+          expect((params as any).bundle[0].path).toEqual(fixture.bip32Path);
+          expect((params as any).bundle[0].showOnTrezor).toBe(false);
+          expect((params as any).bundle[0].coin).toEqual(
+            trezorCoin(fixture.network)
+          );
+          expect((params as any).bundle[0].crossChain).toBe(true);
+          expect((params as any).bundle[1].path).toEqual(fixture.bip32Path);
+          expect((params as any).bundle[1].address).toEqual(fixture.address);
+          expect((params as any).bundle[1].showOnTrezor).toBe(true);
+          expect((params as any).bundle[1].coin).toEqual(
+            trezorCoin(fixture.network)
+          );
+          expect((params as any).bundle[1].crossChain).toBe(true);
           // FIXME check multisig details
         });
       });
@@ -446,7 +452,7 @@ describe("trezor", () => {
   describe("TrezorSignMessage", () => {
     const _bip32Path = "m/45'/0'/0'/0'";
 
-    function interactionBuilder(bip32Path, message) {
+    function interactionBuilder(bip32Path = "", message = "") {
       return new TrezorSignMessage({
         network: MAINNET,
         bip32Path: bip32Path || _bip32Path,
@@ -475,7 +481,7 @@ describe("trezor", () => {
       const interaction = interactionBuilder();
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.signMessage);
-      expect(params.path).toEqual(_bip32Path);
+      expect((params as any).path).toEqual(_bip32Path);
     });
   });
 });
