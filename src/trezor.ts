@@ -44,6 +44,7 @@ import {
 } from "unchained-bitcoin";
 import { ECPair, payments } from "bitcoinjs-lib";
 
+import { BitcoinNetwork } from "unchained-bitcoin";
 import {
   DirectKeystoreInteraction,
   PENDING,
@@ -213,13 +214,10 @@ try {
  * console.log(result); // someValue from payload
  */
 export class TrezorInteraction extends DirectKeystoreInteraction {
-  /**
-   * Trezor interactions require knowing the bitcoin network they are
-   * for.
-   *
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network
-   */
+  network: BitcoinNetwork;
+
+  trezorCoin: string;
+
   constructor({ network }) {
     super();
     this.network = network;
@@ -291,11 +289,15 @@ export class TrezorInteraction extends DirectKeystoreInteraction {
       });
     }
 
-    const result = await method(params);
-    if (!result.success) {
-      throw new Error(result.payload.error);
+    if (typeof method === "function") {
+      const result = await method(params);
+      if (!result.success) {
+        throw new Error(result.payload.error);
+      }
+      return this.parsePayload(result.payload);
+    } else {
+      throw new Error("TrezorConnect method is not a function");
     }
-    return this.parsePayload(result.payload);
   }
 
   /**
@@ -369,7 +371,7 @@ export class TrezorGetMetadata extends TrezorInteraction {
    * @constructor
    */
   constructor() {
-    super({});
+    super({ network: null });
   }
 
   /**
@@ -472,15 +474,13 @@ export class TrezorGetMetadata extends TrezorInteraction {
  *
  */
 export class TrezorExportHDNode extends TrezorInteraction {
-  /**
-   * Requires a BIP32 path to the node to export as well as which network.
-   *
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network
-   * @param {string} bip32Path - the BIP32 path for the HD node
-   * @param {boolean} includeXFP - return xpub with root fingerprint concatenated
-   */
-  constructor({ network, bip32Path, includeXFP }) {
+  bip32Path: string;
+
+  includeXFP: boolean;
+
+  bip32ValidationErrorMessage: any;
+
+  constructor({ network, bip32Path, includeXFP = false }) {
     super({ network });
     this.bip32Path = bip32Path;
     this.includeXFP = includeXFP;
@@ -538,7 +538,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
       throw new Error("Payload does not have two responses.");
     }
     let keyMaterial = "";
-    let rootFingerprint = null;
+    let rootFingerprint = "";
     for (let i = 0; i < payload.length; i++) {
       // Find the payload with bip32 = MULTISIG_ROOT to get xfp
       if (payload[i].serializedPath === MULTISIG_ROOT) {
@@ -594,7 +594,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
  * // "03..."
  */
 export class TrezorExportPublicKey extends TrezorExportHDNode {
-  constructor({ network, bip32Path, includeXFP }) {
+  constructor({ network, bip32Path, includeXFP = false }) {
     super({
       network,
       bip32Path,
@@ -637,7 +637,7 @@ export class TrezorExportPublicKey extends TrezorExportHDNode {
  * // "xpub..."
  */
 export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
-  constructor({ network, bip32Path, includeXFP }) {
+  constructor({ network, bip32Path, includeXFP = false }) {
     super({
       network,
       bip32Path,
@@ -711,16 +711,21 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
  * @extends {module:trezor.TrezorInteraction}
  */
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
-  /**
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network
-   * @param {UTXO[]} [options.inputs] - inputs for the transaction
-   * @param {TransactionOutput[]} [options.outputs] - outputs for the transaction
-   * @param {string[]} [options.bip32Paths] - BIP32 paths on this device to sign with, one per each input
-   * @param {string} [options.psbt] - PSBT string encoded in base64
-   * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
-   * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
-   */
+  // network: BitcoinNetwork
+  inputs: any[];
+
+  outputs: any[];
+
+  bip32Paths: string[];
+
+  psbt?: string;
+
+  keyDetails: any;
+
+  returnSignatureArray?: boolean;
+
+  pubkeys?: any;
+
   constructor({
     network,
     inputs,
@@ -868,16 +873,12 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
  * await interaction.run();
  */
 export class TrezorConfirmMultisigAddress extends TrezorInteraction {
-  /**
-   * Most of the information required to confirm a multisig address
-   * lives in the `Multisig` object from `unchained-bitcoin`.
-   *
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network
-   * @param {string} options.bip32Path - BIP32 path to the public key on this device used in the multisig address
-   * @param {Multisig} options.multisig - multisig object
-   * @param {string} options.publicKey - optional public key to confirm
-   */
+  bip32Path: string;
+
+  multisig: any;
+
+  publicKey: string;
+
   constructor({ network, bip32Path, multisig, publicKey }) {
     super({ network });
     this.bip32Path = bip32Path;
@@ -1028,13 +1029,13 @@ export class TrezorConfirmMultisigAddress extends TrezorInteraction {
  * @extends {module:trezor.TrezorInteraction}
  */
 export class TrezorSignMessage extends TrezorInteraction {
-  /**
-   * @param {object} options - option argument
-   * @param {string} option.network - network
-   * @param {string} option.bip32Path - bip32 path on this device to sign with
-   * @param {string} option.message - hex-encoded string to sign
-   */
-  constructor({ network, bip32Path, message }) {
+  bip32Path: string;
+
+  message: string;
+
+  bip32ValidationErrorMessage: any;
+
+  constructor({ network = "", bip32Path = "", message = "" }) {
     super({ network });
     this.bip32Path = bip32Path;
     this.message = message;
@@ -1136,7 +1137,9 @@ function trezorInput(input, bip32Path) {
     prev_hash: input.txid,
     prev_index: input.index,
     address_n: bip32PathToSequence(bip32Path),
-    ...(input.amountSats && { amount: BigNumber(input.amountSats).toString() }),
+    ...(input.amountSats && {
+      amount: new BigNumber(input.amountSats).toString(),
+    }),
   };
 }
 
@@ -1156,7 +1159,7 @@ function trezorPublicKey(publicKey) {
 
 function trezorOutput(output) {
   return {
-    amount: BigNumber(output.amountSats).toFixed(0),
+    amount: new BigNumber(output.amountSats).toFixed(0),
     address: output.address,
     script_type: "PAYTOADDRESS",
   };
