@@ -20,9 +20,7 @@
  *
  * @module hermit
  */
-import {
-  parseSignaturesFromPSBT,
-} from "unchained-bitcoin";
+import { parseSignaturesFromPSBT } from "unchained-bitcoin";
 import {
   IndirectKeystoreInteraction,
   PENDING,
@@ -30,9 +28,9 @@ import {
   INFO,
   ERROR,
 } from "./interaction";
-import {BCUREncoder} from "./bcur";
+import { BCUREncoder } from "./bcur";
 
-export const HERMIT = 'hermit';
+export const HERMIT = "hermit";
 
 function commandMessage(data) {
   return {
@@ -42,7 +40,7 @@ function commandMessage(data) {
       code: "hermit.command",
       mode: "wallet",
     },
-    ...{text: `${data.instructions} '${data.command}'`},
+    ...{ text: `${data.instructions} '${data.command}'` },
     ...data,
   };
 }
@@ -53,7 +51,6 @@ function commandMessage(data) {
  * @extends {module:interaction.IndirectKeystoreInteraction}
  */
 export class HermitInteraction extends IndirectKeystoreInteraction {
-
   messages() {
     const messages = super.messages();
     messages.push({
@@ -64,7 +61,6 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
     });
     return messages;
   }
-
 }
 
 /**
@@ -74,45 +70,51 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
  * This interaction class works in tandem with the `BCURDecoder`
  * class.  The `BCURDecoder` parses data from Hermit, this class
  * interprets it.
- * 
+ *
  * @extends {module:hermit.HermitInteraction}
  * @example
  * // Hermit returns a descriptor encoded as hex through BC-UR.  Some
  * // application function needs to work with the BCURDecoder class to
  * // parse this data.
  * const descriptorHex = readQRCodeSequence();
- * 
+ *
  * // The interaction parses the data from Hermit
  * const interaction = new HermitExportExtendedPublicKey();
  * const {xpub, bip32Path, rootFingerprint} = interaction.parse(descriptorHex);
- * 
+ *
  * console.log(xpub);
  * // "xpub..."
- * 
+ *
  * console.log(bip32Path);
  * // "m/45'/0'/0'"
- * 
+ *
  * console.log(rootFingerprint);
  * // "abcdefgh"
- * 
+ *
  */
 
 // FIXME -- move all this descriptor regex and extraction stuff to unchained-bitcoin
-const DESCRIPTOR_REGEXP = new RegExp("^\\[([a-fA-F0-9]{8})((?:/[0-9]+'?)+)\\]([a-km-zA-NP-Z1-9]+)$");
+const DESCRIPTOR_REGEXP = new RegExp(
+  "^\\[([a-fA-F0-9]{8})((?:/[0-9]+'?)+)\\]([a-km-zA-NP-Z1-9]+)$"
+);
 
 export class HermitExportExtendedPublicKey extends HermitInteraction {
+  bip32Path: string;
 
-  constructor({bip32Path}) {
+  constructor({ bip32Path }) {
     super();
     this.bip32Path = bip32Path;
   }
 
   messages() {
     const messages = super.messages();
-    messages.push(commandMessage({
-      instructions: "Run the following Hermit command, replacing the BIP32 path if you need to:",
-      command: `display-xpub ${this.bip32Path}`,
-    }));
+    messages.push(
+      commandMessage({
+        instructions:
+          "Run the following Hermit command, replacing the BIP32 path if you need to:",
+        command: `display-xpub ${this.bip32Path}`,
+      })
+    );
     return messages;
   }
 
@@ -120,7 +122,7 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
     if (!descriptorHex) {
       throw new Error("No descriptor received from Hermit.");
     }
-    const descriptor = Buffer.from(descriptorHex, 'hex').toString('utf8');
+    const descriptor = Buffer.from(descriptorHex, "hex").toString("utf8");
     const result = descriptor.match(DESCRIPTOR_REGEXP);
     if (result && result.length == 4) {
       return {
@@ -165,14 +167,11 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
  *
  */
 export class HermitSignMultisigTransaction extends HermitInteraction {
+  psbt: string;
 
-  /**
-   *
-   * @param {object} options - options argument
-   * @param {array<object>} options.psbt - unsigned PSBT to sign
-   * @param {bool} options.returnSignatureArray - return a signed PSBT or an array of signatures (useful in Caravan's testing app)
-   */
-  constructor({psbt, returnSignatureArray=false}) {
+  returnSignatureArray: boolean;
+
+  constructor({ psbt, returnSignatureArray = false }) {
     super();
     this.psbt = psbt;
     this.workflow.unshift("request");
@@ -182,10 +181,13 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
   messages() {
     const messages = super.messages();
 
-    messages.push(commandMessage({
-      instructions: "Run the following Hermit command to scan this signature request:",
-      command: "sign",
-    }));
+    messages.push(
+      commandMessage({
+        instructions:
+          "Run the following Hermit command to scan this signature request:",
+        command: "sign",
+      })
+    );
 
     if (!this.psbt) {
       messages.push({
@@ -195,14 +197,14 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
         text: "PSBT is required.",
       });
     }
-    
+
     // FIXME validate PSBT!
 
     return messages;
   }
 
   request() {
-    const unsignedPSBTHex = Buffer.from(this.psbt, 'base64').toString('hex');
+    const unsignedPSBTHex = Buffer.from(this.psbt, "base64").toString("hex");
     const encoder = new BCUREncoder(unsignedPSBTHex);
     return encoder.parts();
   }
@@ -215,8 +217,7 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
       const signatures = parseSignaturesFromPSBT(signedPSBTHex);
       return Object.values(signatures)[0];
     } else {
-      return Buffer.from(signedPSBTHex, 'hex').toString('base64');
+      return Buffer.from(signedPSBTHex, "hex").toString("base64");
     }
   }
-
 }
