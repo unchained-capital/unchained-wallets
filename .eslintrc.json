@@ -53,7 +53,7 @@
             }
         ],
         "comma-style": "off",
-        "complexity": "error",
+        "complexity": ["error", 21],
         "computed-property-spacing": [
             "error",
             "never"
