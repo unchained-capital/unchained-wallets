@@ -54,3 +54,10 @@ export interface MultisigWalletConfig {
   // signers in the quorum (equal to extendedPublicKeys.length)
   ledgerPolicyHmacs?: LedgerPolicyHmacs[];
 }
+
+// This is currently only used in bcur.ts
+export interface Summary {
+  success: boolean;
+  current: number;
+  length: number;
+}

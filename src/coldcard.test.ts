@@ -22,7 +22,7 @@ const { multisigs, transactions } = TEST_FIXTURES;
 const { nodes } = TEST_FIXTURES.keys.open_source;
 
 describe("ColdcardExportPublicKey", () => {
-  function interactionBuilder({ bip32Path, network }) {
+  function interactionBuilder({ bip32Path = "", network = "" }) {
     return new ColdcardExportPublicKey({
       bip32Path,
       network,
@@ -274,7 +274,7 @@ describe("ColdcardExportPublicKey", () => {
 });
 
 describe("ColdcardExportExtendedPublicKey", () => {
-  function interactionBuilder({ bip32Path, network }) {
+  function interactionBuilder({ bip32Path = "", network = "" }) {
     return new ColdcardExportExtendedPublicKey({
       bip32Path,
       network,
@@ -492,7 +492,13 @@ describe("ColdcardExportExtendedPublicKey", () => {
 });
 
 describe("ColdcardSignMultisigTransaction", () => {
-  function interactionBuilder({ network, inputs, outputs, bip32Paths, psbt }) {
+  function interactionBuilder({
+    network = "",
+    inputs = [],
+    outputs = [],
+    bip32Paths = [],
+    psbt = "",
+  }) {
     return new ColdcardSignMultisigTransaction({
       network,
       inputs,
@@ -648,7 +654,7 @@ describe("ColdcardSignMultisigTransaction", () => {
 });
 
 describe("ColdcardMultisigWalletConfig", () => {
-  let jsonConfigCopy = "";
+  let jsonConfigCopy: any = {};
 
   beforeEach(() => {
     // runs before each test in this block

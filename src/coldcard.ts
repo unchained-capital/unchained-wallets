@@ -31,6 +31,7 @@ import {
   ERROR,
 } from "./interaction";
 import { P2SH, P2SH_P2WSH, P2WSH } from "unchained-bitcoin";
+import { BitcoinNetwork } from "unchained-bitcoin";
 
 export const COLDCARD = "coldcard";
 // Our constants use 'P2SH-P2WSH', their file uses 'P2SH_P2WSH' :\
@@ -64,6 +65,14 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    * @param {string} options.network - bitcoin network (needed for derivations)
    * @param {string} options.bip32Path - bip32Path to interrogate
    */
+  network: BitcoinNetwork;
+
+  bip32Path: string;
+
+  bip32ValidationErrorMessage: any;
+
+  bip32ValidationError: string;
+
   constructor({ network, bip32Path }) {
     super();
     if ([MAINNET, TESTNET].find((net) => net === network)) {
@@ -242,7 +251,8 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
     // because the xpub includes its parent's fingerprint.
     let xfpFromWithinXpub =
       xpubClass.depth === 1
-        ? fingerprintToFixedLengthHex(xpubClass.parentFingerprint)
+        ? xpubClass.parentFingerprint &&
+          fingerprintToFixedLengthHex(xpubClass.parentFingerprint)
         : null;
 
     // Sanity check if you send in a depth one xpub, we should get the same fingerprint
@@ -275,11 +285,13 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    */
   deriveDeeperXpubIfNecessary(result) {
     const knownColdcardChroot = this.chrootForBIP32Path(this.bip32Path);
-    let relativePath = getRelativeBIP32Path(
-      knownColdcardChroot,
-      this.bip32Path
-    );
-    let addressType = COLDCARD_BASE_BIP32_PATHS[knownColdcardChroot];
+    let relativePath =
+      knownColdcardChroot &&
+      getRelativeBIP32Path(knownColdcardChroot, this.bip32Path);
+    let addressType;
+    if (knownColdcardChroot !== null) {
+      addressType = COLDCARD_BASE_BIP32_PATHS[knownColdcardChroot];
+    }
     // result could have p2wsh_p2sh or p2sh_p2wsh based on firmware version. Blah!
     if (addressType.includes("_") && !result[addressType.toLowerCase()]) {
       // Firmware < v3.2.0
@@ -293,7 +305,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
       ? convertExtendedPublicKey(result[addressType.toLowerCase()], prefix)
       : result[addressType.toLowerCase()];
 
-    return relativePath.length
+    return relativePath && relativePath.length
       ? deriveChildExtendedPublicKey(baseXpub, relativePath, this.network)
       : baseXpub;
   }
@@ -419,6 +431,16 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    * @param {array<string>} options.bip32Paths - BIP32 paths
    * @param {object} [options.psbt] - PSBT of the transaction to sign, include it or we will generate it
    */
+  network: string;
+
+  psbt: any;
+
+  inputs: any[];
+
+  outputs: any[];
+
+  bip32Paths: string[];
+
   constructor({ network, inputs, outputs, bip32Paths, psbt }) {
     super();
     this.network = network;
@@ -550,6 +572,18 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
  *
  */
 export class ColdcardMultisigWalletConfig {
+  jsonConfig: any;
+
+  name: string;
+
+  requiredSigners: number;
+
+  totalSigners: number;
+
+  addressType: string;
+
+  extendedPublicKeys: any[];
+
   constructor({ jsonConfig }) {
     if (typeof jsonConfig === "object") {
       this.jsonConfig = jsonConfig;
