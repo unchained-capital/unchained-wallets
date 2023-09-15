@@ -62,11 +62,6 @@ export class CustomInteraction extends IndirectKeystoreInteraction {}
  * // "m/45'/0'/0'"
  */
 export class CustomExportExtendedPublicKey extends CustomInteraction {
-  /**
-   * @param {object} options - options argument
-   * @param {string} options.network - bitcoin network (needed for derivations)
-   * @param {string} options.bip32Path - bip32Path to interrogate
-   */
   network: BitcoinNetwork;
 
   bip32Path: string;
