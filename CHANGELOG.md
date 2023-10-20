@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.6.0...unchained-wallets-v0.6.1) (2023-10-20)
+
+
+### Bug Fixes
+
+* bump @trezor/connect-web patch to fix downstream bug ([cc0beb1](https://github.com/unchained-capital/unchained-wallets/commit/cc0beb14e19bb6689182566ca8a434edc0a27196))
+
 ## [0.6.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.5.3...unchained-wallets-v0.6.0) (2023-09-14)
 
 
