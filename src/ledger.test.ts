@@ -5,7 +5,7 @@
 import {
   TEST_FIXTURES,
   ROOT_FINGERPRINT,
-  TESTNET,
+  Network,
   BraidDetails,
 } from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, WARNING, ERROR } from "./interaction";
@@ -210,10 +210,10 @@ describe("ledger", () => {
             code: "ledger.sign.delay",
           });
           expect(message).not.toBe(null);
-          expect(message.preProcessingTime).toEqual(
+          expect(message?.preProcessingTime).toEqual(
             interaction.preProcessingTime()
           );
-          expect(message.postProcessingTime).toEqual(
+          expect(message?.postProcessingTime).toEqual(
             interaction.postProcessingTime()
           );
         });
@@ -240,8 +240,8 @@ describe("ledger", () => {
                 code: "ledger.sign",
               });
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBeUndefined();
-              expect(message.messages.length).toEqual(5);
+              expect(message?.messages).not.toBeUndefined();
+              expect(message?.messages?.length).toEqual(5);
             });
           });
         } else {
@@ -255,8 +255,8 @@ describe("ledger", () => {
                 code: "ledger.sign",
               });
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBeUndefined();
-              expect(message.messages.length).toEqual(2);
+              expect(message?.messages).not.toBeUndefined();
+              expect(message?.messages?.length).toEqual(2);
             });
 
             it("for version >=1.6.0", () => {
@@ -268,8 +268,8 @@ describe("ledger", () => {
                 code: "ledger.sign",
               });
               expect(message).not.toBe(null);
-              expect(message.messages).not.toBeUndefined();
-              expect(message.messages.length).toEqual(7);
+              expect(message?.messages).not.toBeUndefined();
+              expect(message?.messages?.length).toEqual(7);
             });
           });
         }
@@ -319,7 +319,7 @@ describe("ledger", () => {
     function interactionBuilder(bip32Path) {
       return new LedgerExportExtendedPublicKey({
         bip32Path: bip32Path || "m/45'/0'/0'/0/0",
-        network: TESTNET,
+        network: Network.TESTNET,
         includeXFP: true,
       });
     }

@@ -3,11 +3,11 @@
  */
 
 import {
-  MAINNET,
   ROOT_FINGERPRINT,
   TEST_FIXTURES,
   PSBT_MAGIC_B64,
   networkData,
+  Network,
 } from "unchained-bitcoin";
 import { PENDING, ACTIVE, INFO, ERROR } from "./interaction";
 
@@ -71,7 +71,7 @@ function itThrowsAnErrorOnAnUnsuccessfulRequest(interactionBuilder) {
 describe("trezor", () => {
   describe("TrezorInteraction", () => {
     function interactionBuilder() {
-      return new TrezorInteraction({ network: MAINNET });
+      return new TrezorInteraction({ network: Network.MAINNET });
     }
 
     itHasStandardMessages(interactionBuilder);
@@ -154,7 +154,7 @@ describe("trezor", () => {
     function interactionBuilder() {
       return new TrezorExportHDNode({
         bip32Path,
-        network: MAINNET,
+        network: Network.MAINNET,
       });
     }
 
@@ -164,7 +164,7 @@ describe("trezor", () => {
     it("constructor adds error message on invalid bip32path", () => {
       const interaction = new TrezorExportHDNode({
         bip32Path: "m/foo",
-        network: MAINNET,
+        network: Network.MAINNET,
       });
       expect(
         interaction.hasMessagesFor({
@@ -178,7 +178,7 @@ describe("trezor", () => {
     it("adds error message on bip32path <depth3", () => {
       const interaction = new TrezorExportHDNode({
         bip32Path: "m/45",
-        network: MAINNET,
+        network: Network.MAINNET,
       });
       expect(
         interaction.hasMessagesFor({
@@ -194,7 +194,7 @@ describe("trezor", () => {
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
       expect((params as any).path).toEqual(bip32Path);
-      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).coin).toEqual(trezorCoin(Network.MAINNET));
       expect((params as any).crossChain).toBe(true);
     });
   });
@@ -205,7 +205,7 @@ describe("trezor", () => {
     function interactionBuilder() {
       return new TrezorExportPublicKey({
         bip32Path,
-        network: MAINNET,
+        network: Network.MAINNET,
       });
     }
 
@@ -223,7 +223,7 @@ describe("trezor", () => {
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
       expect((params as any).path).toEqual(bip32Path);
-      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).coin).toEqual(trezorCoin(Network.MAINNET));
       expect((params as any).crossChain).toBe(true);
     });
   });
@@ -234,7 +234,7 @@ describe("trezor", () => {
     function interactionBuilder() {
       return new TrezorExportExtendedPublicKey({
         bip32Path,
-        network: MAINNET,
+        network: Network.MAINNET,
       });
     }
 
@@ -252,7 +252,7 @@ describe("trezor", () => {
       const [method, params] = interaction.connectParams();
       expect(method).toEqual(TrezorConnect.getPublicKey);
       expect((params as any).path).toEqual(bip32Path);
-      expect((params as any).coin).toEqual(trezorCoin(MAINNET));
+      expect((params as any).coin).toEqual(trezorCoin(Network.MAINNET));
       expect((params as any).crossChain).toBe(true);
     });
   });
@@ -454,7 +454,7 @@ describe("trezor", () => {
 
     function interactionBuilder(bip32Path = "", message = "") {
       return new TrezorSignMessage({
-        network: MAINNET,
+        network: Network.MAINNET,
         bip32Path: bip32Path || _bip32Path,
         message: message || "hello world",
       });
@@ -466,7 +466,7 @@ describe("trezor", () => {
     it("constructor adds error message on invalid bip32path", () => {
       const interaction = new TrezorSignMessage({
         bip32Path: "m/foo",
-        network: MAINNET,
+        network: Network.MAINNET,
       });
       expect(
         interaction.hasMessagesFor({

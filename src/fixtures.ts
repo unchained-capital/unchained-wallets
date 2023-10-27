@@ -1,4 +1,4 @@
-import { TEST_FIXTURES, TESTNET } from "unchained-bitcoin";
+import { TEST_FIXTURES, Network } from "unchained-bitcoin";
 import { KeyOrigin, MultisigWalletPolicy } from "./policy";
 
 const paths = ["m/48'/1'/100'/1'", "m/48'/1'/100'/2'"];
@@ -7,7 +7,7 @@ const origins = paths.map((path) => {
   return new KeyOrigin({
     xfp: node.rootFingerprint,
     xpub: node.xpub,
-    network: TESTNET,
+    network: Network.TESTNET,
     bip32Path: path,
   });
 });

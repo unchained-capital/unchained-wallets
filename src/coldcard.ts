@@ -7,8 +7,6 @@
  * * ColdcardExportExtendedPublicKey
  * * ColdcardSignMultisigTransaction
  * * ColdcardMultisigWalletConfig
- *
- * @module coldcard
  */
 import {
   deriveChildExtendedPublicKey,
@@ -16,8 +14,7 @@ import {
   unsignedMultisigPSBT,
   parseSignaturesFromPSBT,
   ExtendedPublicKey,
-  MAINNET,
-  TESTNET,
+  Network,
   validateBIP32Path,
   getRelativeBIP32Path,
   convertExtendedPublicKey,
@@ -48,29 +45,31 @@ export const COLDCARD_WALLET_CONFIG_VERSION = "1.0.0";
 
 /**
  * Base class for interactions with Coldcard
- *
- * @extends {module:interaction.IndirectKeystoreInteraction}
  */
 export class ColdcardInteraction extends IndirectKeystoreInteraction {}
 
 /**
  * Base class for JSON Multisig file-based interactions with Coldcard
  * This class handles the file that comes from the `Export XPUB` menu item.
- *
- * @extends {module:coldcard.ColdcardInteraction}
  */
 class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
   network: BitcoinNetwork;
 
   bip32Path: string;
 
-  bip32ValidationErrorMessage: any;
+  bip32ValidationErrorMessage: { text?: string; code?: string };
 
   bip32ValidationError: string;
 
-  constructor({ network, bip32Path }) {
+  constructor({
+    network,
+    bip32Path,
+  }: {
+    network: BitcoinNetwork;
+    bip32Path: string;
+  }) {
     super();
-    if ([MAINNET, TESTNET].find((net) => net === network)) {
+    if ([Network.MAINNET, Network.TESTNET].find((net) => net === network)) {
       this.network = network;
     } else {
       throw new Error("Unknown network.");
@@ -135,11 +134,8 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    * 1. Is the bip32path valid syntactically?
    * 2. Does the bip32path start with one of the known Coldcard chroots?
    * 3. Are there any hardened indices in the relative path below the chroot?
-   *
-   * @param {string} bip32Path - bip32Path to validate against Coldcard chroots
-   * @return {string} empty or with the appropriate error message
    */
-  validateColdcardBip32Path(bip32Path) {
+  validateColdcardBip32Path(bip32Path: string) {
     const bip32PathError = validateBIP32Path(bip32Path);
     if (bip32PathError.length) {
       this.bip32ValidationErrorMessage = {
@@ -180,11 +176,8 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    * add a field for rootFingerprint (it can sometimes be calculated
    * if not explicitly included)
    *
-   * @param {Object} file JSON file exported from Coldcard
-   * @returns {Object} the parsed response
-   *
    */
-  parse(file) {
+  parse(file: any) {
     //In the case of keys (json), the file will look like:
     //
     //{
@@ -274,16 +267,13 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    * 2. derive deeper if necessary (and able) using functionality
    *    from unchained-bitcoin
    *
-   * @param {Object} result - parsed data from ColdcardJSON
-   * @returns {Object} the desired xpub (if possible)
-   *
    */
-  deriveDeeperXpubIfNecessary(result) {
+  deriveDeeperXpubIfNecessary(result: any) {
     const knownColdcardChroot = this.chrootForBIP32Path(this.bip32Path);
     let relativePath =
       knownColdcardChroot &&
       getRelativeBIP32Path(knownColdcardChroot, this.bip32Path);
-    let addressType;
+    let addressType = "";
     if (knownColdcardChroot !== null) {
       addressType = COLDCARD_BASE_BIP32_PATHS[knownColdcardChroot];
     }
@@ -293,7 +283,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
       addressType = "p2wsh_p2sh";
     }
 
-    const prefix = this.network === TESTNET ? "tpub" : "xpub";
+    const prefix = this.network === Network.TESTNET ? "tpub" : "xpub";
     // If the addressType is segwit, the imported key will not be in the xpub/tpub format,
     // so convert it.
     const baseXpub = addressType.toLowerCase().includes("w")
@@ -310,7 +300,6 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
  * Reads a public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {ColdcardMultisigSettingsFileParser}
  * @example
  * const interaction = new ColdcardExportPublicKey();
  * const reader = new FileReader(); // application dependent
@@ -351,9 +340,8 @@ export class ColdcardExportPublicKey extends ColdcardMultisigSettingsFileParser 
  * Reads an extended public key and (optionally) derives deeper from data in an
  * exported JSON file uploaded from the Coldcard.
  *
- * @extends {ColdcardMultisigSettingsFileParser}
  * @example
- * const interaction = new ColdcardExportExtendedPublicKey({network: MAINNET, bip32Path: 'm/45'/0/0'});
+ * const interaction = new ColdcardExportExtendedPublicKey({network: Network.MAINNET, bip32Path: 'm/45'/0/0'});
  * const reader = new FileReader(); // application dependent
  * const jsonFile = reader.readAsText('ccxp-0F056943.json'); // application dependent
  * const {xpub, rootFingerprint, bip32Path} = interaction.parse(jsonFile);
@@ -392,7 +380,6 @@ export class ColdcardExportExtendedPublicKey extends ColdcardMultisigSettingsFil
  * Returns signature request data via a PSBT for a Coldcard to sign and
  * accepts a PSBT for parsing signatures from a Coldcard device
  *
- * @extends {module:coldcard.ColdcardInteraction}
  * @example
  * const interaction = new ColdcardSignMultisigTransaction({network, inputs, outputs, bip32paths, psbt});
  * console.log(interaction.request());
@@ -489,17 +476,13 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    * other than the direct Object.
    *
    * E.g. PSBT in Base64 is interaction().request().toBase64()
-   *
-   * @returns {Object} Returns the local unsigned PSBT from transaction details
    */
   request() {
     return this.psbt;
   }
 
   /**
-   *
-   * @param {Object} psbtObject - the PSBT
-   * @returns {Object} signatures - This calls a function in unchained-bitcoin which parses
+   * This calls a function in unchained-bitcoin which parses
    * PSBT files for sigantures and then returns an object with the format
    * {
    *   pubkey1 : [sig1, sig2, ...],
@@ -509,7 +492,7 @@ export class ColdcardSignMultisigTransaction extends ColdcardInteraction {
    */
   parse(psbtObject) {
     const signatures = parseSignaturesFromPSBT(psbtObject);
-    if (!signatures || signatures.length === 0) {
+    if (!signatures || Object.keys(signatures).length === 0) {
       throw new Error(
         "No signatures found in the PSBT. Did you upload the right one?"
       );
@@ -621,7 +604,7 @@ export class ColdcardMultisigWalletConfig {
   }
 
   /**
-   * @returns {string} output to be written to a text file and uploaded to Coldcard.
+   * Output to be written to a text file and uploaded to Coldcard.
    */
   adapt() {
     let output = `# Coldcard Multisig setup file (exported from unchained-wallets)

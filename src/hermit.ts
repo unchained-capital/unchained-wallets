@@ -17,8 +17,6 @@
  *
  * * HermitExportExtendedPublicKey
  * * HermitSignMultisigTransaction
- *
- * @module hermit
  */
 import { parseSignaturesFromPSBT } from "unchained-bitcoin";
 import {
@@ -47,8 +45,6 @@ function commandMessage(data) {
 
 /**
  * Base class for interactions with Hermit.
- *
- * @extends {module:interaction.IndirectKeystoreInteraction}
  */
 export class HermitInteraction extends IndirectKeystoreInteraction {
   messages() {
@@ -71,7 +67,6 @@ export class HermitInteraction extends IndirectKeystoreInteraction {
  * class.  The `BCURDecoder` parses data from Hermit, this class
  * interprets it.
  *
- * @extends {module:hermit.HermitInteraction}
  * @example
  * // Hermit returns a descriptor encoded as hex through BC-UR.  Some
  * // application function needs to work with the BCURDecoder class to
@@ -144,7 +139,6 @@ export class HermitExportExtendedPublicKey extends HermitInteraction {
  * class.  The `BCURDecoder` parses data from Hermit, this class
  * interprets it.
  *
- * @extends {module:hermit.HermitInteraction}
  * @example
  * const interaction = new HermitSignMultisigTransaction({psbt});
  * const urParts = interaction.request();
@@ -210,14 +204,21 @@ export class HermitSignMultisigTransaction extends HermitInteraction {
   }
 
   parse(signedPSBTHex) {
-    if (!signedPSBTHex) {
+    try {
+      if (!signedPSBTHex) {
+        throw new Error();
+      }
+      if (this.returnSignatureArray) {
+        const signatures = parseSignaturesFromPSBT(signedPSBTHex);
+        if (!signatures) {
+          throw new Error();
+        }
+        return Object.values(signatures)[0];
+      } else {
+        return Buffer.from(signedPSBTHex, "hex").toString("base64");
+      }
+    } catch (err) {
       throw new Error("No signature received from Hermit.");
-    }
-    if (this.returnSignatureArray) {
-      const signatures = parseSignaturesFromPSBT(signedPSBTHex);
-      return Object.values(signatures)[0];
-    } else {
-      return Buffer.from(signedPSBTHex, "hex").toString("base64");
     }
   }
 }

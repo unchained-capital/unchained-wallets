@@ -6,14 +6,11 @@
  *
  * * CustomExportExtendedPublicKey
  * * CustomSignMultisigTransaction
- *
- * @module custom
  */
 import {
   unsignedMultisigPSBT,
   parseSignaturesFromPSBT,
-  MAINNET,
-  TESTNET,
+  Network,
   validateBIP32Path,
   validateRootFingerprint,
   ExtendedPublicKey,
@@ -31,8 +28,6 @@ export const CUSTOM = "custom";
 
 /**
  * Base class for interactions with Custom "devices"
- *
- * @extends {module:interaction.IndirectKeystoreInteraction}
  */
 export class CustomInteraction extends IndirectKeystoreInteraction {}
 
@@ -42,9 +37,8 @@ export class CustomInteraction extends IndirectKeystoreInteraction {}
  * derivation properties. If no root fingerprint is provided, one will
  * be deterministically assigned.
  *
- * @extends {module:custom.CustomInteraction}
  * @example
- * const interaction = new CustomExportExtendedPublicKey({network: MAINNET, bip32Path: "m/45'/0'/0'"});
+ * const interaction = new CustomExportExtendedPublicKey({network: Network.MAINNET, bip32Path: "m/45'/0'/0'"});
  * const {xpub, rootFingerprint, bip32Path} = interaction.parse({xpub: xpub..., rootFingerprint: 0f056943});
  * console.log(xpub);
  * // "xpub..."
@@ -70,7 +64,7 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
 
   constructor({ network, bip32Path }) {
     super();
-    if ([MAINNET, TESTNET].find((net) => net === network)) {
+    if ([Network.MAINNET, Network.TESTNET].find((net) => net === network)) {
       this.network = network;
     } else {
       throw new Error("Unknown network.");
@@ -115,9 +109,6 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
 
   /**
    * Parse the provided JSON and do some basic error checking
-   *
-   * @param {Object} data - JSON object with incoming data to be parsed (read: reformatted)
-   * @returns {Object} Object - ExtendedPublicKeyDerivation {xpub, bip32path, rootFingerprint}
    */
   parse(data) {
     // build ExtendedPublicKey struct (validation happens in constructor)
@@ -165,7 +156,6 @@ export class CustomExportExtendedPublicKey extends CustomInteraction {
  * Returns signature request data via a PSBT for a Custom "device" to sign and
  * accepts a PSBT for parsing signatures from a Custom "device"
  *
- * @extends {module:custom.CustomInteraction}
  * @example
  * const interaction = new CustomSignMultisigTransaction({network, inputs, outputs, bip32paths, psbt});
  * console.log(interaction.request());
@@ -244,17 +234,13 @@ export class CustomSignMultisigTransaction extends CustomInteraction {
    * other than the direct Object.
    *
    * E.g. PSBT in Base64 is interaction().request().toBase64()
-   *
-   * @returns {Object} Returns the local unsigned PSBT from transaction details
    */
   request() {
     return this.psbt;
   }
 
   /**
-   *
-   * @param {Object} psbtObject - the PSBT
-   * @returns {Object} signatures - This calls a function in unchained-bitcoin which parses
+   * This calls a function in unchained-bitcoin which parses
    * PSBT files for sigantures and then returns an object with the format
    * {
    *   pubkey1 : [sig1, sig2, ...],
@@ -264,7 +250,7 @@ export class CustomSignMultisigTransaction extends CustomInteraction {
    */
   parse(psbtObject) {
     const signatures = parseSignaturesFromPSBT(psbtObject);
-    if (!signatures || signatures.length === 0) {
+    if (!signatures || Object.keys(signatures).length === 0) {
       throw new Error(
         "No signatures found in the PSBT. Did you upload the right one?"
       );

@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { TESTNET, TEST_FIXTURES, BraidDetails } from "unchained-bitcoin";
+import { Network, TEST_FIXTURES, BraidDetails } from "unchained-bitcoin";
 import {
   KeyOrigin,
   validateMultisigPolicyTemplate,
@@ -135,7 +135,7 @@ describe("KeyOrigin", () => {
       xfp: "76223a6e",
       bip32Path: "m/48'/1'/0'/2'",
       xpub: "tpubDE7NQymr4AFtewpAsWtnreyq9ghkzQBXpCZjWLFVRAvnbf7vya2eMTvT2fPapNqL8SuVvLQdbUbMfWLVDCZKnsEBqp6UK93QEzL8Ck23AwF",
-      network: TESTNET,
+      network: Network.TESTNET,
     };
 
     expect(new KeyOrigin(options).toString()).toEqual(
