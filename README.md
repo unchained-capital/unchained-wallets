@@ -1,4 +1,4 @@
-# Unchained Capital Keystore Utilities
+# Unchained Keystore Utilities
 
 [![Build Status](https://travis-ci.com/unchained-capital/unchained-wallets.svg?branch=master)](https://travis-ci.com/unchained-capital/unchained-wallets)
 
