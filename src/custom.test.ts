@@ -6,7 +6,7 @@ import {
   CustomExportExtendedPublicKey,
   CustomSignMultisigTransaction,
 } from "./custom";
-import { MAINNET, TESTNET, TEST_FIXTURES } from "unchained-bitcoin";
+import { Network, TEST_FIXTURES } from "unchained-bitcoin";
 import { INFO, PENDING, ACTIVE, ERROR } from "./interaction";
 import { customFixtures } from "./fixtures/custom.fixtures";
 
@@ -28,7 +28,7 @@ describe("CustomExportExtendedPublicKey", () => {
     });
     it("shows invalid bip32Path unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/01",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -47,7 +47,7 @@ describe("CustomExportExtendedPublicKey", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       expect(() => interaction.parse(notJSON)).toThrow(
@@ -63,7 +63,7 @@ describe("CustomExportExtendedPublicKey", () => {
 
     it("fails when missing xpub field", () => {
       const interaction = interactionBuilder({
-        network: MAINNET,
+        network: Network.MAINNET,
         bip32Path: "m/45'/1'/0'",
       });
       const missingXpub = {
@@ -78,7 +78,7 @@ describe("CustomExportExtendedPublicKey", () => {
     it("computes fake rootFingerprint when initialized on testnet", () => {
       const bip32Path = "m/45'/0'/0'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const missingXfp = { ...customFixtures.validCustomXpubJSON };
@@ -91,7 +91,7 @@ describe("CustomExportExtendedPublicKey", () => {
     it("computes fake rootFingerprint when initialized on mainnet", () => {
       const bip32Path = "m/45'/1'/0'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const missingXfp = { ...customFixtures.validCustomTpubJSON };
@@ -104,7 +104,7 @@ describe("CustomExportExtendedPublicKey", () => {
     it("throws error on invalid rootFingerprint", () => {
       const bip32Path = "m/45'/1'/0'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       expect(() =>
@@ -118,7 +118,7 @@ describe("CustomExportExtendedPublicKey", () => {
     it("throws error as bip32 depth does not match depth in provided xpub", () => {
       let bip32Path = "m/45'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
 
@@ -130,7 +130,7 @@ describe("CustomExportExtendedPublicKey", () => {
     it("throws error as bip32 depth does not match depth in provided xpub (and bip32 missing m/ for whatever reason)", () => {
       let bip32Path = "45'/0'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
 
@@ -143,7 +143,7 @@ describe("CustomExportExtendedPublicKey", () => {
   it("has a message about uploading file", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -182,7 +182,7 @@ describe("CustomSignMultisigTransaction", () => {
   describe("request", () => {
     it("returns psbt if there is one", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: testMultisig.psbt,
       });
       const result = interaction.request();
@@ -196,7 +196,7 @@ describe("CustomSignMultisigTransaction", () => {
         outputs: testTx.outputs,
         bip32Paths: testTx.bip32Paths,
       });
-      const result = interaction.request().toBase64();
+      const result = interaction.request().data.toBase64();
       expect(result).toEqual(testTx.psbt);
     });
   });
@@ -223,7 +223,7 @@ describe("CustomSignMultisigTransaction", () => {
   it("has a message about downloading psbt", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: PENDING,
@@ -236,7 +236,7 @@ describe("CustomSignMultisigTransaction", () => {
   it("has a message about signing psbt", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: PENDING,
@@ -249,7 +249,7 @@ describe("CustomSignMultisigTransaction", () => {
   it("has a message about verify tx", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: ACTIVE,
@@ -262,7 +262,7 @@ describe("CustomSignMultisigTransaction", () => {
   it("has a message about upload PSBT", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: testMultisig.psbt,
       }).hasMessagesFor({
         state: ACTIVE,

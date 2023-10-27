@@ -12,8 +12,6 @@
  * * LedgerExportExtendedPublicKey
  * * LedgerSignMultisigTransaction
  * * LedgerSignMessage
- *
- * @module ledger
  */
 
 import {
@@ -60,9 +58,6 @@ import { MultisigWalletPolicy } from "./policy";
 
 /**
  * Constant defining Ledger interactions.
- *
- * @type {string}
- * @default ledger
  */
 export const LEDGER = "ledger";
 
@@ -75,27 +70,18 @@ import LedgerBtc from "@ledgerhq/hw-app-btc";
 /**
  * Constant representing the action of pushing the left button on a
  * Ledger device.
- *
- * @type {string}
- * @default 'ledger_left_button'
  */
 export const LEDGER_LEFT_BUTTON = "ledger_left_button";
 
 /**
  * Constant representing the action of pushing the right button on a
  * Ledger device.
- *
- * @type {string}
- * @default 'ledger_right_button'
  */
 export const LEDGER_RIGHT_BUTTON = "ledger_right_button";
 
 /**
  * Constant representing the action of pushing both buttons on a
  * Ledger device.
- *
- * @type {string}
- * @default 'ledger_both_buttons'
  */
 export const LEDGER_BOTH_BUTTONS = "ledger_both_buttons";
 
@@ -115,7 +101,6 @@ export interface AppAndVersion {
  * Errors are not caught, so users of this class (and its subclasses)
  * should use `try...catch` as always.
  *
- * @extends {module:interaction.DirectKeystoreInteraction}
  * @example
  * import {LedgerInteraction} from "unchained-wallets";
  * // Simple subclass
@@ -151,8 +136,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * device is plugged in (`device.connect`) and unlocked
    * (`device.unlock`).  Adds an `active` message at the `info` level
    * when communicating with the device (`device.active`).
-   *
-   * @return {module:interaction.Message[]} messages for ths interaction
    */
   messages() {
     const messages = super.messages();
@@ -180,8 +163,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *
    * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for general information or a [specific transport API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-transport-u2f} for examples of API calls.
    *
-   * @param {function} callback -- asynchronous function accepting a single parameter `transport`
-   * @returns {Promise} does the work of setting up a transport connection
    * @example
    * async run() {
    *   return await this.withTransport(async (transport) => {
@@ -189,7 +170,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *   });
    * }
    */
-  async withTransport(callback) {
+  async withTransport(callback: (transport: any) => any) {
     const useU2F = this.environment.satisfies({
       firefox: ">70",
     });
@@ -252,8 +233,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *
    * See the [Ledger API]{@link https://github.com/LedgerHQ/ledgerjs} for general information or the [bitcoin app API]{@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc} for examples of API calls.
    *
-   * @param {function} callback -- accepts two parameters, `app` and `transport`, which are the Ledger APIs for the bitcoin app and the transport layer, respectively.
-   * @returns {Promise} does the work of setting up an app instance (and transport connection)
    * @example
    * async run() {
    *   return await this.withApp(async (app, transport) => {
@@ -261,7 +240,7 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    *   });
    * }
    */
-  withApp(callback) {
+  withApp(callback: (app: any, transport: any) => any) {
     return this.withTransport(async (transport) => {
       let app;
       if (await this.isLegacyApp()) {
@@ -280,7 +259,6 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
    * The way the pubkey/xpub/fingerprints are grabbed makes this a little tricky.
    * Instead of re-writing how that works, let's just add a way to explicitly
    * close the transport.
-   * @return {Promise} - promise to close the transport
    */
   closeTransport() {
     return this.withTransport(async (transport) => {
@@ -296,17 +274,12 @@ export class LedgerInteraction extends DirectKeystoreInteraction {
 /**
  * Base class for interactions which must occur when the Ledger device
  * is not in any app but in the dashboard.
- *
- * @extends {module:ledger.LedgerInteraction}
- *
  */
 export class LedgerDashboardInteraction extends LedgerInteraction {
   /**
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the Ledger dashboard, not the bitcoin app
    * (`ledger.app.dashboard`).
-   *
-   * @return {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -329,8 +302,6 @@ export class LedgerDashboardInteraction extends LedgerInteraction {
 /**
  * Base class for interactions which must occur when the Ledger device
  * is open to the bitcoin app.
- *
- * @extends {module:ledger.LedgerInteraction}
  */
 export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
   /**
@@ -348,8 +319,6 @@ export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
   /**
    * Adds `pending` and `active` messages at the `info` level urging
    * the user to be in the bitcoin app (`ledger.app.bitcoin`).
-   *
-   * @return {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -374,7 +343,6 @@ export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
    * has support for a given interaction. This method can then be called
    * to check the version of the app being called and return whether or
    * not the interaction is supported based on that version
-   * @returns {Promise<boolean>} if the current open app is supported
    */
   async isAppSupported() {
     if (!this.isSupported()) return false;
@@ -388,9 +356,10 @@ export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
    * Inheriting classes should call the super.run()
    * as well as set the properties of support before calling their run
    * in order to check support before calling the actual interaction run
-   * @returns {Promise} could return void or some value that the interaction is meant to provide
+   *
+   * The return type has to remain any to get inheritance typing to work.
    */
-  async run(): Promise<unknown> {
+  async run(): Promise<any> {
     const isSupported = await this.isAppSupported();
     if (!isSupported) {
       throw new Error(
@@ -406,7 +375,6 @@ export abstract class LedgerBitcoinInteraction extends LedgerInteraction {
  *
  * Includes model name, firmware & MCU versions.
  *
- * @extends {module:ledger.LedgerDashboardInteraction}
  * @example
  * import {LedgerGetMetadata} from "unchained-wallets";
  * const interaction = new LedgerGetMetadata();
@@ -448,10 +416,8 @@ export class LedgerGetMetadata extends LedgerDashboardInteraction {
    * Parses the binary data returned from the Ledger API call into a
    * metadata object.
    *
-   * @param {ByteArray} response - binary response data
-   * @returns {Object} - device metadata
    */
-  parseMetadata(response) {
+  parseMetadata(response: any[]) {
     try {
       // From
       //
@@ -610,7 +576,6 @@ export interface LedgerDeviceError {
  * You may want to use `LedgerExportPublicKey` or
  * `LedgerExportExtendedPublicKey` directly.
  *
- * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
  * import {MAINNET} from "unchained-bitcoin";
  * import {LedgerExportHDNode} from "unchained-wallets";
@@ -647,8 +612,6 @@ abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
    * Adds messages related to the warnings Ledger devices produce on various BIP32 paths.
-   *
-   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -679,8 +642,6 @@ abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
    *
    * Any other kind of path is considered unusual and will trigger the
    * warning.
-   *
-   * @returns {boolean} whether a BIP32 path warning will be displayed
    */
   hasBIP32PathWarning() {
     // 0 -> 44'
@@ -713,9 +674,6 @@ abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
    *
    * Optionally get root fingerprint for device. This is useful for keychecks and necessary
    * for PSBTs
-   *
-   * @param {boolean} root fingerprint or not
-   * @returns {string} fingerprint
    */
   async getFingerprint(root = false): Promise<number | string> {
     if (await this.isLegacyApp()) {
@@ -762,8 +720,6 @@ abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
 
   /**
    * See {@link https://github.com/LedgerHQ/ledgerjs/tree/master/packages/hw-app-btc#getwalletpublickey}.
-   *
-   * @returns {object} the HD node object.
    */
   run() {
     return this.withApp(async (app) => {
@@ -778,7 +734,6 @@ abstract class LedgerExportHDNode extends LedgerBitcoinInteraction {
 /**
  * Returns the public key at a given BIP32 path.
  *
- * @extends {module:ledger.LedgerExportHDNode}
  * @example
  * import {LedgerExportPublicKey} from "unchained-wallets";
  * const interaction = new LedgerExportPublicKey({bip32Path: "m/48'/0'/0'/2'/0"});
@@ -812,8 +767,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
   /**
    * Parses out and compresses the public key from the response of
    * `LedgerExportHDNode`.
-   *
-   * @returns {string|Object} (compressed) public key in hex (returns object if asked to include root fingerprint)
    */
   async run() {
     try {
@@ -843,10 +796,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 
   /**
    * Compress the given public key.
-   *
-   * @param {string} [publicKey] - the uncompressed public key in hex
-   * @returns {string} - the compressed public key in hex
-   *
    */
   parsePublicKey(publicKey?: string) {
     if (publicKey) {
@@ -864,7 +813,6 @@ export class LedgerExportPublicKey extends LedgerExportHDNode {
 
 /**
  * Class for wallet extended public key (xpub) interaction at a given BIP32 path.
- * @extends {module:ledger.LedgerExportHDNode}
  */
 export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
   network: BitcoinNetwork;
@@ -897,8 +845,6 @@ export class LedgerExportExtendedPublicKey extends LedgerExportHDNode {
    * const interaction = new LedgerExportExtendedPublicKey({network, bip32Path});
    * const xpub = await interaction.run();
    * console.log(xpub);
-   *
-   * @returns {string|Object} the extended public key (returns object if asked to include root fingerprint)
    */
   async run() {
     try {
@@ -964,7 +910,6 @@ interface LedgerSignMultisigTransactionArguments {
  * - `outputs` is an array of `TransactionOutput` objects from `unchained-bitcoin`
  * - `bip32Paths` is an array of (`string`) BIP32 paths, one for each input, identifying the path on this device to sign that input with
  *
- * @extends {module:ledger.LedgerBitcoinInteraction}
  * @example
  * import {
  *   generateMultisigFromHex, TESTNET, P2SH,
@@ -1020,17 +965,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
   readonly isV2Supported = false;
 
-  /**
-   * @param {object} options - options argument
-   * @param {BitcoinNetwork} options.network - bitcoin network
-   * @param {array<object>} options.inputs - inputs for the transaction
-   * @param {array<object>} options.outputs - outputs for the transaction
-   * @param {array<string>} options.bip32Paths - BIP32 paths
-   * @param {object} [options.v2Options] - arguments to try with a v2 app
-   * @param {string} [options.psbt] - PSBT string encoded in base64
-   * @param {object} [options.keyDetails] - Signing Key Details (Fingerprint + bip32 prefix)
-   * @param {boolean} [options.returnSignatureArray] - return an array of signatures instead of a signed PSBT (useful for test suite)
-   */
   constructor({
     network,
     inputs = [],
@@ -1048,22 +982,30 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
       this.outputs = outputs;
       this.bip32Paths = bip32Paths;
     } else {
-      const { unchainedInputs, unchainedOutputs, bip32Derivations } =
-        translatePSBT(network, P2SH, psbt, keyDetails);
       this.psbt = psbt;
-      this.inputs = unchainedInputs;
-      this.outputs = unchainedOutputs;
-      this.bip32Paths = bip32Derivations.map((b32d) => b32d.path);
-      this.pubkeys = bip32Derivations.map((b32d) => b32d.pubkey);
       this.returnSignatureArray = returnSignatureArray;
+
+      const translatedPsbt = translatePSBT(
+        network,
+        P2SH,
+        this.psbt,
+        keyDetails
+      );
+
+      this.inputs = translatedPsbt?.unchainedInputs;
+      this.outputs = translatedPsbt?.unchainedOutputs;
+      this.bip32Paths = translatedPsbt?.bip32Derivations.map(
+        (b32d) => b32d.path
+      );
+      this.pubkeys = translatedPsbt?.bip32Derivations.map(
+        (b32d) => b32d.pubkey
+      );
     }
     this.v2Options = v2Options;
   }
 
   /**
    * Adds messages describing the signing flow.
-   *
-   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -1193,8 +1135,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
    * Input signatures produced will always have a trailing `...01`
    * {@link https://bitcoin.org/en/glossary/sighash-all SIGHASH_ALL}
    * byte.
-   *
-   * @returns {string[]|string} array of input signatures, one per input or PSBT in Base64
    */
   async run() {
     // will check app support and throw error if not supported
@@ -1266,7 +1206,7 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
     return serializeTransactionOutputs(splitTx).toString("hex");
   }
 
-  ledgerBIP32Path(bip32Path) {
+  ledgerBIP32Path(bip32Path: string) {
     return bip32Path.split("/").slice(1).join("/");
   }
 
@@ -1284,8 +1224,6 @@ export class LedgerSignMultisigTransaction extends LedgerBitcoinInteraction {
 
 /**
  * Returns a signature for a given message by a single public key.
- *
- * @extends {module:ledger.LedgerBitcoinInteraction}
  */
 export class LedgerSignMessage extends LedgerBitcoinInteraction {
   bip32Path: string;
@@ -1298,12 +1236,7 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
   readonly isV2Supported = false;
 
-  /**
-   * @param {object} options - options argument
-   * @param {string} options.bip32Path - the BIP32 path of the HD node of the public key
-   * @param {string} options.message - the message to be signed (in hex)
-   */
-  constructor({ bip32Path, message }) {
+  constructor({ bip32Path, message }: { bip32Path: string; message: string }) {
     super();
     this.bip32Path = bip32Path;
     this.message = message;
@@ -1320,8 +1253,6 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
   /**
    * Adds messages describing the signing flow.
-   *
-   * @returns {module:interaction.Message[]} messages for this interaction
    */
   messages() {
     const messages = super.messages();
@@ -1350,8 +1281,6 @@ export class LedgerSignMessage extends LedgerBitcoinInteraction {
 
   /**
    * See {@link https://github.com/LedgerHQ/ledger-live/tree/develop/libs/ledgerjs/packages/hw-app-btc#signmessagenew}.
-   *
-   * @return {object} {v, r, s}
    */
   async run() {
     // check app version support first
@@ -1518,7 +1447,7 @@ export class LedgerRegisterWalletPolicy extends LedgerBitcoinV2WithRegistrationI
     return messages;
   }
 
-  async run(): Promise<string> {
+  async run() {
     try {
       await super.run();
       const policy = await this.registerWallet(this.verify);
@@ -1588,9 +1517,6 @@ export class LedgerConfirmMultisigAddress extends LedgerBitcoinV2WithRegistratio
 
   /**
    * Adds messages about BIP32 path warnings.
-   *
-   * @returns {module:interaction.Message[]} messages for this interaction
-   *
    */
   messages() {
     const messages = super.messages();

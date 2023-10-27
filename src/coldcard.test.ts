@@ -8,12 +8,7 @@ import {
   ColdcardSignMultisigTransaction,
   ColdcardMultisigWalletConfig,
 } from "./coldcard";
-import {
-  MAINNET,
-  TESTNET,
-  TEST_FIXTURES,
-  ROOT_FINGERPRINT,
-} from "unchained-bitcoin";
+import { Network, TEST_FIXTURES, ROOT_FINGERPRINT } from "unchained-bitcoin";
 import { INFO, PENDING, ACTIVE, ERROR } from "./interaction";
 import { coldcardFixtures } from "./fixtures/coldcard.fixtures";
 
@@ -37,7 +32,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("unknown chroot unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/44'/0",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -51,7 +46,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("invalid bip32Path unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/01",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -65,7 +60,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("hardened after unhardened unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/1'",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -84,7 +79,7 @@ describe("ColdcardExportPublicKey", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       expect(() => interaction.parse(notJSON)).toThrow(/Unable to parse JSON/i);
@@ -101,7 +96,7 @@ describe("ColdcardExportPublicKey", () => {
 
     it("missing xpub", () => {
       const interaction = interactionBuilder({
-        network: MAINNET,
+        network: Network.MAINNET,
         bip32Path: "m/45'/0/0",
       });
       const missingXpub = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -112,7 +107,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("missing bip32path", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const missingb32 = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -123,7 +118,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("xfp in file and computed xfp don't match", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -136,7 +131,7 @@ describe("ColdcardExportPublicKey", () => {
     it("missing xfp but passes bc depth is 1", () => {
       const bip32Path = "m/45'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const missingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -151,7 +146,7 @@ describe("ColdcardExportPublicKey", () => {
     });
     it("no xfp and depth>1 xpub", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -163,7 +158,7 @@ describe("ColdcardExportPublicKey", () => {
     it("xfp and depth>1 xpub", () => {
       const bip32Path = "m/48'/1'/0'/1'/0/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const deeperXPUB = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -176,10 +171,10 @@ describe("ColdcardExportPublicKey", () => {
         rootFingerprint: nodes[bip32Path].rootFingerprint,
       });
     });
-    it("success for valid JSON via TESTNET", () => {
+    it("success for valid JSON via Network.TESTNET", () => {
       const bip32Path = "m/45'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       expect(interaction.isSupported()).toEqual(true);
@@ -192,10 +187,10 @@ describe("ColdcardExportPublicKey", () => {
         bip32Path,
       });
     });
-    it("success for valid JSON via MAINNET", () => {
+    it("success for valid JSON via Network.MAINNET", () => {
       const bip32Path = "m/45'";
       const interaction = interactionBuilder({
-        network: MAINNET,
+        network: Network.MAINNET,
         bip32Path,
       });
       expect(interaction.isSupported()).toEqual(true);
@@ -211,7 +206,7 @@ describe("ColdcardExportPublicKey", () => {
     it("derive down to depth 2 unhardened", () => {
       let b32Path = "m/45'/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: b32Path,
       });
       expect(interaction.isSupported()).toEqual(true);
@@ -222,7 +217,7 @@ describe("ColdcardExportPublicKey", () => {
     it("derive down to depth 3 unhardened", () => {
       let b32Path = "m/45'/1/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: b32Path,
       });
       expect(interaction.isSupported()).toEqual(true);
@@ -235,7 +230,7 @@ describe("ColdcardExportPublicKey", () => {
   it("has a message about uploading file", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -248,7 +243,7 @@ describe("ColdcardExportPublicKey", () => {
   it("has a message about selecting 0 for account ", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -261,7 +256,7 @@ describe("ColdcardExportPublicKey", () => {
   it("has a message about exporting xpub", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -290,7 +285,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
 
     it("unknown chroot unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/44'/0",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -304,7 +299,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
     it("invalid bip32Path unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/01",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -318,7 +313,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
     it("hardened after unhardened unsupported", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/1'",
       });
       expect(interaction.isSupported()).toBe(false);
@@ -337,7 +332,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
       const notJSON = "test";
       const definitelyNotJSON = 77;
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       expect(() => interaction.parse(notJSON)).toThrow(/Unable to parse JSON/i);
@@ -349,7 +344,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
 
     it("missing xpub", () => {
       const interaction = interactionBuilder({
-        network: MAINNET,
+        network: Network.MAINNET,
         bip32Path: "m/45'/0/0",
       });
       const missingXpub = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -360,7 +355,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
     it("missing bip32path", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const missingb32 = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -371,7 +366,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
     it("xfp in file and computed xfp don't match", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -384,7 +379,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("missing xfp but passes", () => {
       const bip32Path = "m/45'";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const missingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -399,7 +394,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     });
     it("no xfp and depth>1 xpub", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'/1/0",
       });
       const reallyMissingXFP = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -413,7 +408,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("xfp and depth>1 xpub", () => {
       const bip32Path = "m/48'/1'/0'/1'/0/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const deeperXPUB = { ...coldcardFixtures.validColdcardXpubJSON };
@@ -431,7 +426,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("derive down to depth 2 unhardened", () => {
       let bip32Path = "m/45'/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
@@ -441,7 +436,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
     it("derive down to depth 3 unhardened", () => {
       let bip32Path = "m/45'/1/0";
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path,
       });
       const result = interaction.parse(coldcardFixtures.validColdcardXpubJSON);
@@ -453,7 +448,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
   it("has a message about uploading file", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -466,7 +461,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
   it("has a message about selecting 0 for account ", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -479,7 +474,7 @@ describe("ColdcardExportExtendedPublicKey", () => {
   it("has a message about exporting xpub", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         bip32Path: "m/45'",
       }).hasMessagesFor({
         state: PENDING,
@@ -516,7 +511,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   describe("request", () => {
     it("return psbt if there is one", () => {
       const interaction = interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       });
       const result = interaction.request();
@@ -530,7 +525,7 @@ describe("ColdcardSignMultisigTransaction", () => {
         outputs: transactions[0].outputs,
         bip32Paths: transactions[0].bip32Paths,
       });
-      const result = interaction.request().toBase64();
+      const result = interaction.request().data.toBase64();
       expect(result).toEqual(transactions[0].psbt);
     });
   });
@@ -563,7 +558,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about wallet config", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: PENDING,
@@ -576,7 +571,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about downloading psbt", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: PENDING,
@@ -589,7 +584,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about transferring psbt", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: PENDING,
@@ -602,7 +597,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about transferring psbt", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: ACTIVE,
@@ -615,7 +610,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about ready to sign", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: ACTIVE,
@@ -628,7 +623,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about verify tx", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: ACTIVE,
@@ -641,7 +636,7 @@ describe("ColdcardSignMultisigTransaction", () => {
   it("has a message about upload PSBT", () => {
     expect(
       interactionBuilder({
-        network: TESTNET,
+        network: Network.TESTNET,
         psbt: multisigs[0].psbt,
       }).hasMessagesFor({
         state: ACTIVE,

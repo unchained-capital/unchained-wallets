@@ -6,8 +6,6 @@
  *
  * * BCUREncoder
  * * BCURDecoder
- *
- * @module bcur
  */
 
 import { encodeUR, smartDecodeUR } from "./vendor/bcur";
@@ -37,23 +35,16 @@ export class BCUREncoder {
 
   /**
    * Create a new encoder.
-   *
-   * @param {string} hexString a hex string to encode
-   * @param {int} fragmentCapacity passed to internal bcur implementation
-   *
    */
-  constructor(hexString, fragmentCapacity = 200) {
+  constructor(hexString: string, fragmentCapacity = 200) {
     this.hexString = hexString;
     this.fragmentCapacity = fragmentCapacity;
   }
 
   /**
    * Return all UR parts.
-   *
-   * @returns {string[]} array of BC UR strings
-   *
    */
-  parts() {
+  parts(): string[] {
     return encodeUR(this.hexString, this.fragmentCapacity);
   }
 }
@@ -99,18 +90,23 @@ export class BCURDecoder {
   // TODO: type these
   error: any;
 
-  summary: any;
+  summary: ReturnType<typeof smartDecodeUR>;
 
   constructor() {
-    this.reset();
+    this.summary = {
+      success: false,
+      current: 0,
+      length: 0,
+      workloads: [],
+      result: "",
+    };
+    this.error = null;
   }
 
   /**
    * Reset this decoder.
    *
    * Clears any error message and received parts and returns counts to zero.
-   *
-   * @returns {null} Nothing is returned.
    */
   reset() {
     this.summary = {
@@ -127,11 +123,8 @@ export class BCURDecoder {
    * Receive a new UR part.
    *
    * It's OK to call this method multiple times for the same UR part.
-   *
-   * @param {string} part the UR part, typically the contents of a QR code
-   * @returns {null} Nothing is returned.
    */
-  receivePart(part) {
+  receivePart(part: string) {
     try {
       const workloads = this.summary.workloads.includes(part)
         ? this.summary.workloads
@@ -145,7 +138,6 @@ export class BCURDecoder {
   /**
    * Returns the current progress of this decoder.
    *
-   * @returns {object} An object with keys `totalParts` and `partsReceived`.
    * @example
    * import {BCURDecoder} from "unchained-wallets";
    * const decoder = BCURDecoder();
@@ -172,8 +164,6 @@ export class BCURDecoder {
    * Is this decoder complete?
    *
    * Will return `true` if there was an error.
-   *
-   * @returns {bool} Completion status
    */
   isComplete() {
     return this.summary.success || Boolean(this.error);
@@ -183,8 +173,6 @@ export class BCURDecoder {
    * Was this decoder successful?
    *
    * Will return `false` if completed because of an error.
-   *
-   * @returns {bool} Success status
    */
   isSuccess() {
     return this.summary.success;
@@ -192,8 +180,6 @@ export class BCURDecoder {
 
   /**
    * Returns the decoded data as a hex string.
-   *
-   * @returns {string} decoded data in hex or `null` if not successful
    */
   data() {
     if (this.isSuccess()) {
@@ -205,10 +191,8 @@ export class BCURDecoder {
 
   /**
    * Returns the error message.
-   *
-   * @returns {string} the error message
    */
-  errorMessage() {
+  errorMessage(): string | null {
     if (this.error) {
       return this.error.message;
     } else {
