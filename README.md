@@ -233,6 +233,16 @@ for more details on messages.
 
 ## Developers
 
+#### A quick note on types
+
+This library has been ported to TypeScript. The process unearthed quite a few
+cases of bad typing. In many cases, the type may be a complex union of other
+types. For now, these types have been defined as `any`, however please note that
+the use of `any` is not best practice and should be removed in the future. This
+will require some type refactoring.
+
+### Setup
+
 Developers who want to work on this library should clone the source
 code and install dependencies:
 
