@@ -1,6 +1,6 @@
 {
   "name": "unchained-wallets",
-  "version": "1.0.0",
+  "version": "0.6.2",
   "description": "Unchained Capital's HD Wallets Library",
   "main": "lib/index.js",
   "repository": {
@@ -37,6 +37,7 @@
     "jest": "^29.4.2",
     "jest-environment-jsdom": "^29.4.1",
     "jest-junit": "^9.0.0",
+    "jsdoc": "^4.0.0",
     "lint-staged": "^13.1.2",
     "mocha": "^10.2.0",
     "prettier": "^2.8.4",

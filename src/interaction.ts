@@ -60,7 +60,7 @@ export const LEVELS = [INFO, WARNING, ERROR];
  *
  * Message objects may have additional properties.
  */
-type Message = {
+export type Message = {
   state?: typeof STATES extends readonly (infer ElementType)[]
     ? ElementType
     : never;
@@ -202,7 +202,7 @@ export class KeystoreInteraction {
   /**
    * Return messages array for this interaction.
    *
-   * The messages array is a (possibly empty) array of [`Message`]{@link module:interaction.Message} objects.
+   * The messages array is a (possibly empty) array of `Message` objects.
    *
    * Subclasses should override this method and add messages as
    * needed.  Make sure to call `super.messages()` to return an empty
@@ -567,7 +567,7 @@ export class IndirectKeystoreInteraction extends KeystoreInteraction {
    * of this interaction.
    *
    */
-  parse(response: object) {
+  parse(response: Record<string, unknown> | string) {
     throw new Error("Override the `parse` method in this interaction.");
   }
 

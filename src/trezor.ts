@@ -445,7 +445,7 @@ export class TrezorExportHDNode extends TrezorInteraction {
 
   includeXFP: boolean;
 
-  bip32ValidationErrorMessage: any;
+  bip32ValidationErrorMessage: { text?: string; code?: string };
 
   constructor({ network, bip32Path, includeXFP = false }) {
     super({ network });
@@ -666,7 +666,6 @@ export class TrezorExportExtendedPublicKey extends TrezorExportHDNode {
  * // ["ababab...", // 1 per input]
  */
 export class TrezorSignMultisigTransaction extends TrezorInteraction {
-  // network: Network
   inputs: any[];
 
   outputs: any[];
@@ -674,8 +673,6 @@ export class TrezorSignMultisigTransaction extends TrezorInteraction {
   bip32Paths: string[];
 
   psbt?: string;
-
-  keyDetails: any;
 
   returnSignatureArray?: boolean;
 

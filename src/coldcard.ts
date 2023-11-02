@@ -19,6 +19,7 @@ import {
   getRelativeBIP32Path,
   convertExtendedPublicKey,
   getMaskedDerivation,
+  MultisigAddressType,
 } from "unchained-bitcoin";
 import {
   IndirectKeystoreInteraction,
@@ -29,6 +30,7 @@ import {
 } from "./interaction";
 import { P2SH, P2SH_P2WSH, P2WSH } from "unchained-bitcoin";
 import { BitcoinNetwork } from "unchained-bitcoin";
+import { WalletConfigKeyDerivation } from "./types";
 
 export const COLDCARD = "coldcard";
 // Our constants use 'P2SH-P2WSH', their file uses 'P2SH_P2WSH' :\
@@ -177,7 +179,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    * if not explicitly included)
    *
    */
-  parse(file: any) {
+  parse(file: Record<string, unknown> | string) {
     //In the case of keys (json), the file will look like:
     //
     //{
@@ -268,7 +270,7 @@ class ColdcardMultisigSettingsFileParser extends ColdcardInteraction {
    *    from unchained-bitcoin
    *
    */
-  deriveDeeperXpubIfNecessary(result: any) {
+  deriveDeeperXpubIfNecessary(result: Record<string, unknown> | string) {
     const knownColdcardChroot = this.chrootForBIP32Path(this.bip32Path);
     let relativePath =
       knownColdcardChroot &&
@@ -537,9 +539,9 @@ export class ColdcardMultisigWalletConfig {
 
   totalSigners: number;
 
-  addressType: string;
+  addressType: MultisigAddressType;
 
-  extendedPublicKeys: any[];
+  extendedPublicKeys: WalletConfigKeyDerivation[];
 
   constructor({ jsonConfig }) {
     if (typeof jsonConfig === "object") {
