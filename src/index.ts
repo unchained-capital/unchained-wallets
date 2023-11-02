@@ -459,11 +459,11 @@ export function ConfirmMultisigAddress({
   keystore: KEYSTORE_TYPES;
   network: Network;
   bip32Path: string;
-  multisig: any;
+  multisig: Record<string, any>;
   publicKey?: string;
   name?: string;
   policyHmac?: string;
-  walletConfig?: any;
+  walletConfig?: MultisigWalletConfig;
 }) {
   switch (keystore) {
     case TREZOR:
