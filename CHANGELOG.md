@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.0...unchained-wallets-v1.0.1) (2023-11-06)
+
+
+### Bug Fixes
+
+* random commit to bump publish task ([ab74787](https://github.com/unchained-capital/unchained-wallets/commit/ab7478711b7e499f04aef455bb7e62456df56beb))
+
 ## [1.0.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.6.2...unchained-wallets-v1.0.0) (2023-11-06)
 
 
