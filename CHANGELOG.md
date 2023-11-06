@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.0](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.6.2...unchained-wallets-v1.0.0) (2023-11-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* jsdoc removal, typescript, and v1.0.0
+
+### Features
+
+* bumps complexity value to allow committing of typescript refactor ([6faa816](https://github.com/unchained-capital/unchained-wallets/commit/6faa816a719f97132f4fa679c49894cf007eea15))
+* jsdoc removal, typescript, and v1.0.0 ([59eeb94](https://github.com/unchained-capital/unchained-wallets/commit/59eeb94511ce1e3dd7fc1fe2e73a098e3781b282))
+* refactors bcur and coldcard to typescript ([2816238](https://github.com/unchained-capital/unchained-wallets/commit/281623823293a47f10d244766c6a44f7eaf855a4))
+* refactors custom.js and tests to ts ([6b9be3b](https://github.com/unchained-capital/unchained-wallets/commit/6b9be3b315ddf06e4f9fca59cc8fd0baea6912ce))
+* refactors hermit.js and tests to ts ([a9cc4c4](https://github.com/unchained-capital/unchained-wallets/commit/a9cc4c426de41143536fc17550b39ad75404073e))
+* refactors trezor.js and tests to ts ([e5a431b](https://github.com/unchained-capital/unchained-wallets/commit/e5a431b92c1700d79b987c82d2251f66614b7334))
+* removes redundant docstrings ([67c19f2](https://github.com/unchained-capital/unchained-wallets/commit/67c19f217c10444e8f300b2e8ac47c744cb213bb))
+
+
+### Bug Fixes
+
+* vite env vars for trezor ([85762ee](https://github.com/unchained-capital/unchained-wallets/commit/85762ee683299e34d391bd1eb1997389d0afa22e))
+
 ## [0.6.2](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v0.6.1...unchained-wallets-v0.6.2) (2023-10-26)
 
 
