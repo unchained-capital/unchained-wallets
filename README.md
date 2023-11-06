@@ -37,8 +37,6 @@ The classes will also provide messages back to the developer suitable
 for display in user interfaces. All errors will also be percolated up
 to the developer to handle how they see fit.
 
-Adding a random change to bump publish automation
-
 ### API
 
 The following top-level functions are the entry points to this API:
