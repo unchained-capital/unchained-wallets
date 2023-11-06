@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.1...unchained-wallets-v1.0.2) (2023-11-06)
+
+
+### Bug Fixes
+
+* actions yaml bugs ([c7e05cf](https://github.com/unchained-capital/unchained-wallets/commit/c7e05cf417e6fce958fc94bf1b910a646ad6e42a))
+
 ## [1.0.1](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.0...unchained-wallets-v1.0.1) (2023-11-06)
 
 
