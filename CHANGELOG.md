@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.2...unchained-wallets-v1.0.3) (2023-11-17)
+
+
+### Bug Fixes
+
+* lock ledger dependencies to avoid js errors ([f115e68](https://github.com/unchained-capital/unchained-wallets/commit/f115e686d90669bceb13c056eac29f12109e6764))
+
 ## [1.0.2](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.1...unchained-wallets-v1.0.2) (2023-11-06)
 
 
