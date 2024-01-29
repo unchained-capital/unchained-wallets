@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.3...unchained-wallets-v1.0.4) (2024-01-29)
+
+
+### Bug Fixes
+
+* **trezor:** pin connect url to stable version ([5b256bf](https://github.com/unchained-capital/unchained-wallets/commit/5b256bf6ffcd259a74251442f06038e7ce2570bf))
+
 ## [1.0.3](https://github.com/unchained-capital/unchained-wallets/compare/unchained-wallets-v1.0.2...unchained-wallets-v1.0.3) (2023-11-17)
 
 
