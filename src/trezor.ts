@@ -109,21 +109,18 @@ const TREZOR_DEV =
   env_variables.TREZOR_DEV ||
   env_variables.REACT_APP_TREZOR_DEV ||
   env_variables.VITE_TREZOR_DEV;
+
 try {
-  if (TREZOR_DEV)
-    TrezorConnect.init({
-      connectSrc: TREZOR_CONNECT_URL,
-      lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
-      manifest: {
-        email: "help@unchained-capital.com",
-        appUrl: "https://github.com/unchained-capital/unchained-wallets",
-      },
-    });
-  else
-    TrezorConnect.manifest({
-      email: "help@unchained-capital.com",
+  TrezorConnect.init({
+    connectSrc: TREZOR_DEV
+      ? TREZOR_CONNECT_URL
+      : "https://connect.trezor.io/9.1.9/", // pinning to this connect version to avoid backwards incompatible changes
+    lazyLoad: true, // this param prevents iframe injection until a TrezorConnect.method is called
+    manifest: {
+      email: "help@unchained.com",
       appUrl: "https://github.com/unchained-capital/unchained-wallets",
-    });
+    },
+  });
 } catch (e) {
   // We hit this if we run this code outside of a browser, for example
   // during unit testing.
