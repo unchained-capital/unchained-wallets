@@ -1,3 +1,7 @@
+> [!CAUTION]
+> ⛔️ DEPRECATED⛔️ <br/>
+> This repository has been deprecated and moved to a new location. Active development and ongoing maintenance will continue at https://github.com/caravan-bitcoin/caravan in the @caravan/wallets package
+
 # Unchained Keystore Utilities
 
 [![Build Status](https://travis-ci.com/unchained-capital/unchained-wallets.svg?branch=master)](https://travis-ci.com/unchained-capital/unchained-wallets)
